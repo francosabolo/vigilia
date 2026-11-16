@@ -58,9 +58,9 @@ class ClaudeDetectionVerifier implements DetectionVerifier
      * Version of everything that shapes the answer: prompt, output schema and effort. Changing any of them
      * invalidates cached verdicts automatically.
      */
-    public static function promptFingerprint(): string
+    public static function promptFingerprint(?string $systemPrompt = null): string
     {
-        return substr(sha1(self::SYSTEM_PROMPT.json_encode(StructuredOutput::toJsonSchema(DetectionVerdict::class)).'|effort=low'), 0, 12);
+        return substr(sha1(($systemPrompt ?? self::SYSTEM_PROMPT).json_encode(StructuredOutput::toJsonSchema(DetectionVerdict::class)).'|effort=low'), 0, 12);
     }
 
     /**
@@ -79,12 +79,12 @@ class ClaudeDetectionVerifier implements DetectionVerifier
      * @param  array{data: string, media_type: string}  $image
      * @return array<string, mixed>
      */
-    public function requestParams(string $model, string $context, array $image): array
+    public function requestParams(string $model, string $context, array $image, ?string $systemPrompt = null): array
     {
         return [
             'model' => $model,
             'maxTokens' => 2048,
-            'system' => self::SYSTEM_PROMPT,
+            'system' => $systemPrompt ?? self::SYSTEM_PROMPT,
             'messages' => [[
                 'role' => 'user',
                 'content' => [
@@ -141,22 +141,50 @@ class ClaudeDetectionVerifier implements DetectionVerifier
 
     public function verify(DetectionEvent $event): VerificationResult
     {
+        return $this->review($event->snapshot_path, $event->camera, $this->eventContext($event), $this->eventSubject($event));
+    }
+
+    /**
+     * Shadow mode: one call with a challenger model and/or prompt, on exactly what production saw. Never cached,
+     * never counted in the site budget and never used to decide anything.
+     *
+     * @return array{result: VerificationResult, input_tokens: int, output_tokens: int, latency_ms: int}|null
+     */
+    public function challenge(DetectionEvent $event, string $model, string $systemPrompt): ?array
+    {
+        $image = $this->loadImage($event->snapshot_path);
+        if ($image === null) {
+            return null;
+        }
+
+        $started = microtime(true);
+        $message = $this->client->messages->create(...$this->requestParams($model, $this->cameraContext($event->camera, $this->eventContext($event)), $image, $systemPrompt));
+
+        return [
+            'result' => $this->verdictFromMessage($message, $model) ?? $this->fallback($this->eventSubject($event), 'La IA no devolvió un veredicto.', $model),
+            'input_tokens' => $message->usage->inputTokens + (int) $message->usage->cacheReadInputTokens,
+            'output_tokens' => $message->usage->outputTokens,
+            'latency_ms' => (int) round((microtime(true) - $started) * 1000),
+        ];
+    }
+
+    private function eventContext(DetectionEvent $event): string
+    {
         $zones = $event->camera->zones()->whereIn('frigate_zone', $event->zones ?? [])->get()
             ->map(fn ($zone): string => "{$zone->name} ({$zone->kind->label()})")
             ->implode(', ');
 
-        $context = sprintf(
+        return sprintf(
             'Detector: %s (score %s). Zonas: %s.',
             LabelTranslator::translate($event->label),
             $event->score !== null ? number_format($event->score, 2) : 'n/d',
             $zones ?: (implode(', ', $event->zones ?? []) ?: 'cámara completa'),
         );
+    }
 
-        return $this->review($event->snapshot_path, $event->camera, $context, sprintf(
-            '%s detectada en %s.',
-            ucfirst(LabelTranslator::translate($event->label)),
-            $event->camera->name,
-        ));
+    private function eventSubject(DetectionEvent $event): string
+    {
+        return sprintf('%s detectada en %s.', ucfirst(LabelTranslator::translate($event->label)), $event->camera->name);
     }
 
     public function verifySnapshot(string $path, Camera $camera, string $context): VerificationResult

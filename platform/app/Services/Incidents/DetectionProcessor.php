@@ -13,6 +13,7 @@ use App\Models\Incident;
 use App\Models\Zone;
 use App\Services\Activity\ActivityFeed;
 use App\Services\Rules\ArmingEvaluator;
+use App\Services\Shadow\ShadowMode;
 use App\Services\Verification\DetectionVerifier;
 use App\Services\Verification\LabelTranslator;
 use App\Services\Verification\VerificationResult;
@@ -86,6 +87,7 @@ class DetectionProcessor
             $event->trace = $this->trace;
             $event->save();
             $this->broadcast($event);
+            app(ShadowMode::class)->consider($event);
 
             return null;
         }
@@ -113,6 +115,7 @@ class DetectionProcessor
 
         $event->forceFill(['trace' => $this->trace])->save();
         $this->broadcast($event);
+        app(ShadowMode::class)->consider($event);
 
         return $incident;
     }

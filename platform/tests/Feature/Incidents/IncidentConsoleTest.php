@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\CameraViewStatus;
 use App\Enums\IncidentResolution;
 use App\Enums\IncidentStatus;
 use App\Enums\UserRole;
+use App\Models\Camera;
 use App\Models\Incident;
 use App\Models\Site;
 use App\Models\User;
@@ -56,3 +58,11 @@ it('serves media only through signed urls', function () {
     $this->get("/media/incidents/{$this->incident->id}/snapshot")->assertForbidden();
     $this->get($this->incident->mediaUrl('snapshot'))->assertOk();
 });
+
+it('opens every kind of incident page', function (string $source) {
+    $camera = Camera::factory()->create(['site_id' => $this->site->id, 'view_status' => CameraViewStatus::Moved]);
+    $incident = Incident::factory()->create(['site_id' => $this->site->id, 'camera_id' => $camera->id, 'source' => $source]);
+
+    $this->actingAs($this->operator)->get("/incidents/{$incident->id}")->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('incidents/show')->where('incident.source', $source));
+})->with(['detection', 'resident_report', 'panic', 'tamper', 'equipment']);

@@ -9,6 +9,7 @@ use App\Http\Controllers\IncidentMediaController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ResidentAdminController;
 use App\Http\Controllers\ResidentController;
+use App\Http\Controllers\ShadowController;
 use App\Http\Controllers\SiteConfigurationController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\TeamController;
@@ -56,6 +57,8 @@ Route::middleware('auth')->group(function () {
         Route::post('sites', [SiteController::class, 'store'])->name('sites.store');
         Route::post('sites/{site}/edges', [EdgeDeviceController::class, 'store'])->name('edges.store');
         Route::delete('sites/{site}/edges/{edge}', [EdgeDeviceController::class, 'destroy'])->name('edges.destroy');
+        Route::get('ai/shadow', [ShadowController::class, 'index'])->name('shadow.index');
+        Route::post('ai/shadow/detections/{detectionEvent}/label', [ShadowController::class, 'label'])->name('shadow.label');
         Route::get('team', [TeamController::class, 'index'])->name('team.index');
         Route::post('team', [TeamController::class, 'store'])->name('team.store');
         Route::patch('team/{member}', [TeamController::class, 'update'])->name('team.update');

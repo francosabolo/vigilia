@@ -19,4 +19,13 @@ enum Truth: string
     {
         return $this === self::Intrusion;
     }
+
+    /**
+     * Whether a good verifier should alert on it (ground truth for shadow mode): intrusions, and someone
+     * loitering in an armed zone at night, which is what the loitering images show.
+     */
+    public function shouldAlert(): bool
+    {
+        return in_array($this, [self::Intrusion, self::Loitering], true);
+    }
 }

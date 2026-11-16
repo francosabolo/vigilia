@@ -5,6 +5,7 @@ namespace App\Services\Incidents;
 use App\Enums\IncidentResolution;
 use App\Enums\IncidentStatus;
 use App\Events\IncidentChanged;
+use App\Models\DetectionEvent;
 use App\Models\Incident;
 use App\Models\User;
 
@@ -68,6 +69,13 @@ class IncidentWorkflow
         ])->save();
 
         $this->record($incident, $resolution->value, $user, $channel, $notes);
+
+        // A closed security incident tells what its detections really were (shadow mode and evaluations use it).
+        if (in_array($resolution, [IncidentResolution::Confirmed, IncidentResolution::FalseAlarm], true)) {
+            DetectionEvent::where('incident_id', $incident->id)
+                ->where(fn ($query) => $query->whereNull('ground_truth_source')->orWhere('ground_truth_source', 'incident'))
+                ->update(['ground_truth' => $resolution === IncidentResolution::Confirmed, 'ground_truth_source' => 'incident']);
+        }
 
         return true;
     }

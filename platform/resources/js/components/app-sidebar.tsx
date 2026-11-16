@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Building2, Cctv, LayoutGrid, Siren, Users } from 'lucide-react';
+import { Building2, Cctv, FlaskConical, LayoutGrid, Siren, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -29,6 +29,14 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
+const centralNavItems: NavItem[] = [
+    {
+        title: 'Pruebas de IA',
+        url: '/ai/shadow',
+        icon: FlaskConical,
+    },
+];
+
 const adminNavItems: NavItem[] = [
     {
         title: 'Equipo',
@@ -39,7 +47,8 @@ const adminNavItems: NavItem[] = [
 
 export function AppSidebar() {
     const { auth } = usePage<{ auth: { user: { role?: string } } }>().props;
-    const items = auth.user.role === 'admin' ? [...mainNavItems, ...adminNavItems] : mainNavItems;
+    const role = auth.user.role;
+    const items = [...mainNavItems, ...(role === 'admin' || role === 'operator' ? centralNavItems : []), ...(role === 'admin' ? adminNavItems : [])];
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

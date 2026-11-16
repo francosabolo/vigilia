@@ -7,6 +7,7 @@ use Database\Factories\DetectionEventFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DetectionEvent extends Model
 {
@@ -21,6 +22,7 @@ class DetectionEvent extends Model
     protected $fillable = [
         'edge_device_id', 'camera_id', 'external_id', 'label', 'score', 'zones',
         'started_at', 'ended_at', 'snapshot_path', 'clip_path', 'status', 'ai_verdict', 'trace', 'incident_id',
+        'ground_truth', 'ground_truth_source', 'reviewed_by',
     ];
 
     protected function casts(): array
@@ -28,6 +30,7 @@ class DetectionEvent extends Model
         return [
             'zones' => 'array',
             'ai_verdict' => 'array',
+            'ground_truth' => 'boolean',
             'trace' => 'array',
             'score' => 'float',
             'started_at' => 'datetime',
@@ -49,5 +52,13 @@ class DetectionEvent extends Model
     public function incident(): BelongsTo
     {
         return $this->belongsTo(Incident::class);
+    }
+
+    /**
+     * @return HasMany<ShadowVerdict, $this>
+     */
+    public function shadowVerdicts(): HasMany
+    {
+        return $this->hasMany(ShadowVerdict::class);
     }
 }

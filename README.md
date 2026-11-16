@@ -65,6 +65,13 @@ Edge nuevo: `php artisan seguria:edge-create {site_id} edge-norte` imprime el `S
 
 Para cambiar el prompt o el modelo, corré en local `php artisan seguria:eval-gate --record`. Necesita las imágenes en `storage/app/eval*` y la API key, y cuesta centavos con caché y batch. Si el cambio empeora alguna métrica, no guarda nada (salvo con `--accept-regression`). Commiteá la carpeta `evals/` junto con el cambio.
 
+### Modo sombra (Pruebas de IA)
+Un retador (otro modelo y/o un prompt en un archivo) analiza en segundo plano una muestra de las detecciones reales, sin decidir nada. En la consola, **Pruebas de IA** lo compara con producción: intrusiones detectadas, falsas alarmas, costo y latencia. También muestra los desacuerdos con la foto, para que una persona diga qué era.
+
+- Variables: `SEGURIA_SHADOW=true`, `SEGURIA_SHADOW_MODEL`, `SEGURIA_SHADOW_PROMPT` (ruta a un `.md` con el prompt), `SEGURIA_SHADOW_SAMPLE` (0,25) y `SEGURIA_SHADOW_DAILY_CAP` (500).
+- Sobre detecciones pasadas: `php artisan seguria:shadow-run --limit=40`. Con `--simulated`, usa la verdad que conoce el simulador.
+- La verdad sale de los incidentes cerrados, del simulador o de la revisión en la pantalla. Recomienda promover solo con al menos 10 amenazas y 20 casos sin amenaza con resultado conocido.
+
 ### Zonas
 Las zonas se dibujan en la consola, sobre una imagen en vivo de cada cámara (**Barrios → cámara → Dibujar zonas**). La consola es la fuente de verdad: el bridge baja las zonas por `/api/edge/commands`, las escribe en `config.yml` (guarda un `.bak`) y reinicia Frigate. Las cámaras que no tienen zonas dibujadas no se tocan.
 

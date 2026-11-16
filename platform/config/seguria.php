@@ -37,6 +37,17 @@ return [
     'require_two_factor' => (bool) env('SEGURIA_REQUIRE_2FA', env('APP_ENV') === 'production'),
 
     'ai' => [
+        // Shadow mode: a challenger (another model and/or prompt) analyzes a sample of real detections in the
+        // background, without deciding anything, to compare it with production before promoting it.
+        'shadow' => [
+            'enabled' => (bool) env('SEGURIA_SHADOW', false),
+            'model' => env('SEGURIA_SHADOW_MODEL', 'claude-sonnet-5-5'),
+            // Path (from the platform folder) to the challenger's system prompt; empty = production prompt.
+            'prompt_file' => env('SEGURIA_SHADOW_PROMPT'),
+            'sample_rate' => (float) env('SEGURIA_SHADOW_SAMPLE', 0.25),
+            'daily_cap' => (int) env('SEGURIA_SHADOW_DAILY_CAP', 500),
+            'include_simulated' => (bool) env('SEGURIA_SHADOW_SIMULATED', false),
+        ],
         // Verifications per site per day before falling back to alerting without AI (0 = no cap).
         'daily_cap_per_site' => (int) env('SEGURIA_AI_DAILY_CAP', 3000),
         // On when there is a non-empty key (an empty ANTHROPIC_API_KEY= must not turn it on), unless forced.

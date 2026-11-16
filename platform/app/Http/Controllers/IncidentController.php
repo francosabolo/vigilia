@@ -47,7 +47,7 @@ class IncidentController extends Controller
     {
         Gate::authorize('view', $incident);
 
-        $incident->load(['site:id,name,organization_id', 'camera:id,name,sector', 'zone:id,name', 'reporter:id,name,lot,phone', 'acknowledgedBy:id,name', 'actions.user:id,name', 'snapshotRequests.camera:id,name']);
+        $incident->load(['site:id,name,organization_id', 'camera:id,name,sector,view_status', 'zone:id,name', 'reporter:id,name,lot,phone', 'acknowledgedBy:id,name', 'actions.user:id,name', 'snapshotRequests.camera:id,name']);
 
         return Inertia::render('incidents/show', [
             'incident' => $this->summary($incident) + [

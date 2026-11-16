@@ -233,6 +233,8 @@ class OperationSimulator
             'started_at' => $event['at'],
             'ended_at' => $event['at']->addSeconds(random_int(4, 40)),
             'snapshot_path' => $this->images->pathFor($this->imageGroup($event)),
+            'ground_truth' => $event['truth']->shouldAlert(),
+            'ground_truth_source' => 'simulation',
         ]);
         $detection->setRelation('camera', $event['camera']);
 
