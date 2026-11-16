@@ -43,6 +43,7 @@ export function SiteSwitcher() {
                 {siteContext.sites.map((site) => (
                     <DropdownMenuItem key={site.id} onSelect={() => select(site.id)} className={cn(siteContext.current?.id === site.id && 'font-semibold')}>
                         <Building2 className="mr-2 size-4" /> {site.name}
+                        {site.is_simulated && <span className="text-muted-foreground ml-1 text-xs">simulado</span>}
                         {siteContext.current?.id === site.id && <Check className="ml-auto size-4" />}
                     </DropdownMenuItem>
                 ))}

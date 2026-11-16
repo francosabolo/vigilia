@@ -64,7 +64,7 @@ class SiteScope
         $open = Incident::query()->whereIn('site_id', $this->siteIds($request))->where('status', '!=', IncidentStatus::Resolved);
 
         return [
-            'sites' => Site::whereIn('id', $user->accessibleSiteIds())->orderBy('name')->get(['id', 'name'])->toArray(),
+            'sites' => Site::whereIn('id', $user->accessibleSiteIds())->orderBy('is_simulated')->orderBy('name')->get(['id', 'name', 'is_simulated'])->toArray(),
             'current' => $current ? ['id' => $current->id, 'name' => $current->name] : null,
             'canSwitch' => $user->isCentral(),
             'alerts' => [

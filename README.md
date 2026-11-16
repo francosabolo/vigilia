@@ -26,6 +26,9 @@ php artisan seguria:simulate        # dispara una detección de punta a punta
 php artisan seguria:fake-edge       # demo sin Frigate: cuadros sintéticos, fotos en vivo y controles de vista
 php artisan seguria:fake-edge --move=1:25   # simula que alguien giró 25° la cámara 1
 php artisan seguria:fake-edge --cover=2     # simula que taparon la cámara 2
+php artisan seguria:simulate-operation --sites=8 --days=7   # 8 barrios simulados, 7 días de operación + reporte
+php artisan seguria:simulate-operation --live --speed=30    # operación simulada en vivo (mirá la consola)
+php artisan seguria:simulate-operation --reset --sites=0 --days=0   # borra los barrios simulados
 php artisan seguria:simulate --image=foto_noche.jpg   # con ANTHROPIC_API_KEY prueba la IA real
 php artisan test
 ```

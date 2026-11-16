@@ -76,6 +76,7 @@ interface Props {
     site: {
         id: number;
         name: string;
+        is_simulated: boolean;
         address: string | null;
         perimeter: LatLng[];
         center: LatLng | null;
@@ -125,7 +126,12 @@ function WatchHeader({ site }: { site: Props['site'] }) {
     return (
         <header className="flex flex-wrap items-end justify-between gap-4">
             <div>
-                <h1 className="font-display text-4xl leading-tight font-semibold">{site.name}</h1>
+                <h1 className="font-display flex items-center gap-3 text-4xl leading-tight font-semibold">
+                    {site.name}
+                    {site.is_simulated && (
+                        <span className="bg-surface-2 text-muted-foreground rounded px-2 py-0.5 font-sans text-sm font-medium">Simulado</span>
+                    )}
+                </h1>
                 {site.address && <p className="text-muted-foreground">{site.address}</p>}
                 <p
                     className={cn(

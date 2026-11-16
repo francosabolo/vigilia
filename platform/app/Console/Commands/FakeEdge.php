@@ -38,34 +38,11 @@ class FakeEdge extends Command
                 $lastHealth = time();
             }
 
-            foreach (EdgeDevice::with('cameras')->get() as $device) {
-                $device->forceFill([
-                    'last_seen_at' => now(),
-                    'zones_version' => $zones->payloadFor($device)['version'],
-                ])->save();
-
-                if ($wall->isWatched($device->site_id)) {
-                    foreach ($device->cameras as $camera) {
-                        $wall->storePreview($camera, $this->frame($camera));
-                    }
-                }
-
-                if ($healthDue) {
-                    foreach ($device->cameras as $camera) {
-                        if ($incident = $monitor->check($camera, file_get_contents($this->frame($camera)->getPathname()))) {
-                            $this->warn("Tamper incident #{$incident->id}: {$incident->title}");
-                        }
-                    }
-                }
-
-                SnapshotRequest::where('edge_device_id', $device->id)->where('status', 'pending')->with('camera')->get()
-                    ->each(function (SnapshotRequest $request): void {
-                        $path = "sites/{$request->camera->site_id}/incidents/{$request->incident_id}/live-{$request->camera_id}.jpg";
-                        Storage::disk(config('seguria.media_disk'))->put($path, file_get_contents($this->frame($request->camera)->getPathname()));
-                        $request->update(['status' => 'fulfilled', 'snapshot_path' => $path, 'sent_at' => now(), 'fulfilled_at' => now()]);
-                        ReviewReportedSnapshot::dispatch($request);
-                        $this->line("Live frame sent for {$request->camera->name}");
-                    });
+            try {
+                $this->cycle($wall, $zones, $monitor, $healthDue);
+            } catch (\Throwable $exception) {
+                // A real edge keeps running when the cloud hiccups; so does this one.
+                $this->error('Cycle failed: '.$exception->getMessage());
             }
 
             if (! $this->option('once')) {
@@ -74,6 +51,42 @@ class FakeEdge extends Command
         } while (! $this->option('once'));
 
         return self::SUCCESS;
+    }
+
+    private function cycle(CameraWall $wall, ZoneSync $zones, CameraViewMonitor $monitor, bool $healthDue): void
+    {
+
+        foreach (EdgeDevice::with('cameras', 'site')->get() as $device) {
+            $device->forceFill([
+                'last_seen_at' => now(),
+                'zones_version' => $zones->payloadFor($device)['version'],
+            ])->save();
+
+            if ($wall->isWatched($device->site_id)) {
+                foreach ($device->cameras as $camera) {
+                    $wall->storePreview($camera, $this->frame($camera));
+                }
+            }
+
+            // Simulated sites (seguria:simulate-operation) are not health-checked: hundreds of cameras.
+            if ($healthDue && ! $device->site->is_simulated) {
+                foreach ($device->cameras as $camera) {
+                    if ($incident = $monitor->check($camera, file_get_contents($this->frame($camera)->getPathname()))) {
+                        $this->warn("Tamper incident #{$incident->id}: {$incident->title}");
+                    }
+                }
+            }
+
+            SnapshotRequest::where('edge_device_id', $device->id)->where('status', 'pending')->with('camera')->get()
+                ->each(function (SnapshotRequest $request): void {
+                    $path = "sites/{$request->camera->site_id}/incidents/{$request->incident_id}/live-{$request->camera_id}.jpg";
+                    Storage::disk(config('seguria.media_disk'))->put($path, file_get_contents($this->frame($request->camera)->getPathname()));
+                    $request->update(['status' => 'fulfilled', 'snapshot_path' => $path, 'sent_at' => now(), 'fulfilled_at' => now()]);
+                    ReviewReportedSnapshot::dispatch($request);
+                    $this->line("Live frame sent for {$request->camera->name}");
+                });
+        }
+
     }
 
     /**

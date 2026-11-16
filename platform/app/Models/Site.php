@@ -13,7 +13,7 @@ class Site extends Model
     /** @use HasFactory<SiteFactory> */
     use HasFactory;
 
-    protected $fillable = ['organization_id', 'name', 'address', 'perimeter', 'lat', 'lng', 'timezone', 'guard_whatsapp', 'ack_timeout_seconds'];
+    protected $fillable = ['organization_id', 'name', 'address', 'perimeter', 'lat', 'lng', 'is_simulated', 'timezone', 'guard_whatsapp', 'ack_timeout_seconds'];
 
     protected function casts(): array
     {
@@ -21,6 +21,7 @@ class Site extends Model
             'perimeter' => 'array',
             'lat' => 'float',
             'lng' => 'float',
+            'is_simulated' => 'boolean',
         ];
     }
 

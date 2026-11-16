@@ -24,6 +24,7 @@ export interface NavItem {
 export interface SiteOption {
     id: number;
     name: string;
+    is_simulated?: boolean;
 }
 
 export interface SiteContext {
