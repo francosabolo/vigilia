@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import { objectLabels } from '@/lib/seguria';
+import { objectLabels, plural } from '@/lib/seguria';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm, usePoll } from '@inertiajs/react';
 import { CheckCircle2, Loader2, RotateCcw, Trash2, Undo2, VideoOff } from 'lucide-react';
@@ -200,7 +200,7 @@ export default function ZoneEditor({ camera, zones, synced, interval }: Props) {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-base">{editing ? `Editar ${editing.name}` : 'Nueva zona'}</CardTitle>
-                                <CardDescription>{form.data.coordinates.length} punto(s) marcados</CardDescription>
+                                <CardDescription>{plural(form.data.coordinates.length, 'punto marcado', 'puntos marcados')}</CardDescription>
                             </CardHeader>
                             <CardContent className="flex flex-col gap-3">
                                 <Input placeholder="Nombre (ej. Alambrado norte)" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} />

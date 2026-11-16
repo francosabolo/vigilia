@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useLiveIncidents } from '@/hooks/use-live-incidents';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import { formatDuration, type IncidentStatus, type Metrics, type Severity } from '@/lib/seguria';
+import { formatDuration, plural, type IncidentStatus, type Metrics, type Severity } from '@/lib/seguria';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { Cctv, Cpu } from 'lucide-react';
@@ -72,9 +72,9 @@ function WatchStatus({ openIncidents, openCount, escalatedCount, edgesOffline }:
                     </h1>
                     <p className="text-muted-foreground mt-1 text-[15px]">La guardia ya fue avisada. Seguí el avance en la consola.</p>
                 </div>
-                <Button asChild size="lg" variant="secondary">
-                    <Link href="/incidents">Ver incidentes</Link>
-                </Button>
+                <Link href="/incidents" className="text-[15px] font-medium underline underline-offset-4">
+                    Ir a incidentes
+                </Link>
             </section>
         );
     }
@@ -85,7 +85,7 @@ function WatchStatus({ openIncidents, openCount, escalatedCount, edgesOffline }:
             <div>
                 <h1 className="font-display text-3xl leading-tight font-semibold">Todo en orden</h1>
                 <p className="text-muted-foreground mt-1 text-[15px]">
-                    {edgesOffline > 0 ? `Atención: ${edgesOffline} equipo(s) edge sin señal.` : 'No hay incidentes abiertos y todos los equipos están conectados.'}
+                    {edgesOffline > 0 ? `Atención: ${plural(edgesOffline, 'equipo edge', 'equipos edge')} sin señal.` : 'No hay incidentes abiertos y todos los equipos están conectados.'}
                 </p>
             </div>
         </section>

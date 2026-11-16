@@ -115,6 +115,11 @@ export const actionLabel: Record<string, string> = {
     ai_review: 'Revisión IA de cámara en vivo',
 };
 
+/** "1 incidente", "3 incidentes". Never "incidente(s)": it reads like system output. */
+export function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
+    return `${count} ${count === 1 ? singular : pluralForm}`;
+}
+
 const relative = new Intl.RelativeTimeFormat('es-AR', { numeric: 'auto' });
 
 export function timeAgo(iso: string | null): string {

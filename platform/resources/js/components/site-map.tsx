@@ -260,7 +260,7 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                <Button asChild size="sm">
+                                <Button asChild size="sm" variant="secondary">
                                     <Link href={`/cameras?site=${siteId}`}>Ver en vivo</Link>
                                 </Button>
                                 {canManage && (

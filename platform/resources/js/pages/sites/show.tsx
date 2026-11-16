@@ -5,12 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import { formatDuration, timeAgo, type EdgeStatus, type Metrics } from '@/lib/seguria';
+import { formatDuration, plural, timeAgo, type EdgeStatus, type Metrics } from '@/lib/seguria';
 import { type BreadcrumbItem } from '@/types';
 import { SiteMap } from '@/components/site-map';
 import { type LatLng } from '@/lib/geo';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
-import { Cctv, PenTool, Trash2, VideoOff } from 'lucide-react';
+import { Cctv, PenTool, Siren, Trash2, VideoOff } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 
 type Tab = 'resumen' | 'cobertura' | 'camaras' | 'vecinos' | 'ajustes';
@@ -70,6 +70,7 @@ interface Props {
         ack_timeout_seconds: number;
         open_incidents: number;
         escalated_incidents: number;
+        escalated_incident_id: number | null;
         edges: EdgeStatus[];
         cameras: Camera[];
     };
@@ -99,13 +100,13 @@ function WatchHeader({ site }: { site: Props['site'] }) {
     const noEdge = site.edges.length === 0;
 
     const [tone, sentence] = site.escalated_incidents
-        ? (['alarm', `${site.escalated_incidents} incidente(s) sin respuesta de la guardia`] as const)
+        ? (['alarm', `${plural(site.escalated_incidents, 'incidente', 'incidentes')} sin respuesta de la guardia`] as const)
         : noEdge
           ? (['muted', 'Sin equipo edge conectado: el barrio todavía no está vigilado'] as const)
           : edgesDown
             ? (['alarm', 'El equipo edge no responde: las cámaras no se están analizando'] as const)
             : site.open_incidents
-              ? (['pending', `Vigilado, con ${site.open_incidents} incidente(s) en curso`] as const)
+              ? (['pending', `Vigilado, con ${plural(site.open_incidents, 'incidente', 'incidentes')} en curso`] as const)
               : (['ok', 'Vigilado, sin novedades'] as const);
 
     return (
@@ -126,19 +127,27 @@ function WatchHeader({ site }: { site: Props['site'] }) {
                     {sentence}
                 </p>
             </div>
-            <div className="flex items-center gap-2">
-                <span className="text-muted-foreground mr-2 flex items-center gap-1.5 text-sm">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                {/* Header links are navigation, not actions: they never compete with the tab's primary action. */}
+                <Link href={`/cameras?site=${site.id}`} className="hover:text-foreground text-muted-foreground flex items-center gap-1.5 text-[15px] font-medium underline-offset-4 hover:underline">
                     <Cctv className="size-4" />
-                    {onlineCameras} de {site.cameras.length} cámaras online
-                </span>
-                {site.open_incidents > 0 && (
-                    <Button asChild variant="secondary">
-                        <Link href="/incidents">Ver incidentes</Link>
+                    Cámaras en vivo
+                    <span className="tabular-nums">
+                        ({onlineCameras}/{site.cameras.length})
+                    </span>
+                </Link>
+                {site.open_incidents > 0 && !site.escalated_incident_id && (
+                    <Link href="/incidents" className="hover:text-foreground text-muted-foreground text-[15px] font-medium underline-offset-4 hover:underline">
+                        Incidentes en curso
+                    </Link>
+                )}
+                {site.escalated_incident_id && (
+                    <Button asChild variant="destructive" size="lg">
+                        <Link href={`/incidents/${site.escalated_incident_id}`}>
+                            <Siren className="mr-1 size-4" /> Atender incidente
+                        </Link>
                     </Button>
                 )}
-                <Button asChild>
-                    <Link href={`/cameras?site=${site.id}`}>Ver cámaras en vivo</Link>
-                </Button>
             </div>
         </header>
     );
@@ -154,7 +163,7 @@ function Tabs({ siteId, tab, canManage, residentsCount, camerasCount }: { siteId
     ];
 
     return (
-        <nav className="flex gap-1 overflow-x-auto border-b" aria-label="Secciones del barrio">
+        <nav className="flex gap-1 overflow-x-auto border-b [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Secciones del barrio">
             {tabs.map((item) => (
                 <Link
                     key={item.id}
@@ -288,7 +297,7 @@ function CamerasTab({ site, canManage }: Pick<Props, 'site' | 'canManage'>) {
 
 /* ---------- Vecinos ---------- */
 
-function InviteResident({ siteId, sectors }: { siteId: number; sectors: string[] }) {
+function InviteResident({ siteId, sectors, alarmActive }: { siteId: number; sectors: string[]; alarmActive: boolean }) {
     const [open, setOpen] = useState(false);
     const form = useForm({ name: '', email: '', lot: '', sector: sectors[0] ?? '', phone: '' });
 
@@ -314,7 +323,7 @@ function InviteResident({ siteId, sectors }: { siteId: number; sectors: string[]
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>Invitar vecino</Button>
+                <Button variant={alarmActive ? 'secondary' : 'default'}>Invitar vecino</Button>
             </DialogTrigger>
             <DialogContent>
                 <form onSubmit={submit} className="flex flex-col gap-4">
@@ -360,7 +369,7 @@ function RemoveResident({ siteId, resident }: { siteId: number; resident: Reside
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button size="icon" variant="ghost" className="size-8" aria-label={`Quitar a ${resident.name}`}>
+                <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-alarm size-8" aria-label={`Quitar a ${resident.name}`}>
                     <Trash2 className="size-4" />
                 </Button>
             </DialogTrigger>
@@ -408,7 +417,7 @@ function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-muted-foreground max-w-xl text-sm">Los vecinos usan su propia app: botón de pánico, avisos y modo vacaciones. No ven cámaras ni imágenes.</p>
-                {canManage && <InviteResident siteId={site.id} sectors={sectors} />}
+                {canManage && <InviteResident siteId={site.id} sectors={sectors} alarmActive={!!site.escalated_incident_id} />}
             </div>
 
             {residents.length === 0 ? (
@@ -464,6 +473,7 @@ function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site
 /* ---------- Ajustes ---------- */
 
 function SettingsTab({ site }: Pick<Props, 'site'>) {
+    const alarmActive = !!site.escalated_incident_id;
     const form = useForm({ guard_whatsapp: site.guard_whatsapp ?? '', ack_timeout_seconds: Math.round(site.ack_timeout_seconds / 60) * 60 });
 
     function submit(event: FormEvent) {
@@ -498,7 +508,9 @@ function SettingsTab({ site }: Pick<Props, 'site'>) {
             </div>
 
             <div className="flex items-center gap-3">
-                <Button disabled={form.processing || !form.isDirty}>Guardar ajustes</Button>
+                <Button variant={alarmActive ? 'secondary' : 'default'} disabled={form.processing || !form.isDirty}>
+                    Guardar ajustes
+                </Button>
                 {form.recentlySuccessful && <span className="text-ok text-sm">Guardado</span>}
             </div>
         </form>

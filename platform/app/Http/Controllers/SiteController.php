@@ -68,6 +68,7 @@ class SiteController extends Controller
                 'ack_timeout_seconds' => $site->ack_timeout_seconds,
                 'open_incidents' => $site->incidents()->where('status', '!=', IncidentStatus::Resolved)->count(),
                 'escalated_incidents' => $site->incidents()->where('status', IncidentStatus::Escalated)->count(),
+                'escalated_incident_id' => $site->incidents()->where('status', IncidentStatus::Escalated)->latest('detected_at')->value('id'),
                 'edges' => $site->edgeDevices->map(fn (EdgeDevice $edge): array => $this->edge($edge)),
                 'cameras' => $site->cameras->sortBy([['sector', 'asc'], ['name', 'asc']])->values()->map(function (Camera $camera) use ($wall): array {
                     $previewAt = $wall->previewAt($camera);

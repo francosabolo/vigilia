@@ -51,6 +51,21 @@ La lente de cámara con un barrido de vigilancia (`platform/resources/js/compone
 - Las cámaras de un barrio tienen que poder verse todas a la vez. (origen: pedido de Franco, 16/11/2026)
 - Una sola acción principal por pantalla (botón blanco en la consola, grafito en vecinos). *(principio base de Tónica)*
 
+### Jerarquía de acciones
+Hay cuatro niveles y en pantalla nunca conviven dos del mismo nivel alto:
+
+| Nivel | Cómo se ve | Cuándo |
+|---|---|---|
+| Alarma | Botón rojo relleno ("Atender incidente") | Solo si hay un incidente escalado. Es la única acción que puede estar por encima de la principal. |
+| Principal | Botón blanco relleno (grafito en vecinos) | Uno por pantalla: la acción del contenido activo ("Invitar vecino", "Guardar ajustes", "Recibido, voy en camino"). |
+| Secundaria | Botón gris (`secondary`) o con borde (`outline`) | Acciones alternativas del mismo contenido. |
+| Navegación | Link de texto con ícono, sin relleno | Ir a otra pantalla ("Cámaras en vivo", "Incidentes en curso"). |
+
+- La acción principal pertenece al contenido activo (la pestaña o el formulario), no al encabezado. En el encabezado van links de navegación y, si hay una alarma, el botón rojo — porque una acción de navegación en blanco compite con la acción real de la pantalla. (origen: corrección de Franco sobre la pantalla del barrio, 16/11/2026)
+- Si hay una alarma activa, la acción principal de la pestaña baja a secundaria: en pantalla queda un solo botón que se destaca, el de atender. (origen: corrección de Franco, 16/11/2026)
+- Ir a otra pantalla nunca se diseña como botón relleno: es un link. Un botón ejecuta algo, un link lleva a otro lugar. (origen: corrección de Franco, 16/11/2026)
+- Las acciones destructivas dentro de una fila (como el tacho) van atenuadas y se ponen rojas solo al pasar el mouse, siempre con confirmación — porque no deberían pesar más que el contenido de la fila. (origen: corrección de Franco, 16/11/2026)
+
 ## Listados y tablas
 - En los incidentes, la severidad se lee en la franja de color a la izquierda de la fila, y el estado en un punto con texto. Nada de pastillas de colores — porque así la fila se lee de un vistazo y el color queda reservado para las señales. (origen: confirmado por Franco, 16/11/2026)
 - El orden por defecto es por urgencia: primero los escalados, después los nuevos y al final el resto, del más reciente al más viejo. *(principio base de Tónica)*
@@ -66,6 +81,8 @@ La lente de cámara con un barrido de vigilancia (`platform/resources/js/compone
 ## Textos y tono
 - Castellano rioplatense, con voseo y verbos concretos en los botones ("Atender ahora", "Enviar aviso a la guardia", "Recibido, voy en camino"). *(principio base de Tónica)*
 - No prometer lo que el sistema no hace (por ejemplo, "la IA aprende de este descarte") — porque en seguridad la confianza es el producto. (origen: confirmado por Franco, 16/11/2026)
+- Los plurales se resuelven en el código ("1 incidente", "3 incidentes", con `plural()` de `lib/seguria.ts`). Nunca "incidente(s)" — porque se lee como texto de sistema. (origen: corrección de Franco, 16/11/2026)
 
 ## Reglas aprendidas
 - El diseño genérico del starter kit se rechazó: hay que partir del contexto del usuario (una sala de control, una guardia en movimiento) y no de un template. (origen: corrección de Franco, 16/11/2026)
+- Antes de cerrar una pantalla, contar los botones rellenos visibles a la vez, sumando el encabezado y el contenido. Si hay más de uno (o más de uno además del rojo de alarma), hay que bajar alguno de nivel — porque en la pantalla del barrio "Ver cámaras en vivo" e "Invitar vecino" competían. (origen: corrección de Franco, 16/11/2026)

@@ -137,7 +137,9 @@ function AwayMode({ awayUntil, hasLot }: { awayUntil: string | null; hasLot: boo
     return (
         <form onSubmit={(e) => { e.preventDefault(); form.put('/vecinos/away', { preserveScroll: true }); }} className="flex flex-col gap-2 sm:flex-row">
             <input type="date" value={form.data.away_until} min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)} onChange={(e) => form.setData('away_until', e.target.value)} className="border-input bg-background flex-1 rounded-lg border px-3 py-3 text-base" required />
-            <Button disabled={form.processing || !form.data.away_until}>Activar hasta esa fecha</Button>
+            <Button variant="secondary" disabled={form.processing || !form.data.away_until}>
+                Activar hasta esa fecha
+            </Button>
             {form.errors.away_until && <p className="text-alarm text-sm">{form.errors.away_until}</p>}
         </form>
     );
