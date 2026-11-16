@@ -28,6 +28,49 @@ class SiteConfigurationController extends Controller
         return back();
     }
 
+    public function updatePerimeter(Request $request, Site $site): RedirectResponse
+    {
+        Gate::authorize('manage', $site);
+
+        $data = $request->validate([
+            'perimeter' => ['present', 'array', 'max:200'],
+            'perimeter.*' => ['array', 'size:2'],
+            'perimeter.*.0' => ['numeric', 'between:-90,90'],
+            'perimeter.*.1' => ['numeric', 'between:-180,180'],
+            'center' => ['nullable', 'array', 'size:2'],
+            'center.0' => ['numeric', 'between:-90,90'],
+            'center.1' => ['numeric', 'between:-180,180'],
+        ]);
+
+        abort_if(count($data['perimeter']) > 0 && count($data['perimeter']) < 3, 422, 'El perímetro necesita al menos 3 puntos.');
+
+        $site->update([
+            'perimeter' => $data['perimeter'],
+            'lat' => $data['center'][0] ?? $site->lat,
+            'lng' => $data['center'][1] ?? $site->lng,
+        ]);
+
+        return back();
+    }
+
+    /**
+     * Where a camera is installed and what it sees: position, direction, field of view and useful range.
+     */
+    public function updatePlacement(Request $request, Camera $camera): RedirectResponse
+    {
+        Gate::authorize('manage', $camera->site);
+
+        $camera->update($request->validate([
+            'lat' => ['required', 'numeric', 'between:-90,90'],
+            'lng' => ['required', 'numeric', 'between:-180,180'],
+            'heading' => ['required', 'integer', 'between:0,359'],
+            'fov' => ['required', 'integer', 'between:10,360'],
+            'range_m' => ['required', 'integer', 'between:5,300'],
+        ]));
+
+        return back();
+    }
+
     public function updateCamera(Request $request, Camera $camera): RedirectResponse
     {
         Gate::authorize('manage', $camera->site);

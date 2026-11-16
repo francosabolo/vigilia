@@ -52,7 +52,9 @@ Route::middleware('auth')->group(function () {
         Route::patch('sites/{site}', [SiteConfigurationController::class, 'updateSite'])->name('sites.update');
         Route::post('sites/{site}/residents', [ResidentAdminController::class, 'store'])->name('residents.store');
         Route::delete('sites/{site}/residents/{resident}', [ResidentAdminController::class, 'destroy'])->name('residents.destroy');
+        Route::patch('sites/{site}/perimeter', [SiteConfigurationController::class, 'updatePerimeter'])->name('sites.perimeter');
         Route::patch('cameras/{camera}', [SiteConfigurationController::class, 'updateCamera'])->name('cameras.update');
+        Route::patch('cameras/{camera}/placement', [SiteConfigurationController::class, 'updatePlacement'])->name('cameras.placement');
         Route::post('cameras/{camera}/zones', [SiteConfigurationController::class, 'storeZone'])->name('zones.store');
         Route::patch('zones/{zone}', [SiteConfigurationController::class, 'updateZone'])->name('zones.update');
         Route::delete('zones/{zone}', [SiteConfigurationController::class, 'destroyZone'])->name('zones.destroy');

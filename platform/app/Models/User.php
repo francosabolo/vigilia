@@ -32,6 +32,7 @@ class User extends Authenticatable
         'lot',
         'sector',
         'away_until',
+        'last_login_at',
     ];
 
     /**
@@ -56,6 +57,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => UserRole::class,
             'away_until' => 'datetime',
+            'last_login_at' => 'datetime',
         ];
     }
 

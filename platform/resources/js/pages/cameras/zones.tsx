@@ -8,7 +8,7 @@ import { objectLabels } from '@/lib/seguria';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm, usePoll } from '@inertiajs/react';
 import { CheckCircle2, Loader2, RotateCcw, Trash2, Undo2, VideoOff } from 'lucide-react';
-import { useRef, useState, type MouseEvent } from 'react';
+import { useRef, useState, type FormEvent, type MouseEvent } from 'react';
 
 type Point = [number, number];
 
@@ -19,6 +19,7 @@ interface ZoneData {
     lot: string | null;
     watched_labels: string[];
     coordinates: Point[];
+    schedules: { id: number; days: number[]; starts_at: string; ends_at: string }[];
 }
 
 interface Props {
@@ -28,7 +29,60 @@ interface Props {
     interval: number;
 }
 
-const COLORS = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+const COLORS = ['#ffffff', '#f5a524', '#34c77b', '#7aa2ff', '#c084fc', '#f472b6'];
+const DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+function Schedules({ zone }: { zone: ZoneData }) {
+    const form = useForm({ days: [1, 2, 3, 4, 5, 6, 7], starts_at: '20:00', ends_at: '07:00' });
+
+    function submit(event: FormEvent) {
+        event.preventDefault();
+        form.post(`/zones/${zone.id}/schedules`, { preserveScroll: true });
+    }
+
+    return (
+        <div className="flex flex-col gap-2 border-t pt-3">
+            <div className="text-sm font-medium">Cuándo está armada</div>
+            {zone.schedules.length === 0 && <p className="text-muted-foreground text-sm">Las 24 h, todos los días. Agregá un horario si solo hay que vigilarla de noche.</p>}
+            {zone.schedules.map((schedule) => (
+                <div key={schedule.id} className="flex items-center gap-2 text-sm">
+                    <span>{schedule.days.length === 7 ? 'Todos los días' : schedule.days.map((day) => DAYS[day - 1]).join(' ')}</span>
+                    <span className="tabular-nums">
+                        de {schedule.starts_at} a {schedule.ends_at}
+                    </span>
+                    <Button size="icon" variant="ghost" className="ml-auto size-7" aria-label="Quitar horario" onClick={() => router.delete(`/schedules/${schedule.id}`, { preserveScroll: true })}>
+                        <Trash2 className="size-4" />
+                    </Button>
+                </div>
+            ))}
+            <form onSubmit={submit} className="flex flex-wrap items-center gap-2">
+                <div className="flex gap-0.5">
+                    {DAYS.map((day, index) => {
+                        const iso = index + 1;
+                        const active = form.data.days.includes(iso);
+                        return (
+                            <button
+                                type="button"
+                                key={day}
+                                aria-pressed={active}
+                                onClick={() => form.setData('days', active ? form.data.days.filter((d) => d !== iso) : [...form.data.days, iso].sort())}
+                                className={cn('size-7 rounded text-xs', active ? 'bg-primary text-primary-foreground' : 'border')}
+                            >
+                                {day}
+                            </button>
+                        );
+                    })}
+                </div>
+                <Input type="time" aria-label="Desde" className="w-28" value={form.data.starts_at} onChange={(e) => form.setData('starts_at', e.target.value)} />
+                <Input type="time" aria-label="Hasta" className="w-28" value={form.data.ends_at} onChange={(e) => form.setData('ends_at', e.target.value)} />
+                <Button size="sm" variant="secondary" disabled={form.processing || form.data.days.length === 0}>
+                    Agregar horario
+                </Button>
+                <InputError message={form.errors.days || form.errors.ends_at} />
+            </form>
+        </div>
+    );
+}
 
 export default function ZoneEditor({ camera, zones, synced, interval }: Props) {
     // Keeps the edge sending frames while the editor is open.
@@ -171,6 +225,7 @@ export default function ZoneEditor({ camera, zones, synced, interval }: Props) {
                                         <RotateCcw className="mr-1 size-4" /> Borrar dibujo
                                     </Button>
                                 </div>
+                                {editing && <Schedules zone={editing} />}
                                 <div className="flex gap-2">
                                     <Button onClick={save} disabled={form.processing || form.data.coordinates.length < 3 || !form.data.name}>Guardar zona</Button>
                                     <Button variant="ghost" onClick={() => setEditingId(null)}>Cancelar</Button>

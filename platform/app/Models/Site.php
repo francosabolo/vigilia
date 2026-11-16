@@ -13,7 +13,16 @@ class Site extends Model
     /** @use HasFactory<SiteFactory> */
     use HasFactory;
 
-    protected $fillable = ['organization_id', 'name', 'address', 'timezone', 'guard_whatsapp', 'ack_timeout_seconds'];
+    protected $fillable = ['organization_id', 'name', 'address', 'perimeter', 'lat', 'lng', 'timezone', 'guard_whatsapp', 'ack_timeout_seconds'];
+
+    protected function casts(): array
+    {
+        return [
+            'perimeter' => 'array',
+            'lat' => 'float',
+            'lng' => 'float',
+        ];
+    }
 
     public function organization(): BelongsTo
     {

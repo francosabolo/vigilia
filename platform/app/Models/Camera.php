@@ -13,12 +13,17 @@ class Camera extends Model
     /** @use HasFactory<CameraFactory> */
     use HasFactory;
 
-    protected $fillable = ['site_id', 'edge_device_id', 'name', 'frigate_name', 'sector', 'is_online', 'last_seen_at'];
+    protected $fillable = ['site_id', 'edge_device_id', 'name', 'frigate_name', 'sector', 'lat', 'lng', 'heading', 'fov', 'range_m', 'is_online', 'last_seen_at'];
 
     protected function casts(): array
     {
         return [
             'is_online' => 'boolean',
+            'lat' => 'float',
+            'lng' => 'float',
+            'heading' => 'integer',
+            'fov' => 'integer',
+            'range_m' => 'integer',
             'last_seen_at' => 'datetime',
         ];
     }

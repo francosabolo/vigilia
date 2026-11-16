@@ -31,13 +31,19 @@ class ZoneEditorController extends Controller
                 'site' => ['id' => $camera->site->id, 'name' => $camera->site->name],
                 'preview_url' => $previewAt ? route('cameras.preview', ['camera' => $camera, 't' => $previewAt->timestamp]) : null,
             ],
-            'zones' => $camera->zones()->orderBy('id')->get()->map(fn (Zone $zone): array => [
+            'zones' => $camera->zones()->with('armingSchedules')->orderBy('id')->get()->map(fn (Zone $zone): array => [
                 'id' => $zone->id,
                 'name' => $zone->name,
                 'frigate_zone' => $zone->frigate_zone,
                 'lot' => $zone->lot,
                 'watched_labels' => $zone->watched_labels ?? [],
                 'coordinates' => $zone->coordinates ?? [],
+                'schedules' => $zone->armingSchedules->map(fn ($schedule): array => [
+                    'id' => $schedule->id,
+                    'days' => $schedule->days,
+                    'starts_at' => substr($schedule->starts_at, 0, 5),
+                    'ends_at' => substr($schedule->ends_at, 0, 5),
+                ]),
             ]),
             'synced' => $edge ? $sync->isSynced($edge) : null,
             'interval' => CameraWall::PREVIEW_INTERVAL,

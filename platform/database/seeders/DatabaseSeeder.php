@@ -57,7 +57,20 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        // Map: a ~350 x 220 m gated community near Pilar, and one in Cardales.
+        $layouts = [
+            $site->id => ['center' => [-34.45870, -58.91420], 'cameras' => ['perimetro_norte' => [-34.45770, -58.91600, 90], 'perimetro_sur' => [-34.45970, -58.91240, 270]]],
+            $second->id => ['center' => [-34.31840, -59.01960], 'cameras' => ['perimetro_norte' => [-34.31740, -59.02140, 90], 'perimetro_sur' => [-34.31940, -59.01780, 270]]],
+        ];
+
         foreach ([$site, $second] as $community) {
+            [$lat, $lng] = $layouts[$community->id]['center'];
+            $community->update([
+                'lat' => $lat,
+                'lng' => $lng,
+                'perimeter' => [[$lat + 0.0010, $lng - 0.0019], [$lat + 0.0010, $lng + 0.0019], [$lat - 0.0010, $lng + 0.0019], [$lat - 0.0010, $lng - 0.0019]],
+            ]);
+
             $edge = EdgeDevice::firstOrCreate(['site_id' => $community->id, 'name' => 'edge-guardia'], [
                 'token_hash' => hash('sha256', 'demo-'.$community->id),
                 'last_seen_at' => now(),
@@ -65,10 +78,16 @@ class DatabaseSeeder extends Seeder
             ]);
 
             foreach ([['perimetro_norte', 'Perímetro Norte', 'Alambrado norte'], ['perimetro_sur', 'Perímetro Sur', 'Muro sur']] as [$frigate, $name, $sector]) {
+                [$cameraLat, $cameraLng, $heading] = $layouts[$community->id]['cameras'][$frigate];
                 $camera = Camera::firstOrCreate(['edge_device_id' => $edge->id, 'frigate_name' => $frigate], [
                     'site_id' => $community->id,
                     'name' => $name,
                     'sector' => $sector,
+                    'lat' => $cameraLat,
+                    'lng' => $cameraLng,
+                    'heading' => $heading,
+                    'fov' => 90,
+                    'range_m' => 60,
                     'last_seen_at' => now(),
                 ]);
 

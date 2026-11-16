@@ -21,6 +21,10 @@ class CameraWallController extends Controller
      */
     public function index(Request $request, SiteScope $scope, CameraWall $wall): Response
     {
+        if ($request->integer('site') && $request->user()->isCentral()) {
+            $scope->set($request, $request->integer('site'));
+        }
+
         $siteIds = $scope->siteIds($request);
 
         foreach ($siteIds as $siteId) {
