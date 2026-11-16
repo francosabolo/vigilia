@@ -17,6 +17,14 @@ return [
     'dedup_seconds' => (int) env('SEGURIA_DEDUP_SECONDS', 120),
 
     /*
+     * Following someone across cameras: a person seen by a nearby camera shortly after joins the same incident.
+     */
+    'tracking' => [
+        'window_seconds' => (int) env('SEGURIA_TRACKING_WINDOW', 180),
+        'max_distance_m' => (int) env('SEGURIA_TRACKING_DISTANCE', 150),
+    ],
+
+    /*
      * Realistic images that dress simulated detections and cameras (the generated evaluation set).
      */
     'demo_images_path' => env('SEGURIA_DEMO_IMAGES_PATH'),

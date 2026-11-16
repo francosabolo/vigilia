@@ -1,5 +1,6 @@
 import { DecisionTrail } from '@/components/console/decision-trail';
 import { SeverityText, StatusSignal } from '@/components/incident-badges';
+import { IncidentRoute } from '@/components/incident-route';
 import { Button } from '@/components/ui/button';
 import { useLiveIncidents } from '@/hooks/use-live-incidents';
 import AppLayout from '@/layouts/app-layout';
@@ -192,6 +193,8 @@ export default function IncidentShow({ incident, channel }: Props) {
                             <Media incident={incident} />
                         </div>
                     ) : null}
+
+                    {incident.route.length >= 2 && <IncidentRoute route={incident.route} />}
 
                     {incident.reporter && (
                         <div className="border-pending/50 bg-pending/10 flex flex-wrap items-center gap-3 rounded-lg border p-4">

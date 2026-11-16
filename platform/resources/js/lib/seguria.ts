@@ -43,6 +43,8 @@ export interface IncidentDetail extends IncidentSummary {
         can_fix: boolean;
     } | null;
     reporter: { name: string; lot: string | null; phone: string | null } | null;
+    /** Cameras that saw the person, in order (only when followed across 2+ cameras). */
+    route: { camera_id: number; camera: string; position: [number, number] | null; at: string }[];
     live_frames: { camera: string; url: string }[];
     actions: IncidentAction[];
 }
@@ -170,6 +172,7 @@ export const actionLabel: Record<string, string> = {
     confirmed: 'Cerrado: intrusión confirmada',
     false_alarm: 'Cerrado: falsa alarma',
     recovered: 'Cerrado: el equipo se recuperó solo',
+    tracked: 'Vista por otra cámara del recorrido',
     equipment_down: 'Equipo sin señal',
     note: 'Nota',
     panic: 'Botón de pánico activado por un vecino',

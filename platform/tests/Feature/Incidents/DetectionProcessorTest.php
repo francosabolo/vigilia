@@ -3,6 +3,7 @@
 use App\Enums\DetectionStatus;
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
+use App\Enums\UserRole;
 use App\Enums\ZoneKind;
 use App\Events\DetectionActivity;
 use App\Events\IncidentChanged;
@@ -168,4 +169,40 @@ it('shows the AI activity on the dashboard and the decision trail in the inciden
     $this->actingAs($operator)->get("/incidents/{$incident->id}")->assertInertia(fn ($page) => $page
         ->has('incident.decisions', 1)
         ->where('incident.decisions.0.agent', 'Analista IA'));
+});
+
+it('follows a person to a nearby camera as one incident with its route', function () {
+    fakeVerdict();
+    $this->camera->update(['lat' => -34.45000, 'lng' => -58.91000]);
+    // About 80 m away, on the same site.
+    $next = Camera::factory()->create(['site_id' => $this->camera->site_id, 'name' => 'Calle interna', 'lat' => -34.45070, 'lng' => -58.91020]);
+    Zone::factory()->for($next)->create(['frigate_zone' => 'alambrado']);
+    $operator = User::factory()->create(['role' => UserRole::Operator, 'organization_id' => $this->camera->site->organization_id]);
+
+    $first = app(DetectionProcessor::class)->process(detection($this->camera, ['label' => 'person', 'started_at' => now()->subSeconds(40)]));
+    $second = app(DetectionProcessor::class)->process(detection($next, ['label' => 'person', 'started_at' => now()]));
+
+    expect($second->id)->toBe($first->id)
+        ->and(Incident::count())->toBe(1)
+        ->and($second->fresh()->title)->toBe('Persona recorriendo: Perímetro Norte → Calle interna')
+        ->and(in_array($second->fresh()->severity, [Severity::High, Severity::Critical], true))->toBeTrue()
+        ->and($second->actions()->where('type', 'tracked')->exists())->toBeTrue();
+
+    $this->actingAs($operator)->get("/incidents/{$first->id}")
+        ->assertInertia(fn ($page) => $page->has('incident.route', 2)->where('incident.route.1.camera', 'Calle interna'));
+});
+
+it('does not join cameras that are far apart or too late', function () {
+    fakeVerdict();
+    $this->camera->update(['lat' => -34.45000, 'lng' => -58.91000]);
+    $far = Camera::factory()->create(['site_id' => $this->camera->site_id, 'lat' => -34.46000, 'lng' => -58.92000]); // ~1.4 km
+    Zone::factory()->for($far)->create(['frigate_zone' => 'alambrado']);
+    $near = Camera::factory()->create(['site_id' => $this->camera->site_id, 'lat' => -34.45050, 'lng' => -58.91000]);
+    Zone::factory()->for($near)->create(['frigate_zone' => 'alambrado']);
+
+    app(DetectionProcessor::class)->process(detection($this->camera, ['label' => 'person', 'started_at' => now()->subMinutes(10)]));
+    app(DetectionProcessor::class)->process(detection($far, ['label' => 'person', 'started_at' => now()->subMinutes(9)]));
+    app(DetectionProcessor::class)->process(detection($near, ['label' => 'person', 'started_at' => now()]));
+
+    expect(Incident::count())->toBe(3);
 });

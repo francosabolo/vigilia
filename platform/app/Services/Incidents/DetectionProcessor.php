@@ -3,11 +3,13 @@
 namespace App\Services\Incidents;
 
 use App\Enums\DetectionStatus;
+use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
 use App\Events\DetectionActivity;
 use App\Events\IncidentChanged;
 use App\Events\IncidentOpened;
+use App\Models\Camera;
 use App\Models\DetectionEvent;
 use App\Models\Incident;
 use App\Models\Zone;
@@ -17,6 +19,7 @@ use App\Services\Shadow\ShadowMode;
 use App\Services\Verification\DetectionVerifier;
 use App\Services\Verification\LabelTranslator;
 use App\Services\Verification\VerificationResult;
+use App\Support\Geo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -106,6 +109,17 @@ class DetectionProcessor
                 return $incident;
             }
 
+            $tracked = $this->findTrackedIncident($event);
+            if ($tracked) {
+                [$incident, $from, $meters, $seconds] = $tracked;
+                $distance = $meters !== null ? "a {$meters} m" : 'en el mismo sector';
+                $this->step('decision', 'Seguria', 'alert', "Probablemente es la misma persona del incidente #{$incident->id}: la vio {$from->name} hace {$seconds} s, {$distance}. Lo sumó al recorrido.");
+                $this->attach($incident, $event, $verdict, tracked: [$from, $meters, $seconds]);
+                IncidentChanged::dispatch($incident, 'detection_added');
+
+                return $incident;
+            }
+
             $incident = $this->open($event, $zone, $verdict);
             $this->step('decision', 'Seguria', 'alert', "Abrió el incidente #{$incident->id} con severidad {$incident->severity->value} y avisó a la guardia.");
             IncidentOpened::dispatch($incident);
@@ -179,6 +193,48 @@ class DetectionProcessor
             ->first();
     }
 
+    /**
+     * Follows someone across cameras: an open person incident in the same site whose latest detection was a
+     * nearby camera (by map distance, or the same sector when cameras have no position) a few minutes ago.
+     * There is no person re-identification: it is a proximity rule, and the interface says "probably".
+     *
+     * @return array{0: Incident, 1: Camera, 2: ?int, 3: int}|null incident, previous camera, meters, seconds
+     */
+    private function findTrackedIncident(DetectionEvent $event): ?array
+    {
+        if ($event->label !== 'person') {
+            return null;
+        }
+
+        $since = $event->started_at->copy()->subSeconds(config('seguria.tracking.window_seconds'));
+        $candidates = Incident::query()
+            ->where('site_id', $event->camera->site_id)
+            ->where('source', IncidentSource::Detection)
+            ->where('status', '!=', IncidentStatus::Resolved)
+            ->whereHas('detectionEvents', fn ($query) => $query->where('label', 'person')->where('started_at', '>=', $since))
+            ->lockForUpdate()
+            ->latest('id')
+            ->get();
+
+        foreach ($candidates as $incident) {
+            $last = $incident->detectionEvents()->with('camera')->where('label', 'person')->latest('started_at')->first();
+            if (! $last || $last->camera_id === $event->camera_id) {
+                continue;
+            }
+
+            $meters = Geo::distanceMeters($last->camera, $event->camera);
+            $near = $meters !== null
+                ? $meters <= config('seguria.tracking.max_distance_m')
+                : $last->camera->sector !== null && $last->camera->sector === $event->camera->sector;
+
+            if ($near) {
+                return [$incident, $last->camera, $meters, (int) max(0, $last->started_at->diffInSeconds($event->started_at))];
+            }
+        }
+
+        return null;
+    }
+
     private function open(DetectionEvent $event, ?Zone $zone, VerificationResult $verdict): Incident
     {
         $label = ucfirst(LabelTranslator::translate($event->label));
@@ -211,11 +267,18 @@ class DetectionProcessor
         return $incident;
     }
 
-    private function attach(Incident $incident, DetectionEvent $event, VerificationResult $verdict): void
+    /**
+     * @param  array{0: Camera, 1: ?int, 2: int}|null  $tracked  previous camera, meters and seconds when following someone
+     */
+    private function attach(Incident $incident, DetectionEvent $event, VerificationResult $verdict, ?array $tracked = null): void
     {
         $event->forceFill(['status' => DetectionStatus::Threat, 'incident_id' => $incident->id])->save();
 
         $severity = $this->severity($event, $verdict, $incident->zone);
+        // Someone moving through the site, seen by several cameras, is at least high.
+        if ($tracked && $this->rank($severity) < $this->rank(Severity::High)) {
+            $severity = Severity::High;
+        }
         if ($this->rank($severity) > $this->rank($incident->severity)) {
             $incident->severity = $severity;
         }
@@ -226,10 +289,18 @@ class DetectionProcessor
             'clip_path' => $event->clip_path ?? $incident->clip_path,
         ])->save();
 
+        if ($tracked) {
+            [$from, $meters, $seconds] = $tracked;
+            $cameras = $incident->detectionEvents()->with('camera:id,name')->orderBy('started_at')->get()->pluck('camera.name')->unique()->values();
+            $incident->forceFill(['title' => 'Persona recorriendo: '.$cameras->implode(' → ')])->save();
+        }
+
         $incident->actions()->create([
-            'type' => 'detection_added',
+            'type' => $tracked ? 'tracked' : 'detection_added',
             'channel' => 'ai',
-            'notes' => $verdict->description,
+            'notes' => $tracked
+                ? "Vista en {$event->camera->name}, {$tracked[2]} s después de {$tracked[0]->name}".($tracked[1] !== null ? " ({$tracked[1]} m)" : '').". {$verdict->description}"
+                : $verdict->description,
             'meta' => ['detection_event_id' => $event->id],
         ]);
     }

@@ -62,6 +62,7 @@ class IncidentController extends Controller
                     'view_status' => $incident->camera->view_status->value,
                     'can_fix' => Gate::allows('manage', $incident->site),
                 ] : null,
+                'route' => $this->route($incident),
                 'decisions' => $incident->detectionEvents()->with('camera.site:id,name')->orderBy('started_at')->get()->map(fn ($event) => app(ActivityFeed::class)->item($event)),
                 'reporter' => $incident->reporter ? ['name' => $incident->reporter->name, 'lot' => $incident->reporter->lot, 'phone' => $incident->reporter->phone] : null,
                 'live_frames' => $incident->snapshotRequests->whereNotNull('snapshot_path')->values()->map(fn ($snapshot): array => [
@@ -169,5 +170,29 @@ class IncidentController extends Controller
             'detected_at' => $incident->detected_at->toIso8601String(),
             'escalated_at' => $incident->escalated_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Where the person was seen, camera by camera, when the incident follows someone across cameras.
+     *
+     * @return array<int, array{camera: string, position: ?array{0: float, 1: float}, at: string}>
+     */
+    private function route(Incident $incident): array
+    {
+        $steps = [];
+        foreach ($incident->detectionEvents()->with('camera:id,name,lat,lng')->orderBy('started_at')->get() as $event) {
+            $last = end($steps);
+            if ($last && $last['camera_id'] === $event->camera_id) {
+                continue;
+            }
+            $steps[] = [
+                'camera_id' => $event->camera_id,
+                'camera' => $event->camera->name,
+                'position' => $event->camera->lat !== null ? [$event->camera->lat, $event->camera->lng] : null,
+                'at' => $event->started_at->toIso8601String(),
+            ];
+        }
+
+        return count($steps) >= 2 ? $steps : [];
     }
 }
