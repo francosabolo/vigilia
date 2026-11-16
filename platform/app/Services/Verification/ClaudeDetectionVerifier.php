@@ -35,6 +35,13 @@ class ClaudeDetectionVerifier implements DetectionVerifier
         Ejemplo: "2 personas trepando el alambrado del sector norte, una con mochila."
         PROMPT;
 
+    /**
+     * Tokens actually consumed, by model (used by the evaluation command to report real cost).
+     *
+     * @var array<string, array{calls: int, input: int, output: int}>
+     */
+    public array $usage = [];
+
     public function __construct(private readonly Client $client) {}
 
     public function verify(DetectionEvent $event): VerificationResult
@@ -109,6 +116,11 @@ class ClaudeDetectionVerifier implements DetectionVerifier
             ]],
             outputConfig: ['format' => DetectionVerdict::class, 'effort' => 'low'],
         );
+
+        $this->usage[$model] ??= ['calls' => 0, 'input' => 0, 'output' => 0];
+        $this->usage[$model]['calls']++;
+        $this->usage[$model]['input'] += $message->usage->inputTokens + (int) $message->usage->cacheReadInputTokens;
+        $this->usage[$model]['output'] += $message->usage->outputTokens;
 
         $verdict = $message->stopReason === 'refusal' ? null : $message->parsedOutput();
 

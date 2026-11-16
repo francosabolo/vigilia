@@ -25,6 +25,12 @@ return [
         'review_band' => [0.35, 0.75],
         // Minimum confidence to raise an incident.
         'threat_threshold' => (float) env('SEGURIA_AI_THREAT_THRESHOLD', 0.5),
+        // List prices in USD per million tokens [input, output], used to report real evaluation cost.
+        'prices' => [
+            'claude-haiku-5-5' => [0.10, 0.50],
+            'claude-sonnet-5-5' => [2.00, 10.00],
+            'claude-opus-5-5' => [4.00, 20.00],
+        ],
     ],
 
     'whatsapp' => [

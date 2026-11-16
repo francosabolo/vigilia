@@ -29,6 +29,9 @@ php artisan seguria:fake-edge --cover=2     # simula que taparon la cámara 2
 php artisan seguria:simulate-operation --sites=8 --days=7   # 8 barrios simulados, 7 días de operación + reporte
 php artisan seguria:simulate-operation --live --speed=30    # operación simulada en vivo (mirá la consola)
 php artisan seguria:simulate-operation --reset --sites=0 --days=0   # borra los barrios simulados
+php artisan seguria:eval                    # mide la IA con el set de storage/app/eval (positivos/ y negativos/)
+php artisan seguria:eval-degrade            # crea 4 niveles más difíciles en storage/app/eval-hard
+php artisan seguria:eval storage/app/eval-hard/3_oscura_con_ruido   # mide un nivel
 php artisan seguria:simulate --image=foto_noche.jpg   # con ANTHROPIC_API_KEY prueba la IA real
 php artisan test
 ```
