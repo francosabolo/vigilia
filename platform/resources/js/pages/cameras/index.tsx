@@ -71,7 +71,7 @@ export default function CamerasIndex({ sites, interval }: Props) {
                     <h1 className="font-display text-3xl font-semibold">Cámaras</h1>
                     <p className="text-muted-foreground text-sm">
                         {total} cámaras. La imagen se actualiza cada {interval} segundos mientras esta pantalla está abierta; el video completo se ve
-                        desde la red del barrio.
+                        desde la red del edificio o country.
                     </p>
                 </div>
 
@@ -79,7 +79,7 @@ export default function CamerasIndex({ sites, interval }: Props) {
                     <section key={site.id} className="flex flex-col gap-3">
                         {sites.length > 1 && <h2 className="text-lg font-semibold">{site.name}</h2>}
                         {site.cameras.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">Este barrio todavía no tiene cámaras conectadas.</p>
+                            <p className="text-muted-foreground text-sm">Todavía no tiene cámaras conectadas.</p>
                         ) : (
                             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                                 {site.cameras.map((camera) => (

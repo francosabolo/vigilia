@@ -5,6 +5,7 @@ namespace App\Services\Residents;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
+use App\Enums\SiteKind;
 use App\Events\IncidentChanged;
 use App\Events\IncidentOpened;
 use App\Models\Camera;
@@ -21,7 +22,7 @@ class ResidentAlerts
 {
     public function panic(User $resident, ?string $notes = null): Incident
     {
-        return $this->open($resident, IncidentSource::Panic, Severity::Critical, 'Botón de pánico del lote '.($resident->lot ?? 's/d'), $resident->sector, $notes);
+        return $this->open($resident, IncidentSource::Panic, Severity::Critical, 'Botón de pánico '.($resident->site?->kind === SiteKind::Country ? 'del lote ' : 'de la unidad ').($resident->lot ?? 's/d'), $resident->sector, $notes);
     }
 
     public function report(User $resident, string $sector, ?string $notes = null): Incident

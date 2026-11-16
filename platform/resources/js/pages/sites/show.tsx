@@ -1,3 +1,4 @@
+import { SectionTitle } from '@/components/icon-circle';
 import InputError from '@/components/input-error';
 import { ItemActionButton, ItemActionLink, ItemActions } from '@/components/item-action';
 import { SiteMap } from '@/components/site-map';
@@ -16,11 +17,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { type LatLng } from '@/lib/geo';
-import { formatDuration, plural, timeAgo, zoneKindLabel, type EdgeStatus, type Metrics, type ZoneKind } from '@/lib/seguria';
+import {
+    formatDuration,
+    plural,
+    theSite,
+    timeAgo,
+    unitNoun,
+    zoneKindLabel,
+    type EdgeStatus,
+    type Metrics,
+    type SiteKind,
+    type ZoneKind,
+} from '@/lib/seguria';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
-import { Cctv, Siren, VideoOff } from 'lucide-react';
+import { BarChart3, Cctv, Cpu, Siren, VideoOff } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 
 type Tab = 'resumen' | 'cobertura' | 'camaras' | 'vecinos' | 'ajustes';
@@ -76,6 +88,7 @@ interface Props {
     site: {
         id: number;
         name: string;
+        kind: SiteKind;
         is_simulated: boolean;
         address: string | null;
         perimeter: LatLng[];
@@ -95,6 +108,7 @@ interface Props {
 }
 
 const DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 function scheduleText(schedules: Schedule[]): string {
     if (schedules.length === 0) return 'Vigilada las 24 h';
@@ -116,7 +130,7 @@ function WatchHeader({ site }: { site: Props['site'] }) {
     const [tone, sentence] = site.escalated_incidents
         ? (['alarm', `${plural(site.escalated_incidents, 'incidente', 'incidentes')} sin respuesta de la guardia`] as const)
         : noEdge
-          ? (['muted', 'Sin equipo edge conectado: el barrio todavía no está vigilado'] as const)
+          ? (['muted', `Sin equipo edge conectado: ${theSite(site.kind)} todavía no está vigilado`] as const)
           : edgesDown
             ? (['alarm', 'El equipo edge no responde: las cámaras no se están analizando'] as const)
             : site.open_incidents
@@ -128,6 +142,9 @@ function WatchHeader({ site }: { site: Props['site'] }) {
             <div>
                 <h1 className="font-display flex items-center gap-3 text-4xl leading-tight font-semibold">
                     {site.name}
+                    <span className="bg-surface-2 text-muted-foreground rounded-full px-2.5 py-0.5 font-sans text-sm font-medium">
+                        {site.kind === 'country' ? 'Country' : 'Edificio'}
+                    </span>
                     {site.is_simulated && (
                         <span className="bg-surface-2 text-muted-foreground rounded px-2 py-0.5 font-sans text-sm font-medium">Simulado</span>
                     )}
@@ -206,7 +223,7 @@ function Tabs({
     ];
 
     return (
-        <nav className="flex gap-1 overflow-x-auto border-b [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Secciones del barrio">
+        <nav className="flex gap-1 overflow-x-auto border-b [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Secciones">
             {tabs.map((item) => (
                 <Link
                     key={item.id}
@@ -231,9 +248,9 @@ function Tabs({
 function NoCameras({ siteId }: { siteId: number }) {
     return (
         <div className="rounded-xl border border-dashed p-8 text-center">
-            <p className="text-lg font-semibold">Este barrio todavía no tiene cámaras</p>
+            <p className="text-lg font-semibold">Todavía no hay cámaras conectadas</p>
             <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm">
-                Las cámaras aparecen solas cuando el equipo edge del barrio se conecta. Para registrar uno, corré{' '}
+                Las cámaras aparecen solas cuando se conecta el equipo edge del lugar. Para registrar uno, corré{' '}
                 <code className="bg-surface-2 rounded px-1">php artisan seguria:edge-create {siteId} edge-1</code> y cargá el token en el equipo.
             </p>
         </div>
@@ -251,7 +268,9 @@ function Summary({ site, metrics, canManage }: Pick<Props, 'site' | 'metrics' | 
 
             <div className="grid gap-8 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
                 <section>
-                    <h2 className="mb-3 text-lg font-semibold">Últimos 7 días</h2>
+                    <SectionTitle icon={BarChart3} className="mb-3">
+                        Últimos 7 días
+                    </SectionTitle>
                     <dl className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
                         {[
                             [metrics.detections, 'movimientos analizados'],
@@ -267,7 +286,9 @@ function Summary({ site, metrics, canManage }: Pick<Props, 'site' | 'metrics' | 
                     </dl>
                 </section>
                 <section>
-                    <h2 className="mb-3 text-lg font-semibold">Equipos edge</h2>
+                    <SectionTitle icon={Cpu} className="mb-3">
+                        Equipos edge
+                    </SectionTitle>
                     {site.edges.length === 0 ? (
                         <p className="text-muted-foreground text-sm">Ninguno conectado.</p>
                     ) : (
@@ -328,7 +349,11 @@ function CamerasTab({ site, canManage }: Pick<Props, 'site' | 'canManage'>) {
                                     <li key={zone.id}>
                                         <span className="font-medium">{zone.name}</span>
                                         <span className="text-muted-foreground"> ({zoneKindLabel[zone.kind].toLowerCase()})</span>
-                                        {zone.lot && <span className="text-muted-foreground">, lote {zone.lot}</span>}
+                                        {zone.lot && (
+                                            <span className="text-muted-foreground">
+                                                , {unitNoun(site.kind)} {zone.lot}
+                                            </span>
+                                        )}
                                         <span className="text-muted-foreground">. {scheduleText(zone.schedules)}.</span>
                                         {!zone.has_polygon && <span className="text-pending"> Falta dibujarla.</span>}
                                     </li>
@@ -354,7 +379,7 @@ function CamerasTab({ site, canManage }: Pick<Props, 'site' | 'canManage'>) {
 
 /* ---------- Vecinos ---------- */
 
-function InviteResident({ siteId, sectors, alarmActive }: { siteId: number; sectors: string[]; alarmActive: boolean }) {
+function InviteResident({ siteId, sectors, alarmActive, kind }: { siteId: number; sectors: string[]; alarmActive: boolean; kind: SiteKind }) {
     const [open, setOpen] = useState(false);
     const form = useForm({ name: '', email: '', lot: '', sector: sectors[0] ?? '', phone: '' });
 
@@ -399,7 +424,11 @@ function InviteResident({ siteId, sectors, alarmActive }: { siteId: number; sect
                         <Input id="email" type="email" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} />,
                     )}
                     <div className="grid grid-cols-2 gap-3">
-                        {field('lot', 'Lote', <Input id="lot" value={form.data.lot} onChange={(e) => form.setData('lot', e.target.value)} />)}
+                        {field(
+                            'lot',
+                            capitalize(unitNoun(kind)),
+                            <Input id="lot" value={form.data.lot} onChange={(e) => form.setData('lot', e.target.value)} />,
+                        )}
                         {field(
                             'sector',
                             'Sector',
@@ -444,7 +473,7 @@ function InviteResident({ siteId, sectors, alarmActive }: { siteId: number; sect
     );
 }
 
-function EditResident({ siteId, resident, sectors }: { siteId: number; resident: Resident; sectors: string[] }) {
+function EditResident({ siteId, resident, sectors, kind }: { siteId: number; resident: Resident; sectors: string[]; kind: SiteKind }) {
     const [open, setOpen] = useState(false);
     const form = useForm({ name: resident.name, lot: resident.lot ?? '', sector: resident.sector ?? '', phone: resident.phone ?? '' });
 
@@ -471,7 +500,7 @@ function EditResident({ siteId, resident, sectors }: { siteId: number; resident:
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="grid gap-1.5">
-                            <Label htmlFor={`lot-${resident.id}`}>Lote</Label>
+                            <Label htmlFor={`lot-${resident.id}`}>{capitalize(unitNoun(kind))}</Label>
                             <Input id={`lot-${resident.id}`} value={form.data.lot} onChange={(e) => form.setData('lot', e.target.value)} />
                             <InputError message={form.errors.lot} />
                         </div>
@@ -575,14 +604,14 @@ function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site
                 <p className="text-muted-foreground max-w-xl text-sm">
                     Los vecinos usan su propia app: botón de pánico, avisos y modo vacaciones. No ven cámaras ni imágenes.
                 </p>
-                {canManage && <InviteResident siteId={site.id} sectors={sectors} alarmActive={!!site.escalated_incident_id} />}
+                {canManage && <InviteResident siteId={site.id} sectors={sectors} alarmActive={!!site.escalated_incident_id} kind={site.kind} />}
             </div>
 
             {residents.length === 0 ? (
                 <div className="rounded-xl border border-dashed p-8 text-center">
                     <p className="text-lg font-semibold">Todavía no hay vecinos en la app</p>
                     <p className="text-muted-foreground mt-1 text-sm">
-                        {canManage ? 'Invitá al primero con su email y su lote.' : 'La administración del barrio los puede invitar.'}
+                        {canManage ? `Invitá al primero con su email y su ${unitNoun(site.kind)}.` : 'La administración los puede invitar.'}
                     </p>
                 </div>
             ) : (
@@ -590,7 +619,7 @@ function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site
                     <table className="w-full text-left text-[15px]">
                         <thead className="text-muted-foreground border-b text-sm">
                             <tr>
-                                <th className="px-4 py-2.5 font-medium">Lote</th>
+                                <th className="px-4 py-2.5 font-medium">{capitalize(unitNoun(site.kind))}</th>
                                 <th className="px-4 py-2.5 font-medium">Vecino</th>
                                 <th className="hidden px-4 py-2.5 font-medium md:table-cell">Sector</th>
                                 <th className="hidden px-4 py-2.5 font-medium md:table-cell">Celular</th>
@@ -622,7 +651,7 @@ function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site
                                     {canManage && (
                                         <td className="px-2 py-3">
                                             <ItemActions className="justify-end">
-                                                <EditResident siteId={site.id} resident={resident} sectors={sectors} />
+                                                <EditResident siteId={site.id} resident={resident} sectors={sectors} kind={site.kind} />
                                                 <RemoveResident siteId={site.id} resident={resident} />
                                             </ItemActions>
                                         </td>
@@ -695,7 +724,7 @@ function SettingsTab({ site }: Pick<Props, 'site'>) {
 
 export default function SiteShow({ tab, canManage, site, residents, residentsCount, sectors, metrics }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Barrios', href: '/sites' },
+        { title: 'Edificios y countries', href: '/sites' },
         { title: site.name, href: `/sites/${site.id}` },
     ];
 

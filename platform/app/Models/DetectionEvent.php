@@ -20,7 +20,7 @@ class DetectionEvent extends Model
 
     protected $fillable = [
         'edge_device_id', 'camera_id', 'external_id', 'label', 'score', 'zones',
-        'started_at', 'ended_at', 'snapshot_path', 'clip_path', 'status', 'ai_verdict', 'incident_id',
+        'started_at', 'ended_at', 'snapshot_path', 'clip_path', 'status', 'ai_verdict', 'trace', 'incident_id',
     ];
 
     protected function casts(): array
@@ -28,6 +28,7 @@ class DetectionEvent extends Model
         return [
             'zones' => 'array',
             'ai_verdict' => 'array',
+            'trace' => 'array',
             'score' => 'float',
             'started_at' => 'datetime',
             'ended_at' => 'datetime',

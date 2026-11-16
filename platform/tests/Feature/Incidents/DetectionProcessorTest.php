@@ -4,6 +4,7 @@ use App\Enums\DetectionStatus;
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
 use App\Enums\ZoneKind;
+use App\Events\DetectionActivity;
 use App\Events\IncidentChanged;
 use App\Events\IncidentOpened;
 use App\Models\ArmingSchedule;
@@ -11,6 +12,7 @@ use App\Models\Camera;
 use App\Models\DetectionEvent;
 use App\Models\EdgeDevice;
 use App\Models\Incident;
+use App\Models\User;
 use App\Models\Zone;
 use App\Services\Incidents\DetectionProcessor;
 use App\Services\Verification\DetectionVerifier;
@@ -131,4 +133,39 @@ it('treats a person at a door, window or sensitive point as critical', function 
 
     expect($incident->severity)->toBe(Severity::Critical)
         ->and($incident->title)->toBe('Persona en Puerta de servicio (Perímetro Norte)');
+});
+
+it('records how each detection was decided and broadcasts it live', function () {
+    Event::fake([IncidentOpened::class, IncidentChanged::class, DetectionActivity::class]);
+    fakeVerdict();
+
+    $alert = detection($this->camera);
+    $incident = app(DetectionProcessor::class)->process($alert);
+
+    expect(collect($alert->fresh()->trace)->pluck('step')->all())->toBe(['detector', 'zone', 'schedule', 'ai', 'decision'])
+        ->and(collect($alert->fresh()->trace)->last()['detail'])->toContain("incidente #{$incident->id}");
+
+    $outside = detection($this->camera, ['zones' => ['vereda']]);
+    app(DetectionProcessor::class)->process($outside);
+    expect(collect($outside->fresh()->trace)->last())->toMatchArray(['step' => 'zone', 'result' => 'stop']);
+
+    // "Analyzing" first, then the decision, for the alert; only the decision for the skipped one.
+    Event::assertDispatched(DetectionActivity::class, fn ($e) => $e->item['id'] === $alert->id && $e->item['outcome'] === 'analyzing');
+    Event::assertDispatched(DetectionActivity::class, fn ($e) => $e->item['id'] === $alert->id && $e->item['outcome'] === 'alert' && str_starts_with($e->item['headline'], 'Alerta:'));
+    Event::assertDispatched(DetectionActivity::class, fn ($e) => $e->item['id'] === $outside->id && $e->item['outcome'] === 'ignored');
+});
+
+it('shows the AI activity on the dashboard and the decision trail in the incident', function () {
+    fakeVerdict();
+    $incident = app(DetectionProcessor::class)->process(detection($this->camera));
+    $operator = User::factory()->create(['role' => 'operator', 'organization_id' => $this->camera->site->organization_id]);
+
+    $this->actingAs($operator)->get('/dashboard')->assertInertia(fn ($page) => $page
+        ->has('activity', 1)
+        ->where('activity.0.outcome', 'alert')
+        ->has('activity.0.trace', 5));
+
+    $this->actingAs($operator)->get("/incidents/{$incident->id}")->assertInertia(fn ($page) => $page
+        ->has('incident.decisions', 1)
+        ->where('incident.decisions.0.agent', 'Analista IA'));
 });

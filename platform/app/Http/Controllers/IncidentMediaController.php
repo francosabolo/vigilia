@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DetectionEvent;
 use App\Models\Incident;
 use App\Models\SnapshotRequest;
 use Illuminate\Support\Facades\Storage;
@@ -9,6 +10,17 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class IncidentMediaController extends Controller
 {
+    /**
+     * Snapshot of a single detection (activity feed and decision trail). Protected by a signed URL.
+     */
+    public function detection(DetectionEvent $detectionEvent): StreamedResponse
+    {
+        $disk = Storage::disk(config('seguria.media_disk'));
+        abort_unless($detectionEvent->snapshot_path && $disk->exists($detectionEvent->snapshot_path), 404);
+
+        return $disk->response($detectionEvent->snapshot_path, headers: ['Cache-Control' => 'private, max-age=3600']);
+    }
+
     /**
      * Live frame requested from the edge after a resident report. Protected by a signed URL.
      */

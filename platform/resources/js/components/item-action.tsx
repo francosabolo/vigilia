@@ -18,7 +18,7 @@ const ICONS: Record<ItemActionKind, LucideIcon> = { view: Eye, edit: Pencil, del
 const LABELS: Record<ItemActionKind, string> = { view: 'Ver', edit: 'Editar', delete: 'Borrar', expand: 'Ampliar' };
 
 const base =
-    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-2';
+    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-2';
 
 function classes(kind: ItemActionKind, className?: string) {
     return cn(base, kind === 'delete' && 'hover:text-alarm', className);

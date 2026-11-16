@@ -6,6 +6,7 @@ use App\Enums\IncidentStatus;
 use App\Models\EdgeDevice;
 use App\Models\Incident;
 use App\Models\Site;
+use App\Services\Activity\ActivityFeed;
 use App\Services\Reports\SiteMetrics;
 use App\Services\Sites\SiteScope;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, SiteMetrics $metrics, SiteScope $scope): Response
+    public function __invoke(Request $request, SiteMetrics $metrics, SiteScope $scope, ActivityFeed $activity): Response
     {
         $siteIds = $scope->siteIds($request);
         $offlineAfter = now()->subSeconds(config('seguria.edge_offline_after'));
@@ -40,6 +41,7 @@ class DashboardController extends Controller
             ->map(fn (Site $site): array => [
                 'id' => $site->id,
                 'name' => $site->name,
+                'kind' => $site->kind->value,
                 'cameras' => $site->cameras_count,
                 'cameras_online' => $site->cameras_online_count,
                 'open_incidents' => $site->open_incidents_count,
@@ -62,6 +64,7 @@ class DashboardController extends Controller
                 ->where(fn ($query) => $query->whereNull('last_seen_at')->orWhere('last_seen_at', '<', $offlineAfter))
                 ->count(),
             'sites' => $sites,
+            'activity' => $activity->latest($siteIds, 30),
             'vapidPublicKey' => config('webpush.vapid.public_key'),
             'channel' => $request->user()->liveChannel(),
         ]);

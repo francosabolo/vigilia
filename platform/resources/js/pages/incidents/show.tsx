@@ -1,3 +1,4 @@
+import { DecisionTrail } from '@/components/console/decision-trail';
 import { SeverityText, StatusSignal } from '@/components/incident-badges';
 import { Button } from '@/components/ui/button';
 import { useLiveIncidents } from '@/hooks/use-live-incidents';
@@ -218,6 +219,36 @@ export default function IncidentShow({ incident, channel }: Props) {
                             </p>
                         </div>
                     </section>
+
+                    {incident.decisions.length > 0 && (
+                        <section className="flex flex-col gap-2">
+                            <h2 className="font-semibold">Cómo se decidió</h2>
+                            <p className="text-muted-foreground text-sm">
+                                {incident.decisions.length === 1
+                                    ? 'El recorrido de la detección que abrió este incidente.'
+                                    : `Este incidente junta ${incident.decisions.length} detecciones. Cada una tiene su recorrido.`}
+                            </p>
+                            {incident.decisions.map((decision, index) => (
+                                <details key={decision.id} open={index === 0} className="bg-card group rounded-lg border">
+                                    <summary className="hover:bg-accent flex cursor-pointer list-none items-center gap-3 rounded-lg px-4 py-3 text-sm">
+                                        <span className="font-medium">
+                                            {new Date(decision.at).toLocaleTimeString('es-AR', {
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                second: '2-digit',
+                                            })}
+                                            , {decision.camera}
+                                        </span>
+                                        <span className="text-muted-foreground flex-1 truncate">{decision.headline}</span>
+                                        <span className="text-muted-foreground text-xs group-open:hidden">Ver</span>
+                                    </summary>
+                                    <div className="border-t p-4">
+                                        <DecisionTrail item={decision} />
+                                    </div>
+                                </details>
+                            ))}
+                        </section>
+                    )}
                 </div>
 
                 <aside className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start">

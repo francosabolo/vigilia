@@ -8,6 +8,7 @@ use App\Enums\IncidentStatus;
 use App\Events\IncidentChanged;
 use App\Models\Incident;
 use App\Models\IncidentAction;
+use App\Services\Activity\ActivityFeed;
 use App\Services\Cameras\CameraViewMonitor;
 use App\Services\Incidents\IncidentWorkflow;
 use App\Services\Sites\SiteScope;
@@ -61,6 +62,7 @@ class IncidentController extends Controller
                     'view_status' => $incident->camera->view_status->value,
                     'can_fix' => Gate::allows('manage', $incident->site),
                 ] : null,
+                'decisions' => $incident->detectionEvents()->with('camera.site:id,name')->orderBy('started_at')->get()->map(fn ($event) => app(ActivityFeed::class)->item($event)),
                 'reporter' => $incident->reporter ? ['name' => $incident->reporter->name, 'lot' => $incident->reporter->lot, 'phone' => $incident->reporter->phone] : null,
                 'live_frames' => $incident->snapshotRequests->whereNotNull('snapshot_path')->values()->map(fn ($snapshot): array => [
                     'camera' => $snapshot->camera->name,

@@ -48,6 +48,7 @@ class ResidentController extends Controller
                 'sector' => $resident->sector,
                 'away_until' => $resident->isAway() ? $resident->away_until->toDateString() : null,
                 'site' => $resident->site?->name,
+                'site_kind' => $resident->site?->kind->value ?? 'building',
             ],
             'sectors' => $this->sectors($resident->site_id),
             'notices' => $notices,

@@ -48,7 +48,7 @@ it('opens a critical incident when a resident presses the panic button', functio
     expect($incident->source)->toBe(IncidentSource::Panic)
         ->and($incident->severity)->toBe(Severity::Critical)
         ->and($incident->reported_by)->toBe($this->resident->id)
-        ->and($incident->title)->toContain('lote 42');
+        ->and($incident->title)->toContain('unidad 42');
     Event::assertDispatched(IncidentOpened::class);
 });
 

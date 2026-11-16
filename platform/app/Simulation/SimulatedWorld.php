@@ -2,6 +2,7 @@
 
 namespace App\Simulation;
 
+use App\Enums\SiteKind;
 use App\Enums\UserRole;
 use App\Enums\ZoneKind;
 use App\Models\Camera;
@@ -34,7 +35,10 @@ class SimulatedWorld
     {
         $names = collect(self::NAMES)->shuffle()->take($count)->values();
 
-        return $names->map(fn (string $name, int $index) => DB::transaction(fn () => $this->site($organization, "Barrio {$name}", $index, random_int($minCameras, $maxCameras))))->all();
+        // Alternate countries and buildings: Seguria sells to both kinds of consorcio.
+        return $names->map(fn (string $name, int $index) => DB::transaction(fn () => $index % 2 === 0
+            ? $this->site($organization, "Country {$name}", $index, random_int($minCameras, $maxCameras))
+            : $this->building($organization, $index, random_int(6, 12))))->all();
     }
 
     public function destroy(): int
@@ -46,6 +50,72 @@ class SimulatedWorld
         }
 
         return $sites->count();
+    }
+
+    private const STREETS = ['Arenales', 'Libertador', 'Cabildo', 'Santa Fe', 'Juncal', 'Billinghurst', 'Gorriti', 'Thames', 'Olazábal', 'Moreno'];
+
+    private const BUILDING_SPOTS = [
+        ['Hall de entrada', ZoneKind::Door], ['Cochera', ZoneKind::Door], ['Puerta de servicio', ZoneKind::Door], ['Terraza', ZoneKind::Sensitive],
+        ['Sala de máquinas', ZoneKind::Sensitive], ['Lavadero', ZoneKind::Sensitive], ['Patio interno', ZoneKind::Perimeter], ['Palier PB', ZoneKind::Door],
+        ['Palier 1° piso', ZoneKind::Door], ['Palier 2° piso', ZoneKind::Door], ['Bauleras', ZoneKind::Sensitive], ['Ascensor', ZoneKind::Sensitive],
+    ];
+
+    /**
+     * A building: small footprint, cameras on accesses and sensitive points, units like "4B".
+     */
+    private function building(Organization $organization, int $index, int $cameraCount): Site
+    {
+        [$baseLat, $baseLng] = [-34.58 + mt_rand(-30, 30) / 1000, -58.42 + mt_rand(-40, 40) / 1000];
+        $street = self::STREETS[$index % count(self::STREETS)];
+        $name = "Edificio {$street} ".(mt_rand(5, 49) * 50);
+        $half = 0.00012;
+
+        $site = Site::create([
+            'organization_id' => $organization->id,
+            'name' => $name,
+            'kind' => SiteKind::Building,
+            'address' => "{$street} (simulado), CABA",
+            'perimeter' => [[$baseLat + $half, $baseLng - $half * 1.3], [$baseLat + $half, $baseLng + $half * 1.3], [$baseLat - $half, $baseLng + $half * 1.3], [$baseLat - $half, $baseLng - $half * 1.3]],
+            'lat' => $baseLat,
+            'lng' => $baseLng,
+            'is_simulated' => true,
+            'ack_timeout_seconds' => 120,
+        ]);
+
+        $edge = EdgeDevice::create(['site_id' => $site->id, 'name' => 'edge-porteria', 'token_hash' => hash('sha256', Str::random(40)), 'version' => '0.3.0', 'last_seen_at' => now()]);
+
+        foreach (array_slice(self::BUILDING_SPOTS, 0, $cameraCount) as $i => [$spot, $kind]) {
+            $angle = $i / max(1, $cameraCount) * 2 * M_PI;
+            $camera = Camera::create([
+                'site_id' => $site->id, 'edge_device_id' => $edge->id, 'name' => $spot, 'frigate_name' => "cam_{$i}",
+                'sector' => $i < 4 ? 'Planta baja' : 'Pisos',
+                'lat' => $baseLat + sin($angle) * $half * 0.8, 'lng' => $baseLng + cos($angle) * $half,
+                'heading' => (int) fmod(rad2deg($angle) + 180 + 360, 360), 'fov' => 100, 'range_m' => 15, 'last_seen_at' => now(),
+            ]);
+            $zone = $camera->zones()->create([
+                'name' => $spot, 'kind' => $kind, 'frigate_zone' => 'alambrado',
+                'watched_labels' => ['person'], 'coordinates' => [[0.25, 0.2], [0.75, 0.2], [0.75, 0.95], [0.25, 0.95]],
+            ]);
+            if ($kind === ZoneKind::Door && $spot !== 'Puerta de servicio') {
+                $zone->armingSchedules()->create(['days' => [1, 2, 3, 4, 5, 6, 7], 'starts_at' => '23:00', 'ends_at' => '06:00']);
+            }
+        }
+
+        $slug = Str::slug($name);
+        User::create([
+            'name' => "Encargado {$name}", 'email' => "encargado.{$slug}@sim.seguria.test", 'password' => Str::random(32),
+            'role' => UserRole::Guard, 'organization_id' => $organization->id, 'site_id' => $site->id,
+        ]);
+        for ($r = 1, $residents = mt_rand(12, 40); $r <= $residents; $r++) {
+            User::create([
+                'name' => fake('es_AR')->name(), 'email' => "vecino{$r}.{$slug}@sim.seguria.test", 'password' => Str::random(32),
+                'role' => UserRole::Resident, 'organization_id' => $organization->id, 'site_id' => $site->id,
+                'lot' => mt_rand(1, 12).chr(64 + mt_rand(1, 6)), 'sector' => mt_rand(0, 1) ? 'Planta baja' : 'Pisos',
+                'last_login_at' => mt_rand(1, 100) <= 70 ? now()->subHours(mt_rand(1, 400)) : null,
+            ]);
+        }
+
+        return $site;
     }
 
     private function site(Organization $organization, string $name, int $index, int $cameraCount): Site
@@ -65,6 +135,7 @@ class SimulatedWorld
             'lat' => $lat,
             'lng' => $lng,
             'is_simulated' => true,
+            'kind' => SiteKind::Country,
             'ack_timeout_seconds' => 180,
         ]);
 

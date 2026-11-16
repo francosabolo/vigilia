@@ -1,9 +1,15 @@
-import { cn } from '@/lib/utils';
 import { severityLabel, statusDot, statusLabel, type IncidentStatus, type Severity } from '@/lib/seguria';
+import { cn } from '@/lib/utils';
 
 export function StatusSignal({ status, className }: { status: IncidentStatus; className?: string }) {
     return (
-        <span className={cn('inline-flex items-center gap-1.5 text-sm', status === 'escalated' ? 'text-alarm font-semibold' : 'text-muted-foreground', className)}>
+        <span
+            className={cn(
+                'inline-flex items-center gap-1.5 text-sm',
+                status === 'escalated' ? 'text-alarm font-semibold' : 'text-muted-foreground',
+                className,
+            )}
+        >
             <span className={cn('size-2 rounded-full', statusDot[status])} />
             {statusLabel[status]}
         </span>

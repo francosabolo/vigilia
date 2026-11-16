@@ -1,14 +1,16 @@
+import { AiActivity } from '@/components/console/ai-activity';
 import { IncidentRow } from '@/components/console/incident-row';
+import { SectionTitle } from '@/components/icon-circle';
 import { ItemActionHint } from '@/components/item-action';
 import { PushToggle } from '@/components/push-toggle';
 import { Button } from '@/components/ui/button';
 import { useLiveIncidents } from '@/hooks/use-live-incidents';
 import AppLayout from '@/layouts/app-layout';
-import { formatDuration, plural, type IncidentStatus, type Metrics, type Severity } from '@/lib/seguria';
+import { formatDuration, plural, type ActivityItem, type IncidentStatus, type Metrics, type Severity } from '@/lib/seguria';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Cctv, Cpu } from 'lucide-react';
+import { Building2, Cctv, Cpu, Filter, Siren } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Panel', href: '/dashboard' }];
 
@@ -37,6 +39,7 @@ interface Props {
     escalatedCount: number;
     edgesOffline: number;
     sites: SiteStatus[];
+    activity: ActivityItem[];
     vapidPublicKey: string | null;
     channel: string;
 }
@@ -113,7 +116,7 @@ function Funnel({ metrics }: { metrics: Metrics }) {
     return (
         <section className="bg-card rounded-xl border p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-lg font-semibold">Qué filtró la IA esta semana</h2>
+                <SectionTitle icon={Filter}>Qué filtró la IA esta semana</SectionTitle>
                 <span className="text-muted-foreground text-sm">
                     Respuesta promedio de la guardia: <span className="text-foreground font-semibold">{formatDuration(metrics.avg_ack_seconds)}</span>
                 </span>
@@ -137,85 +140,99 @@ function Funnel({ metrics }: { metrics: Metrics }) {
     );
 }
 
-export default function Dashboard({ metrics, openIncidents, openCount, escalatedCount, edgesOffline, sites, vapidPublicKey, channel }: Props) {
+export default function Dashboard({
+    metrics,
+    openIncidents,
+    openCount,
+    escalatedCount,
+    edgesOffline,
+    sites,
+    activity,
+    vapidPublicKey,
+    channel,
+}: Props) {
     useLiveIncidents(channel, ['metrics', 'openIncidents', 'openCount', 'escalatedCount', 'sites', 'siteContext']);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Panel" />
-            <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 p-4 md:p-6">
+            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 p-4 md:p-6">
                 <WatchStatus openIncidents={openIncidents} openCount={openCount} escalatedCount={escalatedCount} edgesOffline={edgesOffline} />
 
-                <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-                    <section className="flex flex-col gap-3">
-                        <div className="flex items-baseline justify-between">
-                            <h2 className="text-lg font-semibold">Incidentes abiertos</h2>
-                            {openCount > openIncidents.length && (
-                                <Link
-                                    href="/incidents"
-                                    className="text-muted-foreground hover:text-foreground text-sm underline-offset-4 hover:underline"
-                                >
-                                    Ver los {openCount}
-                                </Link>
-                            )}
-                        </div>
-                        {openIncidents.length === 0 ? (
-                            <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-sm">
-                                Sin incidentes abiertos. Cuando la IA confirme una intrusión, aparece acá y suena la alarma.
-                            </p>
-                        ) : (
-                            openIncidents.map((incident) => (
-                                <IncidentRow
-                                    key={incident.id}
-                                    id={incident.id}
-                                    title={incident.title}
-                                    status={incident.status}
-                                    severity={incident.severity}
-                                    detectedAt={incident.detected_at}
-                                    meta={incident.site}
-                                />
-                            ))
-                        )}
-                    </section>
-
-                    <section className="flex flex-col gap-3">
-                        <h2 className="text-lg font-semibold">Barrios</h2>
-                        <div className="bg-card divide-y rounded-lg border">
-                            {sites.map((site) => {
-                                const healthy = site.edges_offline === 0 && site.cameras_online === site.cameras;
-                                return (
+                <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(340px,2fr)]">
+                    <div className="flex min-w-0 flex-col gap-5">
+                        <section className="flex flex-col gap-3">
+                            <div className="flex items-baseline justify-between">
+                                <SectionTitle icon={Siren}>Incidentes abiertos</SectionTitle>
+                                {openCount > openIncidents.length && (
                                     <Link
-                                        key={site.id}
-                                        href={`/sites/${site.id}`}
-                                        className="group hover:bg-accent flex items-center gap-3 px-4 py-3"
+                                        href="/incidents"
+                                        className="text-muted-foreground hover:text-foreground text-sm underline-offset-4 hover:underline"
                                     >
-                                        <span
-                                            className={cn(
-                                                'size-2.5 rounded-full',
-                                                site.open_incidents > 0 ? 'bg-pending' : healthy ? 'bg-ok' : 'bg-alarm',
-                                            )}
-                                            aria-hidden
-                                        />
-                                        <span className="flex-1 truncate font-medium">{site.name}</span>
-                                        <span className="text-muted-foreground flex items-center gap-1 text-sm" title="Cámaras online">
-                                            <Cctv className="size-4" />
-                                            {site.cameras_online}/{site.cameras}
-                                        </span>
-                                        {site.edges_offline > 0 && (
-                                            <span className="text-alarm flex items-center gap-1 text-sm">
-                                                <Cpu className="size-4" /> sin señal
-                                            </span>
-                                        )}
-                                        <ItemActionHint kind="view" />
+                                        Ver los {openCount}
                                     </Link>
-                                );
-                            })}
-                        </div>
-                        <PushToggle vapidPublicKey={vapidPublicKey} />
-                    </section>
-                </div>
+                                )}
+                            </div>
+                            {openIncidents.length === 0 ? (
+                                <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-sm">
+                                    Sin incidentes abiertos. Cuando la IA confirme una intrusión, aparece acá y suena la alarma.
+                                </p>
+                            ) : (
+                                openIncidents.map((incident) => (
+                                    <IncidentRow
+                                        key={incident.id}
+                                        id={incident.id}
+                                        title={incident.title}
+                                        status={incident.status}
+                                        severity={incident.severity}
+                                        detectedAt={incident.detected_at}
+                                        meta={incident.site}
+                                    />
+                                ))
+                            )}
+                        </section>
+                        <section className="flex flex-col gap-3">
+                            <SectionTitle icon={Building2}>Edificios y countries</SectionTitle>
+                            <div className="bg-card divide-y rounded-lg border">
+                                {sites.map((site) => {
+                                    const healthy = site.edges_offline === 0 && site.cameras_online === site.cameras;
+                                    return (
+                                        <Link
+                                            key={site.id}
+                                            href={`/sites/${site.id}`}
+                                            className="group hover:bg-accent flex items-center gap-3 px-4 py-3"
+                                        >
+                                            <span
+                                                className={cn(
+                                                    'size-2.5 rounded-full',
+                                                    site.open_incidents > 0 ? 'bg-pending' : healthy ? 'bg-ok' : 'bg-alarm',
+                                                )}
+                                                aria-hidden
+                                            />
+                                            <span className="flex-1 truncate font-medium">{site.name}</span>
+                                            <span className="text-muted-foreground flex items-center gap-1 text-sm" title="Cámaras online">
+                                                <Cctv className="size-4" />
+                                                {site.cameras_online}/{site.cameras}
+                                            </span>
+                                            {site.edges_offline > 0 && (
+                                                <span className="text-alarm flex items-center gap-1 text-sm">
+                                                    <Cpu className="size-4" /> sin señal
+                                                </span>
+                                            )}
+                                            <ItemActionHint kind="view" />
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                            <PushToggle vapidPublicKey={vapidPublicKey} />
+                        </section>
+                        <Funnel metrics={metrics} />
+                    </div>
 
-                <Funnel metrics={metrics} />
+                    <div className="lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:self-start [&>section]:max-h-[inherit]">
+                        <AiActivity initial={activity} channel={channel} />
+                    </div>
+                </div>
             </div>
         </AppLayout>
     );

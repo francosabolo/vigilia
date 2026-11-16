@@ -6,7 +6,9 @@ use App\Enums\DetectionStatus;
 use App\Enums\IncidentResolution;
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
+use App\Enums\SiteKind;
 use App\Enums\UserRole;
+use App\Enums\ZoneKind;
 use App\Models\Camera;
 use App\Models\DetectionEvent;
 use App\Models\EdgeDevice;
@@ -26,13 +28,15 @@ class DatabaseSeeder extends Seeder
     {
         $organization = Organization::firstOrCreate(['slug' => 'seguria'], ['name' => 'Seguria Central']);
 
-        $site = Site::firstOrCreate(['name' => 'Barrio Los Álamos'], [
+        $site = Site::firstOrCreate(['name' => 'Country Los Álamos'], [
             'organization_id' => $organization->id,
+            'kind' => SiteKind::Country,
             'address' => 'Ruta 8 km 52, Pilar',
             'ack_timeout_seconds' => 180,
         ]);
         $second = Site::firstOrCreate(['name' => 'Country El Remanso'], [
             'organization_id' => $organization->id,
+            'kind' => SiteKind::Country,
             'address' => 'Ruta 6 km 12, Cardales',
         ]);
 
@@ -104,9 +108,61 @@ class DatabaseSeeder extends Seeder
             }
         }
 
+        $this->building($organization);
+
         if (Incident::where('site_id', $site->id)->doesntExist()) {
             $this->history($site);
         }
+    }
+
+    /**
+     * A consorcio building: entrance hall, garage, service door and rooftop; units like "4B".
+     */
+    private function building(Organization $organization): void
+    {
+        $building = Site::firstOrCreate(['name' => 'Edificio Arenales 2150'], [
+            'organization_id' => $organization->id,
+            'kind' => SiteKind::Building,
+            'address' => 'Arenales 2150, Recoleta, CABA',
+            'lat' => -34.59490,
+            'lng' => -58.39950,
+            'perimeter' => [[-34.59478, -58.39978], [-34.59478, -58.39922], [-34.59502, -58.39922], [-34.59502, -58.39978]],
+        ]);
+        $edge = EdgeDevice::firstOrCreate(['site_id' => $building->id, 'name' => 'edge-porteria'], [
+            'token_hash' => hash('sha256', 'demo-'.$building->id),
+            'last_seen_at' => now(),
+            'version' => '0.3.0',
+        ]);
+
+        $cameras = [
+            ['hall', 'Hall de entrada', 'Planta baja', ZoneKind::Door, 'Puerta de calle', [-34.59478, -58.39950], 180],
+            ['cochera', 'Cochera', 'Subsuelo', ZoneKind::Door, 'Portón de cochera', [-34.59490, -58.39978], 90],
+            ['servicio', 'Puerta de servicio', 'Planta baja', ZoneKind::Door, 'Puerta de servicio', [-34.59502, -58.39940], 0],
+            ['terraza', 'Terraza', 'Piso 12', ZoneKind::Sensitive, 'Acceso a terraza', [-34.59490, -58.39922], 270],
+        ];
+        foreach ($cameras as [$frigate, $name, $sector, $kind, $zoneName, $position, $heading]) {
+            $camera = Camera::firstOrCreate(['edge_device_id' => $edge->id, 'frigate_name' => $frigate], [
+                'site_id' => $building->id, 'name' => $name, 'sector' => $sector,
+                'lat' => $position[0], 'lng' => $position[1], 'heading' => $heading, 'fov' => 100, 'range_m' => 15, 'last_seen_at' => now(),
+            ]);
+            $zone = $camera->zones()->firstOrCreate(['frigate_zone' => 'acceso'], [
+                'name' => $zoneName, 'kind' => $kind, 'watched_labels' => ['person'],
+                'coordinates' => [[0.3, 0.2], [0.7, 0.2], [0.7, 0.95], [0.3, 0.95]],
+            ]);
+            if ($kind === ZoneKind::Door && $frigate !== 'servicio' && $zone->armingSchedules()->doesntExist()) {
+                $zone->armingSchedules()->create(['days' => [1, 2, 3, 4, 5, 6, 7], 'starts_at' => '23:00', 'ends_at' => '06:00']);
+            }
+        }
+
+        User::updateOrCreate(['email' => 'encargado@seguria.test'], [
+            'name' => 'Encargado Arenales', 'password' => 'password', 'email_verified_at' => now(),
+            'role' => UserRole::Guard, 'organization_id' => $organization->id, 'site_id' => $building->id,
+        ]);
+        User::updateOrCreate(['email' => 'vecina.arenales@seguria.test'], [
+            'name' => 'Marta Ruiz', 'password' => 'password', 'email_verified_at' => now(),
+            'role' => UserRole::Resident, 'organization_id' => $organization->id, 'site_id' => $building->id,
+            'lot' => '4B', 'sector' => 'Planta baja',
+        ]);
     }
 
     /**

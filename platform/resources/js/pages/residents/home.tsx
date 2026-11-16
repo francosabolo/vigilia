@@ -1,10 +1,11 @@
+import AppLogoIcon from '@/components/app-logo-icon';
+import { IconCircle } from '@/components/icon-circle';
 import { PushToggle } from '@/components/push-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatDuration, timeAgo, type IncidentStatus, type Metrics } from '@/lib/seguria';
+import { formatDuration, theSite, timeAgo, unitNoun, type IncidentStatus, type Metrics, type SiteKind } from '@/lib/seguria';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
-import AppLogoIcon from '@/components/app-logo-icon';
-import { CheckCircle2, Eye, LogOut, Plane, Siren } from 'lucide-react';
+import { Bell, CheckCircle2, Eye, LogOut, Plane, ShieldCheck, Siren } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 
 interface Notice {
@@ -18,7 +19,7 @@ interface Notice {
 }
 
 interface Props {
-    resident: { name: string; lot: string | null; sector: string | null; away_until: string | null; site: string | null };
+    resident: { name: string; lot: string | null; sector: string | null; away_until: string | null; site: string | null; site_kind: SiteKind };
     sectors: string[];
     notices: Notice[];
     metrics: Metrics;
@@ -79,7 +80,13 @@ function ReportForm({ sectors, defaultSector }: { sectors: string[]; defaultSect
 
     function submit(event: FormEvent) {
         event.preventDefault();
-        form.post('/vecinos/report', { preserveScroll: true, onSuccess: () => { setSent(true); form.reset('notes'); } });
+        form.post('/vecinos/report', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setSent(true);
+                form.reset('notes');
+            },
+        });
     }
 
     if (sent) {
@@ -89,7 +96,9 @@ function ReportForm({ sectors, defaultSector }: { sectors: string[]; defaultSect
                 <div>
                     <p className="font-medium">Gracias, recibimos tu aviso.</p>
                     <p className="text-muted-foreground">La guardia ya lo tiene y la IA está revisando las cámaras de ese sector.</p>
-                    <button className="text-primary mt-2 underline" onClick={() => setSent(false)}>Enviar otro aviso</button>
+                    <button className="text-primary mt-2 underline" onClick={() => setSent(false)}>
+                        Enviar otro aviso
+                    </button>
                 </div>
             </div>
         );
@@ -97,9 +106,15 @@ function ReportForm({ sectors, defaultSector }: { sectors: string[]; defaultSect
 
     return (
         <form onSubmit={submit} className="flex flex-col gap-3">
-            <select value={form.data.sector} onChange={(e) => form.setData('sector', e.target.value)} className="border-input bg-background rounded-lg border px-3 py-3 text-base">
+            <select
+                value={form.data.sector}
+                onChange={(e) => form.setData('sector', e.target.value)}
+                className="border-input bg-background rounded-lg border px-3 py-3 text-base"
+            >
                 {sectors.map((sector) => (
-                    <option key={sector} value={sector}>{sector}</option>
+                    <option key={sector} value={sector}>
+                        {sector}
+                    </option>
                 ))}
             </select>
             <textarea
@@ -111,7 +126,9 @@ function ReportForm({ sectors, defaultSector }: { sectors: string[]; defaultSect
                 className="border-input bg-background rounded-lg border px-3 py-3 text-base"
             />
             {form.errors.sector && <p className="text-alarm text-sm">{form.errors.sector}</p>}
-            <Button size="lg" className="h-12 text-base" disabled={form.processing || !form.data.sector}>Enviar aviso a la guardia</Button>
+            <Button size="lg" className="h-12 text-base" disabled={form.processing || !form.data.sector}>
+                Enviar aviso a la guardia
+            </Button>
         </form>
     );
 }
@@ -120,23 +137,39 @@ function AwayMode({ awayUntil, hasLot }: { awayUntil: string | null; hasLot: boo
     const form = useForm({ away_until: awayUntil ?? '' });
 
     if (!hasLot) {
-        return <p className="text-muted-foreground text-sm">Pedile a la administración que cargue tu lote para usar el modo vacaciones.</p>;
+        return <p className="text-muted-foreground text-sm">Pedile a la administración que cargue tu unidad o lote para usar el modo vacaciones.</p>;
     }
 
     if (awayUntil) {
         return (
             <div className="flex flex-col gap-3 text-sm">
                 <p>
-                    <span className="font-medium">Activado hasta el {new Date(awayUntil + 'T12:00').toLocaleDateString('es-AR')}.</span> Cualquier persona que la IA vea en tu lote genera una alerta a la guardia.
+                    <span className="font-medium">Activado hasta el {new Date(awayUntil + 'T12:00').toLocaleDateString('es-AR')}.</span> Cualquier
+                    persona que la IA vea en tu lote genera una alerta a la guardia.
                 </p>
-                <Button variant="outline" onClick={() => router.put('/vecinos/away', { away_until: null }, { preserveScroll: true })}>Ya volví, desactivar</Button>
+                <Button variant="outline" onClick={() => router.put('/vecinos/away', { away_until: null }, { preserveScroll: true })}>
+                    Ya volví, desactivar
+                </Button>
             </div>
         );
     }
 
     return (
-        <form onSubmit={(e) => { e.preventDefault(); form.put('/vecinos/away', { preserveScroll: true }); }} className="flex flex-col gap-2 sm:flex-row">
-            <input type="date" value={form.data.away_until} min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)} onChange={(e) => form.setData('away_until', e.target.value)} className="border-input bg-background flex-1 rounded-lg border px-3 py-3 text-base" required />
+        <form
+            onSubmit={(e) => {
+                e.preventDefault();
+                form.put('/vecinos/away', { preserveScroll: true });
+            }}
+            className="flex flex-col gap-2 sm:flex-row"
+        >
+            <input
+                type="date"
+                value={form.data.away_until}
+                min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
+                onChange={(e) => form.setData('away_until', e.target.value)}
+                className="border-input bg-background flex-1 rounded-lg border px-3 py-3 text-base"
+                required
+            />
             <Button variant="secondary" disabled={form.processing || !form.data.away_until}>
                 Activar hasta esa fecha
             </Button>
@@ -156,7 +189,8 @@ export default function ResidentHome({ resident, sectors, notices, metrics, vapi
                 <div className="min-w-0 flex-1">
                     <div className="font-display truncate text-lg font-semibold">{resident.site}</div>
                     <div className="text-muted-foreground truncate text-sm">
-                        {resident.name}{resident.lot && `, lote ${resident.lot}`}
+                        {resident.name}
+                        {resident.lot && `, ${unitNoun(resident.site_kind)} ${resident.lot}`}
                     </div>
                 </div>
                 <Link href="/logout" method="post" as="button" className="text-muted-foreground" aria-label="Salir">
@@ -169,18 +203,26 @@ export default function ResidentHome({ resident, sectors, notices, metrics, vapi
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg"><Eye className="size-5" /> Vi algo raro</CardTitle>
+                        <CardTitle className="flex items-center gap-3 text-lg">
+                            <IconCircle icon={Eye} /> Vi algo raro
+                        </CardTitle>
                         <CardDescription>Avisás a la guardia y la IA revisa al instante las cámaras de ese sector.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {sectors.length ? <ReportForm sectors={sectors} defaultSector={resident.sector} /> : <p className="text-muted-foreground text-sm">Todavía no hay sectores configurados.</p>}
+                        {sectors.length ? (
+                            <ReportForm sectors={sectors} defaultSector={resident.sector} />
+                        ) : (
+                            <p className="text-muted-foreground text-sm">Todavía no hay sectores configurados.</p>
+                        )}
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg"><Plane className="size-5" /> Modo vacaciones</CardTitle>
-                        <CardDescription>Mientras no estás, tu lote queda vigilado las 24 h.</CardDescription>
+                        <CardTitle className="flex items-center gap-3 text-lg">
+                            <IconCircle icon={Plane} /> Modo vacaciones
+                        </CardTitle>
+                        <CardDescription>Mientras no estás, tu casa queda vigilada las 24 h.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <AwayMode awayUntil={resident.away_until} hasLot={!!resident.lot} />
@@ -189,7 +231,9 @@ export default function ResidentHome({ resident, sectors, notices, metrics, vapi
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">Avisos de tu sector</CardTitle>
+                        <CardTitle className="flex items-center gap-3 text-lg">
+                            <IconCircle icon={Bell} /> Avisos de tu sector
+                        </CardTitle>
                         <CardDescription>Últimos 7 días</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3">
@@ -200,7 +244,9 @@ export default function ResidentHome({ resident, sectors, notices, metrics, vapi
                                 <span className={`mt-1.5 size-2.5 shrink-0 rounded-full ${notice.status === 'resolved' ? 'bg-ok' : 'bg-pending'}`} />
                                 <div className="flex-1">
                                     <div className="font-medium">{noticeText(notice)}</div>
-                                    <div className="text-muted-foreground">{noticeStatus(notice)}, {timeAgo(notice.detected_at)}</div>
+                                    <div className="text-muted-foreground">
+                                        {noticeStatus(notice)}, {timeAgo(notice.detected_at)}
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -209,14 +255,26 @@ export default function ResidentHome({ resident, sectors, notices, metrics, vapi
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">Así cuidamos el barrio</CardTitle>
+                        <CardTitle className="flex items-center gap-3 text-lg">
+                            <IconCircle icon={ShieldCheck} /> Así cuidamos {theSite(resident.site_kind)}
+                        </CardTitle>
                         <CardDescription>Últimos 30 días</CardDescription>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                        <div><div className="font-display text-4xl font-semibold tabular-nums">{metrics.detections}</div>movimientos analizados por la IA</div>
-                        <div><div className="font-display text-4xl font-semibold tabular-nums">{metrics.incidents}</div>alertas a la guardia</div>
-                        <div><div className="font-display text-4xl font-semibold tabular-nums">{metrics.confirmed}</div>intrusiones frenadas</div>
-                        <div><div className="font-display text-4xl font-semibold tabular-nums">{formatDuration(metrics.avg_ack_seconds)}</div>respuesta promedio</div>
+                        <div>
+                            <div className="font-display text-4xl font-semibold tabular-nums">{metrics.detections}</div>movimientos analizados por la
+                            IA
+                        </div>
+                        <div>
+                            <div className="font-display text-4xl font-semibold tabular-nums">{metrics.incidents}</div>alertas a la guardia
+                        </div>
+                        <div>
+                            <div className="font-display text-4xl font-semibold tabular-nums">{metrics.confirmed}</div>intrusiones frenadas
+                        </div>
+                        <div>
+                            <div className="font-display text-4xl font-semibold tabular-nums">{formatDuration(metrics.avg_ack_seconds)}</div>respuesta
+                            promedio
+                        </div>
                     </CardContent>
                 </Card>
 

@@ -33,6 +33,7 @@ class SiteController extends Controller
             ->map(fn (Site $site): array => [
                 'id' => $site->id,
                 'name' => $site->name,
+                'kind' => $site->kind->value,
                 'open_incidents' => $site->open_incidents_count,
                 'cameras_total' => $site->cameras->count(),
                 'cameras_online' => $site->cameras->where('is_online', true)->count(),
@@ -61,6 +62,7 @@ class SiteController extends Controller
             'site' => [
                 'id' => $site->id,
                 'name' => $site->name,
+                'kind' => $site->kind->value,
                 'is_simulated' => $site->is_simulated,
                 'address' => $site->address,
                 'perimeter' => $site->perimeter ?? [],

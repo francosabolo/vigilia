@@ -23,7 +23,7 @@ const mainNavItems: NavItem[] = [
         icon: Siren,
     },
     {
-        title: 'Barrios',
+        title: 'Edificios y countries',
         url: '/sites',
         icon: Building2,
     },

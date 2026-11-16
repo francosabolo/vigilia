@@ -24,6 +24,7 @@ export interface NavItem {
 export interface SiteOption {
     id: number;
     name: string;
+    kind?: 'building' | 'country';
     is_simulated?: boolean;
 }
 

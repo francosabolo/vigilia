@@ -288,7 +288,7 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                                 <DialogHeader>
                                     <DialogTitle>¿Guardar el nuevo perímetro?</DialogTitle>
                                     <DialogDescription>
-                                        El perímetro se usa para medir qué parte del borde del barrio ven las cámaras. No cambia cómo se detectan las
+                                        El perímetro se usa para medir qué parte del borde ven las cámaras. No cambia cómo se detectan las
                                         intrusiones.
                                     </DialogDescription>
                                 </DialogHeader>
@@ -354,8 +354,8 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                             <li className="flex gap-3">
                                 <span className="font-display bg-surface-2 flex size-6 shrink-0 items-center justify-center rounded-full">1</span>
                                 <span>
-                                    <span className="font-medium">Marcá las esquinas</span> del barrio con un click, en cualquier orden. La figura se
-                                    cierra sola.
+                                    <span className="font-medium">Marcá las esquinas</span> del edificio o country con un click, en cualquier orden.
+                                    La figura se cierra sola.
                                 </span>
                             </li>
                             <li className="flex gap-3">
@@ -476,7 +476,7 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                                 </p>
                             </>
                         ) : (
-                            <p className="text-muted-foreground text-sm">Todavía no está dibujado el perímetro del barrio.</p>
+                            <p className="text-muted-foreground text-sm">Todavía no está dibujado el perímetro del lugio.</p>
                         )}
                         <p className="text-muted-foreground text-sm">Tocá una cámara en el mapa para verla.</p>
                     </section>
@@ -622,7 +622,7 @@ function CoveragePlan({
                         onClick={() => onFocus(null)}
                         className="text-muted-foreground hover:text-foreground self-start text-sm underline-offset-4 hover:underline"
                     >
-                        Ver todo el barrio
+                        Ver todo
                     </button>
                 )}
                 <p className="text-muted-foreground text-xs">

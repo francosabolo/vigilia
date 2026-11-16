@@ -34,6 +34,7 @@ export interface IncidentDetail extends IncidentSummary {
     acknowledged_by: string | null;
     resolved_at: string | null;
     resolution: 'confirmed' | 'false_alarm' | null;
+    decisions: ActivityItem[];
     tamper: {
         camera_id: number;
         before_url: string | null;
@@ -64,6 +65,46 @@ export interface EdgeStatus {
     version: string | null;
     last_seen_at: string | null;
     online: boolean;
+}
+
+export interface TraceStep {
+    step: 'detector' | 'zone' | 'schedule' | 'ai' | 'decision';
+    agent: string;
+    result: 'ok' | 'stop' | 'doubt' | 'alert';
+    detail: string;
+    at: string;
+}
+
+export interface ActivityItem {
+    id: number;
+    site: string;
+    camera: string;
+    label: string;
+    outcome: 'analyzing' | 'ignored' | 'dismissed' | 'alert';
+    headline: string;
+    agent: string;
+    confidence: number | null;
+    incident_id: number | null;
+    at: string;
+    snapshot_url: string | null;
+    trace: TraceStep[];
+}
+
+export type SiteKind = 'building' | 'country';
+
+/** Seguria works with buildings (consorcios) and countries: the interface uses each one's own words. */
+export function siteNoun(kind: SiteKind | null | undefined): string {
+    return kind === 'country' ? 'country' : 'edificio';
+}
+
+/** "el edificio" / "el country" */
+export function theSite(kind: SiteKind | null | undefined): string {
+    return `el ${siteNoun(kind)}`;
+}
+
+/** What a resident's home is called: unidad (4B) in a building, lote (42) in a country. */
+export function unitNoun(kind: SiteKind | null | undefined): string {
+    return kind === 'country' ? 'lote' : 'unidad';
 }
 
 export const objectLabels: Record<string, string> = {

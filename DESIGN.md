@@ -27,14 +27,27 @@ La lente de cámara con un barrido de vigilancia (`platform/resources/js/compone
 | Pendiente / esperando | `#F5A524` | `#B7791F` |
 | En orden / cerrado | `#34C77B` | `#1F8A5B` |
 
+### Forma (referencia Verisure)
+- Los botones son píldoras (`rounded-full`). Las tarjetas tienen esquinas grandes (`rounded-2xl`), borde fino y sin sombra — porque transmiten un servicio cercano, no una herramienta técnica. (origen: confirmado por Franco, 16/11/2026)
+- Las secciones clave llevan su título con un **ícono de línea dentro de un círculo** (`SectionTitle` / `IconCircle` en `components/icon-circle.tsx`), en grafito. Solo es rojo si la sección es una alarma — porque el rojo se reserva para la marca y las alarmas. (origen: confirmado por Franco, 16/11/2026)
+- De Verisure **no** se toma el uso intensivo del rojo, para no romper la regla de señal. (origen: decisión de Franco, 16/11/2026)
+
 ### Tipografía
 - **Barlow** para la interfaz y **Barlow Condensed** para el wordmark, los títulos, los números grandes y los rótulos de cámara — porque viene de la señalética vial (orientación, lectura rápida a distancia). La condensada entra en los mosaicos de cámaras. (origen: confirmado por Franco, 16/11/2026)
 - Sin MAYÚSCULAS en las etiquetas y sin separadores "·" en los textos — porque son recursos genéricos y cuestan más de leer. (origen: confirmado por Franco, 16/11/2026)
 
+## Clientes y vocabulario
+- Seguria le vende a **consorcios**, no al cliente final. Hay dos tipos: **edificios** y **countries**. Cada lugar vigilado tiene su tipo (`kind`) y la interfaz usa sus propias palabras — porque un administrador de edificio no habla de "barrios" ni de "lotes". (origen: Franco, 16/11/2026)
+- **Edificio:** "el edificio"; el hogar de un vecino es una **unidad** (4B). Lo que se vigila son accesos y puntos sensibles: hall, cochera, puerta de servicio y terraza.
+- **Country:** "el country"; el hogar es un **lote** (42). Lo que se vigila es sobre todo el perímetro (alambrado, muro).
+- Cuando se habla de los dos a la vez: "Edificios y countries". Nunca "barrio" en la interfaz.
+- Para los textos se usan `siteNoun`, `theSite` y `unitNoun` de `lib/seguria.ts`.
+
 ## Usuarios y contexto de uso
-- **Operador de la central**: monitorea varios barrios en turnos largos, mayormente de noche, en escritorio, con varias pantallas.
-- **Guardia del barrio**: recibe alertas en el celular (WhatsApp o push) y responde caminando. Una mano, poca atención disponible.
-- **Administración del barrio**: configura zonas, horarios y vecinos. Escritorio, uso ocasional.
+- **Operador de la central**: monitorea varios edificios y countries en turnos largos, mayormente de noche, en escritorio, con varias pantallas.
+- **Guardia del country**: recibe alertas en el celular (WhatsApp o push) y responde caminando. Una mano, poca atención disponible.
+- **Administración del consorcio**: configura zonas, horarios y vecinos. Escritorio, de día, uso ocasional. Es quien contrata.
+- **Encargado o portero (en edificios)**: recibe las alertas como la guardia y conoce a los vecinos.
 - **Vecino**: celular, uso esporádico, a veces en un momento de miedo (pánico). No es técnico.
 
 ## Design system
@@ -43,13 +56,12 @@ La lente de cámara con un barrido de vigilancia (`platform/resources/js/compone
 - Lienzo aprobado: todavía no hay.
 
 ## Tipografía, color y espaciado
-- La consola es oscura por defecto, en grafito — porque se usa de noche y las imágenes de las cámaras tienen que resaltar. (origen: confirmado por Franco, 16/11/2026)
-- La consola tiene un botón en el header para pasar a modo claro (blanco, grafito y rojo, con las mismas reglas de señal), y la elección se recuerda por dispositivo — porque de día, en una oficina con luz, la administración lee mejor en claro. (origen: pedido de Franco, 16/11/2026)
+- La consola es **clara por defecto**: blanco, grafito y rojo, con mucho aire. El modo oscuro se activa con el botón del header y se recuerda por dispositivo; es el indicado para centrales de monitoreo de noche — porque el cliente es el consorcio, y quien usa la consola es sobre todo la administración y el encargado, de día. (origen: decisión de Franco tomando a Verisure como referencia, 16/11/2026. Reemplaza la regla anterior de oscuro por defecto)
 - La app de vecinos es clara — porque se usa de día, desde el celular, y tiene que transmitir calma. (origen: confirmado por Franco, 16/11/2026)
 
 ## Layout y navegación
-- El barrio en pantalla se ve siempre en el header: la central lo cambia desde el selector y la guardia lo ve fijo — porque operar en el barrio equivocado es un error grave. (origen: pedido de Franco, 16/11/2026)
-- Las cámaras de un barrio tienen que poder verse todas a la vez. (origen: pedido de Franco, 16/11/2026)
+- El edificio o country en pantalla se ve siempre en el header: la central lo cambia desde el selector y la guardia lo ve fijo — porque operar en el lugar equivocado es un error grave. (origen: pedido de Franco, 16/11/2026)
+- Las cámaras de un edificio o country tienen que poder verse todas a la vez. (origen: pedido de Franco, 16/11/2026)
 - Una sola acción principal por pantalla (botón blanco en la consola, grafito en vecinos). *(principio base de Tónica)*
 
 ### Jerarquía de acciones
@@ -58,7 +70,7 @@ Hay cuatro niveles y en pantalla nunca conviven dos del mismo nivel alto:
 | Nivel | Cómo se ve | Cuándo |
 |---|---|---|
 | Alarma | Botón rojo relleno ("Atender incidente") | Solo si hay un incidente escalado. Es la única acción que puede estar por encima de la principal. |
-| Principal | Botón relleno: blanco en modo oscuro, grafito en modo claro y en vecinos | Uno por pantalla: la acción del contenido activo ("Invitar vecino", "Guardar ajustes", "Recibido, voy en camino"). |
+| Principal | Píldora rellena: grafito en modo claro y en vecinos, blanco en modo oscuro | Uno por pantalla: la acción del contenido activo ("Invitar vecino", "Guardar ajustes", "Recibido, voy en camino"). |
 | Secundaria | Botón gris (`secondary`) o con borde (`outline`) | Acciones alternativas del mismo contenido. |
 | Navegación | Link de texto con ícono, sin relleno | Ir a otra pantalla ("Cámaras en vivo", "Incidentes en curso"). |
 
@@ -68,11 +80,11 @@ Hay cuatro niveles y en pantalla nunca conviven dos del mismo nivel alto:
 - Las acciones destructivas dentro de una fila van atenuadas y se ponen rojas solo al pasar el mouse, siempre con confirmación — porque no deberían pesar más que el contenido de la fila. Se resuelven con `ItemAction` de tipo `delete` (ver Acciones sobre elementos). (origen: corrección de Franco, 16/11/2026)
 
 ## Acciones sobre elementos (componente `ItemAction`)
-Todo elemento que se ve en pantalla (fila, tarjeta, cámara, zona, vecino, barrio) muestra sus acciones posibles de forma explícita, con ícono y verbo, a la derecha del elemento. No alcanza con que la fila sea clickeable — porque si no se ve qué se puede hacer, la gente no lo descubre. (origen: pedido de Franco, 16/11/2026)
+Todo elemento que se ve en pantalla (fila, tarjeta, cámara, zona, vecino, edificio o country) muestra sus acciones posibles de forma explícita, con ícono y verbo, a la derecha del elemento. No alcanza con que la fila sea clickeable — porque si no se ve qué se puede hacer, la gente no lo descubre. (origen: pedido de Franco, 16/11/2026)
 
 | Acción | Verbo | Ícono | Cuándo |
 |---|---|---|---|
-| `view` | Ver (o "Ver en vivo", "Ver barrio") | ojo | Abre el elemento o su detalle |
+| `view` | Ver (o "Ver en vivo", "Ver edificio") | ojo | Abre el elemento o su detalle |
 | `edit` | Editar (o "Editar zonas", "Mover o girar") | lápiz | Cambia el elemento |
 | `delete` | Borrar / Quitar | tacho | Siempre con diálogo de confirmación que dice qué se pierde. Gris; rojo solo al pasar el mouse |
 | `expand` | Ampliar | flechas | Vista más grande en la misma pantalla |

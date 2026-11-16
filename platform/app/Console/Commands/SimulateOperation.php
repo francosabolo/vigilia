@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\IncidentStatus;
 use App\Enums\UserRole;
+use App\Events\DetectionActivity;
 use App\Events\DetectionEventReceived;
 use App\Events\IncidentChanged;
 use App\Events\IncidentOpened;
@@ -73,7 +74,7 @@ class SimulateOperation extends Command
 
     private function history(OperationSimulator $simulator, $sites, SimulatedVerifier $verifier): int
     {
-        Event::fake([IncidentOpened::class, IncidentChanged::class, DetectionEventReceived::class]);
+        Event::fake([IncidentOpened::class, IncidentChanged::class, DetectionEventReceived::class, DetectionActivity::class]);
         $days = (int) $this->option('days');
         $this->info("Simulating {$days} days for {$sites->count()} sites ({$sites->sum(fn ($site) => $site->cameras()->count())} cameras)…");
 

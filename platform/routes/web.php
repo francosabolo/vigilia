@@ -20,6 +20,7 @@ Route::middleware('signed')->group(function () {
         ->whereIn('kind', ['snapshot', 'clip', 'before'])
         ->name('incidents.media');
     Route::get('media/live-frames/{snapshotRequest}', [IncidentMediaController::class, 'liveFrame'])->name('snapshots.media');
+    Route::get('media/detections/{detectionEvent}', [IncidentMediaController::class, 'detection'])->name('detections.media');
 });
 
 Route::middleware('auth')->group(function () {

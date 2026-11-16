@@ -1,4 +1,11 @@
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
@@ -12,7 +19,7 @@ export function SiteSwitcher() {
 
     if (!siteContext) return null;
 
-    const label = siteContext.current?.name ?? 'Todos los barrios';
+    const label = siteContext.current?.name ?? 'Todos los edificios y countries';
     const Icon = siteContext.current ? Building2 : Layers;
 
     if (!siteContext.canSwitch) {
@@ -34,16 +41,23 @@ export function SiteSwitcher() {
                 <ChevronsUpDown className="text-muted-foreground size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>Barrio en pantalla</DropdownMenuLabel>
+                <DropdownMenuLabel>En pantalla</DropdownMenuLabel>
                 <DropdownMenuItem onSelect={() => select(null)}>
-                    <Layers className="mr-2 size-4" /> Todos los barrios
+                    <Layers className="mr-2 size-4" /> Todos los edificios y countries
                     {!siteContext.current && <Check className="ml-auto size-4" />}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {siteContext.sites.map((site) => (
-                    <DropdownMenuItem key={site.id} onSelect={() => select(site.id)} className={cn(siteContext.current?.id === site.id && 'font-semibold')}>
+                    <DropdownMenuItem
+                        key={site.id}
+                        onSelect={() => select(site.id)}
+                        className={cn(siteContext.current?.id === site.id && 'font-semibold')}
+                    >
                         <Building2 className="mr-2 size-4" /> {site.name}
-                        {site.is_simulated && <span className="text-muted-foreground ml-1 text-xs">simulado</span>}
+                        <span className="text-muted-foreground ml-1 text-xs">
+                            {site.kind === 'country' ? 'country' : 'edificio'}
+                            {site.is_simulated ? ', simulado' : ''}
+                        </span>
                         {siteContext.current?.id === site.id && <Check className="ml-auto size-4" />}
                     </DropdownMenuItem>
                 ))}

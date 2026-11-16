@@ -5,11 +5,12 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { Cctv, Cpu } from 'lucide-react';
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Barrios', href: '/sites' }];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Edificios y countries', href: '/sites' }];
 
 interface SiteRow {
     id: number;
     name: string;
+    kind: 'building' | 'country';
     open_incidents: number;
     cameras_total: number;
     cameras_online: number;
@@ -19,9 +20,9 @@ interface SiteRow {
 export default function SitesIndex({ sites }: { sites: SiteRow[] }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Barrios" />
+            <Head title="Edificios y countries" />
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-6">
-                <h1 className="font-display text-3xl font-semibold">Barrios</h1>
+                <h1 className="font-display text-3xl font-semibold">Edificios y countries</h1>
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {sites.map((site) => (
                         <Link
@@ -53,11 +54,11 @@ export default function SitesIndex({ sites }: { sites: SiteRow[] }) {
                                 </div>
                             ))}
                             <ItemActionHint kind="view" className="-ml-2.5 self-start">
-                                Ver barrio
+                                Ver {site.kind === 'country' ? 'country' : 'edificio'}
                             </ItemActionHint>
                         </Link>
                     ))}
-                    {sites.length === 0 && <p className="text-muted-foreground">No tenés barrios asignados.</p>}
+                    {sites.length === 0 && <p className="text-muted-foreground">No tenés edificios ni countries asignados.</p>}
                 </div>
             </div>
         </AppLayout>

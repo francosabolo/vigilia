@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { BellRing, BellOff } from 'lucide-react';
+import { BellOff, BellRing } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
@@ -23,7 +23,9 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string | null }
 
     useEffect(() => {
         if (!supported) return;
-        navigator.serviceWorker.ready.then((registration) => registration.pushManager.getSubscription()).then((subscription) => setSubscribed(!!subscription));
+        navigator.serviceWorker.ready
+            .then((registration) => registration.pushManager.getSubscription())
+            .then((subscription) => setSubscribed(!!subscription));
     }, [supported]);
 
     if (!supported) return null;

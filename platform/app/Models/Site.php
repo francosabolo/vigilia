@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SiteKind;
 use Database\Factories\SiteFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,11 +14,17 @@ class Site extends Model
     /** @use HasFactory<SiteFactory> */
     use HasFactory;
 
-    protected $fillable = ['organization_id', 'name', 'address', 'perimeter', 'lat', 'lng', 'is_simulated', 'timezone', 'guard_whatsapp', 'ack_timeout_seconds'];
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = ['kind' => 'building'];
+
+    protected $fillable = ['organization_id', 'name', 'kind', 'address', 'perimeter', 'lat', 'lng', 'is_simulated', 'timezone', 'guard_whatsapp', 'ack_timeout_seconds'];
 
     protected function casts(): array
     {
         return [
+            'kind' => SiteKind::class,
             'perimeter' => 'array',
             'lat' => 'float',
             'lng' => 'float',
