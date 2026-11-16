@@ -29,9 +29,9 @@ php artisan seguria:fake-edge --cover=2     # simula que taparon la cámara 2
 php artisan seguria:simulate-operation --sites=8 --days=7   # 8 barrios simulados, 7 días de operación + reporte
 php artisan seguria:simulate-operation --live --speed=30    # operación simulada en vivo (mirá la consola)
 php artisan seguria:simulate-operation --reset --sites=0 --days=0   # borra los barrios simulados
-php artisan seguria:eval                    # mide la IA con el set de storage/app/eval (positivos/ y negativos/)
+php artisan seguria:eval --batch            # mide la IA con el set de storage/app/eval (Batch API: 50% más barato)
 php artisan seguria:eval-degrade            # crea 4 niveles más difíciles en storage/app/eval-hard
-php artisan seguria:eval storage/app/eval-hard/3_oscura_con_ruido   # mide un nivel
+php artisan seguria:eval-compare            # compara todas las corridas guardadas
 php artisan seguria:simulate --image=foto_noche.jpg   # con ANTHROPIC_API_KEY prueba la IA real
 php artisan test
 ```
@@ -47,6 +47,16 @@ Edge nuevo: `php artisan seguria:edge-create {site_id} edge-norte` imprime el `S
 | `site_admin` | su barrio | atender y configurar zonas, horarios y WhatsApp de la guardia |
 | `guard` | su barrio | atender incidentes |
 | `resident` | solo la app de vecinos (`/vecinos`), sin cámaras ni imágenes | botón de pánico, "Vi algo raro", modo vacaciones y avisos de su sector |
+
+### Evaluar la IA sin pagar dos veces
+- **Set:** `platform/storage/app/eval/{positivos,negativos}`. No se versiona en git porque son imágenes. Las de hoy salieron de Magnific (proyecto "Seguria - Set de evaluación IA"); `seguria:eval-degrade` genera los niveles difíciles.
+- **Caché de veredictos** (`storage/app/eval-cache`): se indexa por imagen, modelo y versión del prompt. Repetir una evaluación no se paga; cambiar el prompt invalida solo lo afectado; las imágenes nuevas son lo único que se cobra.
+- **`--batch`:** manda lo que no está en caché a la Batch API, que cuesta la mitad y tarda minutos en lugar de segundos.
+- **Con la consola de Claude, sin API:**
+  1. `seguria:eval-blind <set>` arma una copia anónima y mezclada, con instrucciones en `storage/app/eval-blind/<set>/INSTRUCCIONES.md`; la clave queda aparte, en `storage/app/eval-keys`.
+  2. Le pasás esas instrucciones a la consola, o a un subagente.
+  3. `seguria:eval-import <set>` puntúa y guarda la corrida. Las imágenes que ya juzgó el mismo juez con el mismo prompt se reutilizan.
+- **Corridas** (`storage/app/eval-runs`): todas en el mismo formato, comparables con `seguria:eval-compare`.
 
 ### Zonas
 Las zonas se dibujan en la consola, sobre una imagen en vivo de cada cámara (**Barrios → cámara → Dibujar zonas**). La consola es la fuente de verdad: el bridge baja las zonas por `/api/edge/commands`, las escribe en `config.yml` (guarda un `.bak`) y reinicia Frigate. Las cámaras que no tienen zonas dibujadas no se tocan.

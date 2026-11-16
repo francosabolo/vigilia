@@ -14,6 +14,21 @@ final class VerificationResult
     ) {}
 
     /**
+     * @param  array{is_threat: bool, confidence: ?float, description: string, object_count?: int, suspected_guard?: bool, model?: ?string}  $data
+     */
+    public static function fromArray(array $data): self
+    {
+        return new self(
+            isThreat: (bool) $data['is_threat'],
+            confidence: $data['confidence'] ?? null,
+            description: $data['description'],
+            objectCount: $data['object_count'] ?? 1,
+            suspectedGuard: $data['suspected_guard'] ?? false,
+            model: $data['model'] ?? null,
+        );
+    }
+
+    /**
      * @return array{is_threat: bool, confidence: ?float, description: string, object_count: int, suspected_guard: bool, model: ?string}
      */
     public function toArray(): array

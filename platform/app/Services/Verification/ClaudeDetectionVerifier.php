@@ -4,6 +4,8 @@ namespace App\Services\Verification;
 
 use Anthropic\Client;
 use Anthropic\Core\Exceptions\APIException;
+use Anthropic\Lib\Helpers\StructuredOutput;
+use Anthropic\Messages\Message;
 use App\Models\Camera;
 use App\Models\DetectionEvent;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +20,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class ClaudeDetectionVerifier implements DetectionVerifier
 {
-    private const SYSTEM_PROMPT = <<<'PROMPT'
+    public const SYSTEM_PROMPT = <<<'PROMPT'
         Sos el analista de video de una central de monitoreo de seguridad para barrios cerrados en Argentina.
         Recibís una captura de una cámara perimetral: o bien un detector automático vio una persona o vehículo dentro
         de una zona vigilada en horario armado (nadie debería estar ahí), o bien un vecino reportó algo sospechoso y te
@@ -42,7 +44,89 @@ class ClaudeDetectionVerifier implements DetectionVerifier
      */
     public array $usage = [];
 
+    /**
+     * Optional verdict cache (evaluations): the same image, model, prompt version and context is never paid twice.
+     */
+    public ?VerdictCache $cache = null;
+
     public function __construct(private readonly Client $client) {}
+
+    /**
+     * Version of everything that shapes the answer: prompt, output schema and effort. Changing any of them
+     * invalidates cached verdicts automatically.
+     */
+    public static function promptFingerprint(): string
+    {
+        return substr(sha1(self::SYSTEM_PROMPT.json_encode(StructuredOutput::toJsonSchema(DetectionVerdict::class)).'|effort=low'), 0, 12);
+    }
+
+    /**
+     * The exact image and context a snapshot verification sends (shared by live calls and batch evaluations).
+     *
+     * @return array{context: string, image: array{data: string, media_type: string}}|null
+     */
+    public function prepareSnapshot(string $path, Camera $camera, string $context): ?array
+    {
+        $image = $this->loadImage($path);
+
+        return $image === null ? null : ['context' => $this->cameraContext($camera, $context), 'image' => $image];
+    }
+
+    /**
+     * @param  array{data: string, media_type: string}  $image
+     * @return array<string, mixed>
+     */
+    public function requestParams(string $model, string $context, array $image): array
+    {
+        return [
+            'model' => $model,
+            'maxTokens' => 2048,
+            'system' => self::SYSTEM_PROMPT,
+            'messages' => [[
+                'role' => 'user',
+                'content' => [
+                    ['type' => 'image', 'source' => ['type' => 'base64', 'mediaType' => $image['media_type'], 'data' => $image['data']]],
+                    ['type' => 'text', 'text' => $context],
+                ],
+            ]],
+            'outputConfig' => ['format' => DetectionVerdict::class, 'effort' => 'low'],
+        ];
+    }
+
+    /**
+     * Turns an API message (live or from a batch) into a verdict; null when the model gave none.
+     */
+    public function verdictFromMessage(Message $message, string $model): ?VerificationResult
+    {
+        if ($message->stopReason === 'refusal') {
+            return null;
+        }
+
+        $verdict = $message->parsedOutput();
+        if (! $verdict instanceof DetectionVerdict) {
+            $text = collect($message->content)->first(fn ($block) => $block->type === 'text')?->text;
+            $data = $text ? json_decode($text, true) : null;
+            $verdict = is_array($data) ? DetectionVerdict::fromArray($data) : null;
+        }
+
+        if (! $verdict instanceof DetectionVerdict) {
+            return null;
+        }
+
+        return new VerificationResult(
+            isThreat: $verdict->is_threat && ! $verdict->suspected_guard,
+            confidence: max(0.0, min(1.0, $verdict->confidence)),
+            description: $verdict->description,
+            objectCount: max(1, $verdict->object_count),
+            suspectedGuard: $verdict->suspected_guard,
+            model: $model,
+        );
+    }
+
+    private function cameraContext(Camera $camera, string $context): string
+    {
+        return sprintf('Cámara: %s%s. %s', $camera->name, $camera->sector ? " ({$camera->sector})" : '', $context);
+    }
 
     public function verify(DetectionEvent $event): VerificationResult
     {
@@ -77,7 +161,7 @@ class ClaudeDetectionVerifier implements DetectionVerifier
             return $this->fallback($fallbackSubject, 'Sin imagen para verificar.');
         }
 
-        $context = sprintf('Cámara: %s%s. %s', $camera->name, $camera->sector ? " ({$camera->sector})" : '', $context);
+        $context = $this->cameraContext($camera, $context);
 
         try {
             $result = $this->ask(config('seguria.ai.model'), $context, $image, $fallbackSubject);
@@ -103,39 +187,26 @@ class ClaudeDetectionVerifier implements DetectionVerifier
      */
     private function ask(string $model, string $context, array $image, string $fallbackSubject): VerificationResult
     {
-        $message = $this->client->messages->create(
-            model: $model,
-            maxTokens: 2048,
-            system: self::SYSTEM_PROMPT,
-            messages: [[
-                'role' => 'user',
-                'content' => [
-                    ['type' => 'image', 'source' => ['type' => 'base64', 'mediaType' => $image['media_type'], 'data' => $image['data']]],
-                    ['type' => 'text', 'text' => $context],
-                ],
-            ]],
-            outputConfig: ['format' => DetectionVerdict::class, 'effort' => 'low'],
-        );
-
-        $this->usage[$model] ??= ['calls' => 0, 'input' => 0, 'output' => 0];
-        $this->usage[$model]['calls']++;
-        $this->usage[$model]['input'] += $message->usage->inputTokens + (int) $message->usage->cacheReadInputTokens;
-        $this->usage[$model]['output'] += $message->usage->outputTokens;
-
-        $verdict = $message->stopReason === 'refusal' ? null : $message->parsedOutput();
-
-        if (! $verdict instanceof DetectionVerdict) {
-            return $this->fallback($fallbackSubject, 'La IA no devolvió un veredicto.', $model);
+        $cacheKey = $this->cache?->key($model, self::promptFingerprint(), $context, $image['data']);
+        if ($cacheKey && ($cached = $this->cache->get($cacheKey))) {
+            return VerificationResult::fromArray($cached['verdict']);
         }
 
-        return new VerificationResult(
-            isThreat: $verdict->is_threat && ! $verdict->suspected_guard,
-            confidence: max(0.0, min(1.0, $verdict->confidence)),
-            description: $verdict->description,
-            objectCount: max(1, $verdict->object_count),
-            suspectedGuard: $verdict->suspected_guard,
-            model: $model,
-        );
+        $params = $this->requestParams($model, $context, $image);
+        $message = $this->client->messages->create(...$params);
+
+        $usage = ['input' => $message->usage->inputTokens + (int) $message->usage->cacheReadInputTokens, 'output' => $message->usage->outputTokens];
+        $this->usage[$model] ??= ['calls' => 0, 'input' => 0, 'output' => 0];
+        $this->usage[$model]['calls']++;
+        $this->usage[$model]['input'] += $usage['input'];
+        $this->usage[$model]['output'] += $usage['output'];
+
+        $result = $this->verdictFromMessage($message, $model) ?? $this->fallback($fallbackSubject, 'La IA no devolvió un veredicto.', $model);
+        if ($cacheKey && $result->model === $model) {
+            $this->cache->put($cacheKey, $result, $usage, batch: false);
+        }
+
+        return $result;
     }
 
     /**
