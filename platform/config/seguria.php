@@ -17,7 +17,8 @@ return [
     'dedup_seconds' => (int) env('SEGURIA_DEDUP_SECONDS', 120),
 
     'ai' => [
-        'enabled' => (bool) env('SEGURIA_AI_ENABLED', env('ANTHROPIC_API_KEY') !== null),
+        // On when there is a non-empty key (an empty ANTHROPIC_API_KEY= must not turn it on), unless forced.
+        'enabled' => (bool) env('SEGURIA_AI_ENABLED', filled(env('ANTHROPIC_API_KEY'))),
         // Fast/cheap first pass, and a stronger model for ambiguous verdicts.
         'model' => env('SEGURIA_AI_MODEL', 'claude-haiku-5-5'),
         'review_model' => env('SEGURIA_AI_REVIEW_MODEL', 'claude-sonnet-5-5'),
