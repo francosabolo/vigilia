@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\IncidentResolution;
+use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
+use App\Events\IncidentChanged;
 use App\Models\Incident;
 use App\Models\IncidentAction;
+use App\Services\Cameras\CameraViewMonitor;
 use App\Services\Incidents\IncidentWorkflow;
 use App\Services\Sites\SiteScope;
 use Illuminate\Http\RedirectResponse;
@@ -51,6 +54,13 @@ class IncidentController extends Controller
                 'ai_confidence' => $incident->ai_confidence,
                 'zone' => $incident->zone?->name,
                 'sector' => $incident->sector ?? $incident->camera?->sector,
+                'tamper' => $incident->source === IncidentSource::Tamper && $incident->camera ? [
+                    'camera_id' => $incident->camera->id,
+                    'before_url' => $incident->mediaUrl('before'),
+                    'shift_deg' => $incident->actions->firstWhere('type', 'tamper')?->meta['shift_deg'] ?? null,
+                    'view_status' => $incident->camera->view_status->value,
+                    'can_fix' => Gate::allows('manage', $incident->site),
+                ] : null,
                 'reporter' => $incident->reporter ? ['name' => $incident->reporter->name, 'lot' => $incident->reporter->lot, 'phone' => $incident->reporter->phone] : null,
                 'live_frames' => $incident->snapshotRequests->whereNotNull('snapshot_path')->values()->map(fn ($snapshot): array => [
                     'camera' => $snapshot->camera->name,
@@ -93,6 +103,36 @@ class IncidentController extends Controller
         ]);
 
         $workflow->resolve($incident, IncidentResolution::from($data['resolution']), $request->user(), 'web', $data['notes'] ?? null);
+
+        return back();
+    }
+
+    /**
+     * After a "camera moved/covered" alert: accept the current view as reference, optionally rotating the
+     * camera on the map by the estimated angle (when it was turned on purpose).
+     */
+    public function fixCameraView(Request $request, Incident $incident, CameraViewMonitor $monitor): RedirectResponse
+    {
+        Gate::authorize('manage', $incident->site);
+        abort_unless($incident->source === IncidentSource::Tamper && $incident->camera, 404);
+
+        $data = $request->validate(['apply_shift' => ['boolean']]);
+        $camera = $incident->camera;
+        $shift = $incident->actions()->where('type', 'tamper')->latest('id')->value('meta')['shift_deg'] ?? null;
+
+        if (($data['apply_shift'] ?? false) && $shift !== null) {
+            $camera->update(['heading' => (($camera->heading + $shift) % 360 + 360) % 360]);
+        }
+
+        $monitor->rebaseline($camera);
+
+        $incident->actions()->create([
+            'type' => ($data['apply_shift'] ?? false) ? 'view_rotated' : 'view_rebaselined',
+            'user_id' => $request->user()->id,
+            'channel' => 'web',
+            'notes' => ($data['apply_shift'] ?? false) && $shift !== null ? "Se giró la cámara {$shift}° en el mapa y se tomó la vista actual como referencia." : 'Se tomó la vista actual como nueva referencia.',
+        ]);
+        IncidentChanged::dispatch($incident, 'view_fixed');
 
         return back();
     }

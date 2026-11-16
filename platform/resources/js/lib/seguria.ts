@@ -3,7 +3,7 @@ export type IncidentStatus = 'new' | 'notified' | 'acknowledged' | 'escalated' |
 
 export interface IncidentSummary {
     id: number;
-    source: 'detection' | 'resident_report' | 'panic';
+    source: 'detection' | 'resident_report' | 'panic' | 'tamper';
     title: string;
     status: IncidentStatus;
     severity: Severity;
@@ -34,6 +34,13 @@ export interface IncidentDetail extends IncidentSummary {
     acknowledged_by: string | null;
     resolved_at: string | null;
     resolution: 'confirmed' | 'false_alarm' | null;
+    tamper: {
+        camera_id: number;
+        before_url: string | null;
+        shift_deg: number | null;
+        view_status: 'ok' | 'moved' | 'covered';
+        can_fix: boolean;
+    } | null;
     reporter: { name: string; lot: string | null; phone: string | null } | null;
     live_frames: { camera: string; url: string }[];
     actions: IncidentAction[];
@@ -124,6 +131,9 @@ export const actionLabel: Record<string, string> = {
     resident_report: 'Reporte de un vecino',
     ai_review_requested: 'IA revisando cámaras del sector',
     ai_review: 'Revisión IA de cámara en vivo',
+    tamper: 'Cámara movida o tapada',
+    view_rebaselined: 'Nueva vista de referencia',
+    view_rotated: 'Cámara girada en el mapa',
 };
 
 /** "1 incidente", "3 incidentes". Never "incidente(s)": it reads like system output. */

@@ -7,6 +7,7 @@ use App\Jobs\ReviewReportedSnapshot;
 use App\Models\Camera;
 use App\Models\EdgeDevice;
 use App\Models\SnapshotRequest;
+use App\Services\Cameras\CameraViewMonitor;
 use App\Services\Cameras\CameraWall;
 use App\Services\Zones\ZoneSync;
 use Illuminate\Http\JsonResponse;
@@ -40,6 +41,10 @@ class CommandController extends Controller
                 ? ['cameras' => $device->cameras()->pluck('frigate_name'), 'interval' => CameraWall::PREVIEW_INTERVAL]
                 : null,
             'zones' => $zones->payloadFor($device),
+            'health_check' => [
+                'interval' => CameraViewMonitor::CHECK_INTERVAL,
+                'cameras' => $device->cameras()->pluck('frigate_name'),
+            ],
         ]);
     }
 
@@ -62,6 +67,25 @@ class CommandController extends Controller
         ReviewReportedSnapshot::dispatch($snapshotRequest);
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Periodic frame used to detect a covered or turned camera.
+     */
+    public function storeHealthFrame(Request $request, CameraViewMonitor $monitor): JsonResponse
+    {
+        /** @var EdgeDevice $device */
+        $device = $request->attributes->get('edgeDevice');
+
+        $data = $request->validate([
+            'camera' => ['required', 'string', 'max:100'],
+            'image' => ['required', 'file', 'mimes:jpg,jpeg', 'max:2048'],
+        ]);
+
+        $camera = Camera::where('edge_device_id', $device->id)->where('frigate_name', $data['camera'])->firstOrFail();
+        $incident = $monitor->check($camera, $request->file('image')->get());
+
+        return response()->json(['ok' => true, 'view_status' => $camera->fresh()->view_status->value, 'incident_id' => $incident?->id]);
     }
 
     public function storePreview(Request $request, CameraWall $wall): JsonResponse

@@ -6,6 +6,7 @@ use App\Jobs\ReviewReportedSnapshot;
 use App\Models\Camera;
 use App\Models\EdgeDevice;
 use App\Models\SnapshotRequest;
+use App\Services\Cameras\CameraViewMonitor;
 use App\Services\Cameras\CameraWall;
 use App\Services\Zones\ZoneSync;
 use Illuminate\Console\Command;
@@ -18,15 +19,25 @@ use Illuminate\Support\Facades\Storage;
  */
 class FakeEdge extends Command
 {
-    protected $signature = 'seguria:fake-edge {--once : Run a single cycle and exit}';
+    protected $signature = 'seguria:fake-edge
+        {--once : Run a single cycle and exit}
+        {--health-every=30 : Seconds between health frames (real edges: 300)}
+        {--move= : Simulate a turned camera, e.g. 3:25 (camera 3 turned 25° right)}
+        {--cover= : Simulate a covered camera by ID}';
 
     protected $description = 'Simulate edge boxes locally (demo frames for the camera wall, live frames, zone sync)';
 
-    public function handle(CameraWall $wall, ZoneSync $zones): int
+    public function handle(CameraWall $wall, ZoneSync $zones, CameraViewMonitor $monitor): int
     {
         $this->info('Fake edge running. Ctrl+C to stop.');
+        $lastHealth = 0;
 
         do {
+            $healthDue = time() - $lastHealth >= (int) $this->option('health-every');
+            if ($healthDue) {
+                $lastHealth = time();
+            }
+
             foreach (EdgeDevice::with('cameras')->get() as $device) {
                 $device->forceFill([
                     'last_seen_at' => now(),
@@ -36,6 +47,14 @@ class FakeEdge extends Command
                 if ($wall->isWatched($device->site_id)) {
                     foreach ($device->cameras as $camera) {
                         $wall->storePreview($camera, $this->frame($camera));
+                    }
+                }
+
+                if ($healthDue) {
+                    foreach ($device->cameras as $camera) {
+                        if ($incident = $monitor->check($camera, file_get_contents($this->frame($camera)->getPathname()))) {
+                            $this->warn("Tamper incident #{$incident->id}: {$incident->title}");
+                        }
                     }
                 }
 
@@ -153,6 +172,20 @@ class FakeEdge extends Command
         }
         for ($r = 0; $r < 140; $r++) {
             imagerectangle($image, $r, $r, $width - 1 - $r, $height - 1 - $r, imagecolorallocatealpha($image, 0, 0, 0, 127 - (int) (14 * (1 - $r / 140) ** 2)));
+        }
+
+        // Simulated sabotage for demos: turned (--move=id:deg) or covered (--cover=id).
+        [$movedId, $movedDeg] = array_pad(explode(':', (string) $this->option('move')), 2, 0);
+        if ((int) $movedId === $camera->id && (int) $movedDeg !== 0) {
+            $shift = (int) round((int) $movedDeg / max(1, $camera->fov) * $width);
+            $turned = imagecreatetruecolor($width, $height);
+            imagefill($turned, 0, 0, $gray(20));
+            imagecopy($turned, $image, -$shift, 0, 0, 0, $width, $height);
+            imagedestroy($image);
+            $image = $turned;
+        }
+        if ((int) $this->option('cover') === $camera->id) {
+            imagefilledrectangle($image, 0, 0, $width, $height, $gray(8));
         }
 
         // OSD like a Hikvision camera.

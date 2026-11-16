@@ -23,7 +23,9 @@ cp .env.example .env && php artisan key:generate && php artisan webpush:vapid &&
 php artisan migrate --seed          # datos demo (contraseña "password")
 composer run dev                    # server + queue + reverb + vite
 php artisan seguria:simulate        # dispara una detección de punta a punta
-php artisan seguria:fake-edge       # demo sin Frigate: cuadros sintéticos para el mosaico y fotos en vivo
+php artisan seguria:fake-edge       # demo sin Frigate: cuadros sintéticos, fotos en vivo y controles de vista
+php artisan seguria:fake-edge --move=1:25   # simula que alguien giró 25° la cámara 1
+php artisan seguria:fake-edge --cover=2     # simula que taparon la cámara 2
 php artisan seguria:simulate --image=foto_noche.jpg   # con ANTHROPIC_API_KEY prueba la IA real
 php artisan test
 ```

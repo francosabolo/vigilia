@@ -12,6 +12,7 @@ Route::prefix('edge')->middleware(['edge', 'throttle:1200,1'])->group(function (
     Route::get('commands', [CommandController::class, 'index'])->name('edge.commands');
     Route::post('snapshots/{snapshotRequest}', [CommandController::class, 'storeSnapshot'])->name('edge.snapshots.store');
     Route::post('previews', [CommandController::class, 'storePreview'])->name('edge.previews.store');
+    Route::post('health-frames', [CommandController::class, 'storeHealthFrame'])->name('edge.health-frames.store');
 });
 
 Route::get('webhooks/whatsapp', [WhatsAppWebhookController::class, 'verify'])->name('webhooks.whatsapp.verify');

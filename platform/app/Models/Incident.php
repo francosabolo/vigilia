@@ -91,7 +91,11 @@ class Incident extends Model
      */
     public function mediaUrl(string $kind): ?string
     {
-        $path = $kind === 'clip' ? $this->clip_path : $this->snapshot_path;
+        $path = match ($kind) {
+            'clip' => $this->clip_path,
+            'before' => $this->actions()->where('type', 'tamper')->exists() ? 'before' : null,
+            default => $this->snapshot_path,
+        };
 
         if (! $path) {
             return null;

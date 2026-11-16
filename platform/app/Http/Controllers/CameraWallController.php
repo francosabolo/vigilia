@@ -56,6 +56,37 @@ class CameraWallController extends Controller
         return Inertia::render('cameras/index', ['sites' => $sites, 'interval' => CameraWall::PREVIEW_INTERVAL]);
     }
 
+    /**
+     * One camera, live and large. "Ver en vivo" on a camera always lands here, never on the whole wall.
+     */
+    public function show(Camera $camera, CameraWall $wall): Response
+    {
+        Gate::authorize('view', $camera->site);
+
+        $wall->markWatched($camera->site_id);
+        $previewAt = $wall->previewAt($camera);
+        $camera->load('site', 'zones');
+
+        $siblings = $camera->site->cameras()->orderBy('sector')->orderBy('name')->get(['id', 'name', 'sector', 'is_online']);
+
+        return Inertia::render('cameras/show', [
+            'camera' => [
+                'id' => $camera->id,
+                'name' => $camera->name,
+                'sector' => $camera->sector,
+                'is_online' => $camera->is_online,
+                'view_status' => $camera->view_status->value,
+                'preview_url' => $previewAt ? route('cameras.preview', ['camera' => $camera, 't' => $previewAt->timestamp]) : null,
+                'preview_at' => $previewAt?->toIso8601String(),
+                'zones' => $camera->zones->map(fn ($zone): array => ['name' => $zone->name, 'kind' => $zone->kind->value]),
+                'site' => ['id' => $camera->site->id, 'name' => $camera->site->name],
+            ],
+            'siblings' => $siblings,
+            'canManage' => Gate::allows('manage', $camera->site),
+            'interval' => CameraWall::PREVIEW_INTERVAL,
+        ]);
+    }
+
     public function preview(Camera $camera, CameraWall $wall): StreamedResponse
     {
         Gate::authorize('view', $camera->site);

@@ -28,6 +28,7 @@ class IncidentMediaController extends Controller
         $path = match ($kind) {
             'snapshot' => $incident->snapshot_path,
             'clip' => $incident->clip_path,
+            'before' => $incident->actions()->where('type', 'tamper')->latest('id')->value('meta')['before_path'] ?? null,
             default => null,
         };
 

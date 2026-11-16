@@ -45,6 +45,8 @@ interface Camera {
     name: string;
     sector: string | null;
     is_online: boolean;
+    view_status: 'ok' | 'moved' | 'covered';
+    view_shift_deg: number | null;
     position: LatLng | null;
     heading: number;
     fov: number;
@@ -305,6 +307,13 @@ function CamerasTab({ site, canManage }: Pick<Props, 'site' | 'canManage'>) {
                             <span className="font-display text-xl font-semibold">{camera.name}</span>
                             {camera.sector && <span className="text-muted-foreground">{camera.sector}</span>}
                         </div>
+                        {camera.view_status !== 'ok' && (
+                            <p className="text-alarm mt-1 text-sm font-medium">
+                                {camera.view_status === 'covered'
+                                    ? 'Parece tapada o encandilada.'
+                                    : `Parece movida${camera.view_shift_deg ? ` (unos ${Math.abs(camera.view_shift_deg)}°)` : ''}. No cuenta como cobertura hasta revisarla.`}
+                            </p>
+                        )}
                         {camera.zones.length === 0 ? (
                             <p className="text-muted-foreground mt-2 text-sm">Sin zonas: se analiza la imagen completa, las 24 h.</p>
                         ) : (
@@ -322,7 +331,7 @@ function CamerasTab({ site, canManage }: Pick<Props, 'site' | 'canManage'>) {
                         )}
                     </div>
                     <ItemActions>
-                        <ItemActionLink kind="view" href={`/cameras?site=${site.id}`}>
+                        <ItemActionLink kind="view" href={`/cameras/${camera.id}`}>
                             Ver en vivo
                         </ItemActionLink>
                         {canManage && (

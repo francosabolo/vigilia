@@ -61,3 +61,16 @@ it('tells the administration which residents use the app and on how many devices
         ->where('residents.1.last_login_at', null)
         ->where('residents.1.active_sessions', 0));
 });
+
+it('opens one camera live, not the whole wall', function () {
+    $camera = Camera::factory()->create(['site_id' => $this->site->id, 'name' => 'Portón']);
+    Camera::factory()->create(['site_id' => $this->site->id]);
+
+    $this->actingAs($this->guard)->get("/cameras/{$camera->id}")->assertInertia(fn (Assert $page) => $page
+        ->component('cameras/show')
+        ->where('camera.name', 'Portón')
+        ->has('siblings', 2));
+
+    $stranger = User::factory()->create(['role' => UserRole::Guard, 'site_id' => Site::factory()->create()->id]);
+    $this->actingAs($stranger)->get("/cameras/{$camera->id}")->assertForbidden();
+});

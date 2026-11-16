@@ -5,7 +5,8 @@
 - If the cloud is unreachable, persists the event to QUEUE_DIR and retries later.
 - Sends a heartbeat with camera status every HEARTBEAT_SECONDS.
 - Polls /api/edge/commands every COMMAND_POLL_SECONDS: live frames requested by the platform
-  (resident reports) and, while someone watches the camera wall, a preview frame per camera.
+  (resident reports), preview frames while someone watches the camera wall, zone updates, and a
+  periodic health frame per camera (to detect covered or turned cameras).
 """
 
 import json
@@ -20,7 +21,7 @@ import paho.mqtt.client as mqtt
 import requests
 from ruamel.yaml import YAML
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 API_URL = os.environ["SEGURIA_API_URL"].rstrip("/")
 TOKEN = os.environ["SEGURIA_TOKEN"]
 MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
@@ -191,6 +192,7 @@ def latest_frame(camera: str) -> bytes | None:
 
 def command_loop() -> None:
     last_preview = 0.0
+    last_health = 0.0
     while True:
         try:
             commands = session.get(f"{API_URL}/api/edge/commands", timeout=10).json()
@@ -231,6 +233,22 @@ def command_loop() -> None:
                         )
                     except requests.RequestException as exc:
                         log.warning("preview upload failed: %s", exc)
+
+        health = commands.get("health_check")
+        if health and time.time() - last_health >= health.get("interval", 300):
+            last_health = time.time()
+            for camera in health.get("cameras", []):
+                frame = latest_frame(camera)
+                if frame:
+                    try:
+                        session.post(
+                            f"{API_URL}/api/edge/health-frames",
+                            data={"camera": camera},
+                            files={"image": ("health.jpg", frame, "image/jpeg")},
+                            timeout=30,
+                        )
+                    except requests.RequestException as exc:
+                        log.warning("health frame upload failed: %s", exc)
 
         time.sleep(COMMAND_POLL_SECONDS)
 

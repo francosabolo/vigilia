@@ -78,6 +78,8 @@ class SiteController extends Controller
                         'name' => $camera->name,
                         'sector' => $camera->sector,
                         'is_online' => $camera->is_online,
+                        'view_status' => $camera->view_status->value,
+                        'view_shift_deg' => $camera->view_shift_deg,
                         'position' => $camera->lat !== null ? [$camera->lat, $camera->lng] : null,
                         'heading' => $camera->heading,
                         'fov' => $camera->fov,

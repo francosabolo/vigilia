@@ -13,6 +13,7 @@ import { CircleMarker, MapContainer, Marker, Polygon, Polyline, TileLayer, Toolt
 
 export interface MapCamera extends CameraPlacement {
     name: string;
+    view_status?: 'ok' | 'moved' | 'covered';
     sector: string | null;
     preview_url: string | null;
 }
@@ -70,7 +71,11 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
     const [placement, setPlacement] = useState<MapCamera | null>(null);
     const [mapCenter, setMapCenter] = useState<LatLng>(center ?? DEFAULT_CENTER);
 
-    const liveCameras = cameras.map((camera) => (placement && camera.id === placement.id ? placement : camera));
+    // A moved or covered camera no longer guarantees what its cone shows: it does not count as coverage.
+    const liveCameras = cameras.map((camera) => {
+        const current = placement && camera.id === placement.id ? placement : camera;
+        return { ...current, is_online: current.is_online && (current.view_status ?? 'ok') === 'ok' };
+    });
     const placed = liveCameras.filter((camera) => camera.position);
     const unplaced = liveCameras.filter((camera) => !camera.position);
     const shownPerimeter = mode === 'perimeter' ? draftPerimeter : perimeter;
@@ -81,7 +86,10 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
     const [modelId, setModelId] = useState(CAMERA_MODELS[0].id);
     const [focus, setFocus] = useState<LatLng[] | null>(null);
     const model = CAMERA_MODELS.find((candidate) => candidate.id === modelId)!;
-    const plan = useMemo(() => (variant === 'coverage' ? planCoverage(perimeter, cameras, model) : null), [variant, perimeter, cameras, model]);
+    const plan = useMemo(
+        () => (variant === 'coverage' ? planCoverage(perimeter, liveCameras, model) : null),
+        [variant, perimeter, liveCameras, model],
+    );
 
     const fitPoints: LatLng[] = focus ?? [...perimeter, ...cameras.flatMap((camera) => (camera.position ? [camera.position] : []))];
 
@@ -159,7 +167,12 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                             key={`cone-${camera.id}`}
                             positions={fovPolygon(camera)}
                             pathOptions={{
-                                color: camera.is_online ? COLORS.cone : COLORS.coneOffline,
+                                color:
+                                    camera.view_status && camera.view_status !== 'ok'
+                                        ? COLORS.draft
+                                        : camera.is_online
+                                          ? COLORS.cone
+                                          : COLORS.coneOffline,
                                 weight: camera.id === selectedId ? 2 : 1,
                                 fillOpacity: camera.id === selectedId ? 0.28 : 0.14,
                                 dashArray: camera.is_online ? undefined : '4 4',
@@ -433,7 +446,7 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                                 </p>
                             </div>
                             <ItemActions className="-ml-2.5 flex-wrap">
-                                <ItemActionLink kind="view" href={`/cameras?site=${siteId}`}>
+                                <ItemActionLink kind="view" href={`/cameras/${selected.id}`}>
                                     Ver en vivo
                                 </ItemActionLink>
                                 {canManage && (

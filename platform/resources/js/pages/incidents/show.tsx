@@ -2,8 +2,8 @@ import { SeverityText, StatusSignal } from '@/components/incident-badges';
 import { Button } from '@/components/ui/button';
 import { useLiveIncidents } from '@/hooks/use-live-incidents';
 import AppLayout from '@/layouts/app-layout';
-import { cn } from '@/lib/utils';
 import { actionLabel, formatDateTime, timeAgo, type IncidentDetail } from '@/lib/seguria';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Bot, Phone } from 'lucide-react';
@@ -16,7 +16,9 @@ interface Props {
 
 function Media({ incident }: { incident: IncidentDetail }) {
     if (incident.clip_url) {
-        return <video src={incident.clip_url} poster={incident.snapshot_url ?? undefined} controls autoPlay muted loop playsInline className="w-full" />;
+        return (
+            <video src={incident.clip_url} poster={incident.snapshot_url ?? undefined} controls autoPlay muted loop playsInline className="w-full" />
+        );
     }
     if (incident.snapshot_url) {
         return <img src={incident.snapshot_url} alt="Captura del incidente" className="w-full" />;
@@ -25,6 +27,47 @@ function Media({ incident }: { incident: IncidentDetail }) {
         <div className="text-muted-foreground flex aspect-video items-center justify-center text-sm">
             {incident.source === 'detection' ? 'El edge no envió imagen de esta detección.' : 'Aviso sin imagen: lo reportó una persona.'}
         </div>
+    );
+}
+
+function TamperComparison({ incident }: { incident: IncidentDetail }) {
+    const tamper = incident.tamper!;
+    const fix = (applyShift: boolean) => router.post(`/incidents/${incident.id}/camera-view`, { apply_shift: applyShift }, { preserveScroll: true });
+
+    return (
+        <section className="flex flex-col gap-3">
+            <div className="grid gap-2 sm:grid-cols-2">
+                {[
+                    ['Antes (vista de referencia)', tamper.before_url],
+                    ['Ahora', incident.snapshot_url],
+                ].map(([label, url]) => (
+                    <figure key={label} className="overflow-hidden rounded-lg border bg-black">
+                        {url ? (
+                            <img src={url} alt={label!} className="w-full" />
+                        ) : (
+                            <div className="text-muted-foreground flex aspect-video items-center justify-center text-sm">Sin imagen</div>
+                        )}
+                        <figcaption className="bg-card px-3 py-1.5 text-sm font-medium">{label}</figcaption>
+                    </figure>
+                ))}
+            </div>
+            {tamper.can_fix && tamper.view_status !== 'ok' && (
+                <div className="bg-card flex flex-col gap-3 rounded-lg border p-4">
+                    <p className="text-sm">Cuando la revisen en el lugar, elegí qué pasó con la cámara:</p>
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="secondary" onClick={() => fix(false)}>
+                            Ya la acomodamos: usar la vista actual
+                        </Button>
+                        {tamper.shift_deg !== null && (
+                            <Button variant="secondary" onClick={() => fix(true)}>
+                                Fue a propósito: girarla {Math.abs(tamper.shift_deg)}° en el mapa
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            )}
+            {tamper.view_status === 'ok' && <p className="text-ok text-sm">La cámara ya tiene una vista de referencia nueva.</p>}
+        </section>
     );
 }
 
@@ -37,7 +80,9 @@ function ResponsePanel({ incident }: { incident: IncidentDetail }) {
             <div className="flex items-start gap-3">
                 <span className="bg-ok mt-1.5 size-2.5 rounded-full" />
                 <div>
-                    <p className="font-semibold">{incident.resolution === 'confirmed' ? 'Cerrado como intrusión confirmada' : 'Cerrado como falsa alarma'}</p>
+                    <p className="font-semibold">
+                        {incident.resolution === 'confirmed' ? 'Cerrado como intrusión confirmada' : 'Cerrado como falsa alarma'}
+                    </p>
                     <p className="text-muted-foreground text-sm">{timeAgo(incident.resolved_at)}</p>
                 </div>
             </div>
@@ -60,7 +105,10 @@ function ResponsePanel({ incident }: { incident: IncidentDetail }) {
                 <div className="bg-surface-2 flex flex-col gap-2 rounded-lg p-3">
                     <p className="text-sm">{confirming === 'confirmed' ? '¿Cerrar como intrusión confirmada?' : '¿Cerrar como falsa alarma?'}</p>
                     <div className="flex gap-2">
-                        <Button variant={confirming === 'confirmed' ? 'destructive' : 'secondary'} onClick={() => post(`/incidents/${incident.id}/resolve`, { resolution: confirming })}>
+                        <Button
+                            variant={confirming === 'confirmed' ? 'destructive' : 'secondary'}
+                            onClick={() => post(`/incidents/${incident.id}/resolve`, { resolution: confirming })}
+                        >
                             Sí, cerrar
                         </Button>
                         <Button variant="ghost" onClick={() => setConfirming(null)}>
@@ -70,7 +118,11 @@ function ResponsePanel({ incident }: { incident: IncidentDetail }) {
                 </div>
             ) : (
                 <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" className="border-alarm/60 text-alarm hover:bg-alarm/10 hover:text-alarm" onClick={() => setConfirming('confirmed')}>
+                    <Button
+                        variant="outline"
+                        className="border-alarm/60 text-alarm hover:bg-alarm/10 hover:text-alarm"
+                        onClick={() => setConfirming('confirmed')}
+                    >
                         Fue una intrusión
                     </Button>
                     <Button variant="outline" onClick={() => setConfirming('false_alarm')}>
@@ -114,7 +166,9 @@ export default function IncidentShow({ incident, channel }: Props) {
                         </p>
                     </header>
 
-                    {incident.source === 'detection' || incident.live_frames.length === 0 ? (
+                    {incident.tamper ? (
+                        <TamperComparison incident={incident} />
+                    ) : incident.source === 'detection' || incident.live_frames.length === 0 ? (
                         <div className={cn('overflow-hidden rounded-xl border bg-black', incident.status === 'escalated' && 'border-alarm border-2')}>
                             <Media incident={incident} />
                         </div>
@@ -158,7 +212,9 @@ export default function IncidentShow({ incident, channel }: Props) {
                         <div>
                             <p className="text-[15px]">{incident.description ?? 'Sin descripción.'}</p>
                             <p className="text-muted-foreground mt-1 text-sm">
-                                {incident.ai_confidence !== null ? `Análisis de IA con ${Math.round(incident.ai_confidence * 100)}% de confianza.` : 'Sin verificación de IA.'}
+                                {incident.ai_confidence !== null
+                                    ? `Análisis de IA con ${Math.round(incident.ai_confidence * 100)}% de confianza.`
+                                    : 'Sin verificación de IA.'}
                             </p>
                         </div>
                     </section>
@@ -187,7 +243,7 @@ export default function IncidentShow({ incident, channel }: Props) {
                                 Anotar
                             </Button>
                         </form>
-                        <ol className="relative flex flex-col gap-4 pl-5 before:absolute before:inset-y-1 before:left-1 before:w-px before:bg-border">
+                        <ol className="before:bg-border relative flex flex-col gap-4 pl-5 before:absolute before:inset-y-1 before:left-1 before:w-px">
                             {incident.actions.map((action) => (
                                 <li key={action.id} className="relative text-sm">
                                     <span className="bg-muted-foreground absolute top-1.5 -left-[18px] size-2 rounded-full" aria-hidden />

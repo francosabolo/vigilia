@@ -17,7 +17,7 @@ Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware('signed')->group(function () {
     Route::get('media/incidents/{incident}/{kind}', IncidentMediaController::class)
-        ->whereIn('kind', ['snapshot', 'clip'])
+        ->whereIn('kind', ['snapshot', 'clip', 'before'])
         ->name('incidents.media');
     Route::get('media/live-frames/{snapshotRequest}', [IncidentMediaController::class, 'liveFrame'])->name('snapshots.media');
 });
@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
         Route::put('current-site', CurrentSiteController::class)->name('current-site');
 
         Route::get('cameras', [CameraWallController::class, 'index'])->name('cameras.index');
+        Route::get('cameras/{camera}', [CameraWallController::class, 'show'])->name('cameras.show');
         Route::get('cameras/{camera}/preview', [CameraWallController::class, 'preview'])->name('cameras.preview');
         Route::get('cameras/{camera}/zones', ZoneEditorController::class)->name('cameras.zones');
 
@@ -46,6 +47,7 @@ Route::middleware('auth')->group(function () {
         Route::post('incidents/{incident}/acknowledge', [IncidentController::class, 'acknowledge'])->name('incidents.acknowledge');
         Route::post('incidents/{incident}/resolve', [IncidentController::class, 'resolve'])->name('incidents.resolve');
         Route::post('incidents/{incident}/notes', [IncidentController::class, 'note'])->name('incidents.notes');
+        Route::post('incidents/{incident}/camera-view', [IncidentController::class, 'fixCameraView'])->name('incidents.camera-view');
 
         Route::get('sites', [SiteController::class, 'index'])->name('sites.index');
         Route::get('sites/{site}', [SiteController::class, 'show'])->name('sites.show');
