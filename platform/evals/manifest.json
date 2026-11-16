@@ -1,0 +1,1950 @@
+{
+    "recorded_at": "2026-11-16T18:51:38+00:00",
+    "prompt": "cafb39b2d636",
+    "model": "claude-haiku-5-5",
+    "review_model": "claude-sonnet-5-5",
+    "metrics": {
+        "storage/app/eval": {
+            "recall": 1,
+            "false_alarm_rate": 0
+        },
+        "storage/app/eval-hard/1_baja_resolucion": {
+            "recall": 1,
+            "false_alarm_rate": 0
+        },
+        "storage/app/eval-hard/2_muy_baja_resolucion": {
+            "recall": 1,
+            "false_alarm_rate": 0
+        },
+        "storage/app/eval-hard/3_oscura_con_ruido": {
+            "recall": 0.9688,
+            "false_alarm_rate": 0.0625
+        },
+        "storage/app/eval-hard/4_desenfoque_niebla": {
+            "recall": 1,
+            "false_alarm_rate": 0
+        }
+    },
+    "images": [
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/agachados_muro_1.jpg",
+            "sha1": "fae02d792a2004a8fa2f26cbd71645e0cc1c66e4",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/agachados_muro_2.jpg",
+            "sha1": "ab84acdfbdbd76b5c61705fc3acce92da0942e36",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/agachados_muro_3.jpg",
+            "sha1": "cf0634ec4813c06573e36f3943714cb33c37441d",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/agachados_muro_4.jpg",
+            "sha1": "53b2d8d39dcd555ac08ef1bfca599dd302abe23c",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/capucha_franja_1.jpg",
+            "sha1": "2a10875eb87c18108180d6e0f2a5006e63883c45",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/capucha_franja_2.jpg",
+            "sha1": "e76fa8dbdc69a100adafe02b3b5369f65c2a1fea",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/capucha_franja_3.jpg",
+            "sha1": "1572b73e6d83ab04d0c35a8718641c38e1543035",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/capucha_franja_4.jpg",
+            "sha1": "f78c5e337479aecc421e1b52291ec2ae5858eb62",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/cortando_alambrado_1.jpg",
+            "sha1": "9bd90681a5d7f7b2b1f5cd82916b2a58cc5c8f3e",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/cortando_alambrado_2.jpg",
+            "sha1": "1121d2f261cd374106aa6b696190822add0383b7",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/cortando_alambrado_3.jpg",
+            "sha1": "9f6578aa283f19f2f9df9fbcd26e46e06f9d2415",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/cortando_alambrado_4.jpg",
+            "sha1": "b297bbaa9869f49d67c89dac29288399e27bb577",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/escalera_muro_1.jpg",
+            "sha1": "c2570929d3a778f6cf9a32606cc0ce7094e96dc0",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/escalera_muro_2.jpg",
+            "sha1": "ee7a69ec8f7a96793c8d8191916e5d47a7e6ebf8",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/escalera_muro_3.jpg",
+            "sha1": "e099e9e202893b20237c17422446fde91b15dd26",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/escalera_muro_4.jpg",
+            "sha1": "5ee3229f806a6919f331f768911c9c5fe07f55c9",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/escondido_arbustos_1.jpg",
+            "sha1": "67d5ee60a62ab19f7197f5efb6d2db3fbb2b4a2a",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/escondido_arbustos_2.jpg",
+            "sha1": "73737d4b2760d26a1dabaae0ae38f4d347ac6a7a",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/escondido_arbustos_3.jpg",
+            "sha1": "0756bcab27c2059e59d4d4bf538661201eca9924",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/escondido_arbustos_4.jpg",
+            "sha1": "0fdcf305d8f63f873d2e8c0736f9fe8a553f986a",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/forzando_porton_1.jpg",
+            "sha1": "8e5b48459ceac78b884325a5d4c375950a92a791",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/forzando_porton_2.jpg",
+            "sha1": "d606e563d4a7b716e2db10d1671b387e80099733",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/forzando_porton_3.jpg",
+            "sha1": "97a6ddd6800bc959352849cee835e7ca97d7d909",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/forzando_porton_4.jpg",
+            "sha1": "6b79915185057866d1c1d7f07e2307352b3681c5",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/trepando_1.jpg",
+            "sha1": "2a5b04ece42751ae7d39a606b1954c771d19054b",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/trepando_2.jpg",
+            "sha1": "b3d620d30d1b099fbb5a4493b646b632f8db1577",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/trepando_3.jpg",
+            "sha1": "ee9530e5d1893f6dc41e4c070a3f25b3d9845584",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/trepando_4.jpg",
+            "sha1": "0b33ea0d0ce1f09397ce43ef09edb94420f61bbe",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/ventana_1.jpg",
+            "sha1": "93e7f99ebef11037dfaa80f121dcc3d81197882d",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/ventana_2.jpg",
+            "sha1": "c1df03f3f928712ce3edd9f262b089f5d9f60c6b",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/ventana_3.jpg",
+            "sha1": "bf5fc54ec22700ce6990bde6a70d3b1c88cc3bf0",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "positivos/ventana_4.jpg",
+            "sha1": "93bab129f8a35bbb254b579859eceebeb73eb61f",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/faros_1.jpg",
+            "sha1": "c9e11ec4f210022fd32e8c263f8e3f05dabd3b24",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/faros_2.jpg",
+            "sha1": "5c6bfd62fe9a81dd8a6d6c92d78a47420a24cfe5",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/faros_3.jpg",
+            "sha1": "0a7997c49c29e09f647a32d95ec5ef3f5cab8821",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/faros_4.jpg",
+            "sha1": "8949dfa095c98dcd4acbcd852a2a5e5d21c9d0e0",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/gato_1.jpg",
+            "sha1": "17ea248f3045e4eff765f01196d39a2da9476adf",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/gato_2.jpg",
+            "sha1": "8df3d2be95ed4e0584a028c2f9282dc5e2e4943f",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/gato_3.jpg",
+            "sha1": "66fec806a83bdb9639e1117c7131170213bbc63d",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/gato_4.jpg",
+            "sha1": "676ea7097ad0fbf10084aaa48ab83418ad097d22",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/guardia_ronda_1.jpg",
+            "sha1": "a4068cc2a80c72715e2debd90957db5d5cc8ec3c",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/guardia_ronda_2.jpg",
+            "sha1": "b56bf82e388e8ea21b95bbe15793f93e33003a6e",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/guardia_ronda_3.jpg",
+            "sha1": "6f1b9ef20d8613c0a769acbe47f5ba4f7f07c51c",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/guardia_ronda_4.jpg",
+            "sha1": "3b82416de6bb5a7ff29bb5c45f8178beb1dc910c",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/insectos_1.jpg",
+            "sha1": "447b348e282429d65460c29278b35618e49f1e28",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/insectos_2.jpg",
+            "sha1": "dc357be253289ed0ef8a24c35db173592194dc6b",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/insectos_3.jpg",
+            "sha1": "4f48255523f926f57945b0cf959b787eeffe68ad",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/insectos_4.jpg",
+            "sha1": "01758d049f7f1c2e41e007fdb8b4ef6d3442d246",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/lluvia_1.jpg",
+            "sha1": "20725b30dec70e9698ab6cc7c5a80c713f69caec",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/lluvia_2.jpg",
+            "sha1": "46535fbe6daf189b4a606b85f9b7a126474febf3",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/lluvia_3.jpg",
+            "sha1": "046897efcec3b294bae460cbc1933595e4c59305",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/lluvia_4.jpg",
+            "sha1": "289edd9e187b345f6de950ec99dc696d2d9fbbcd",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/perro_1.jpg",
+            "sha1": "bba5a36fca35af982faa39448b4f5182437579f8",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/perro_2.jpg",
+            "sha1": "5977f7926c450791fdab03f51fbfa3b54a168f1c",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/perro_3.jpg",
+            "sha1": "8fa7dda6fb3c030a040320b609c34a31a52a4691",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/perro_4.jpg",
+            "sha1": "b4452bae3445fd6e26a65ad27fa51cf24e3295ea",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/telarana_1.jpg",
+            "sha1": "181a511770d1cf4c50256c43d8650f758e465c05",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/telarana_2.jpg",
+            "sha1": "552da097c0c6813e2868b374e2b2e75d614fa39a",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/telarana_3.jpg",
+            "sha1": "6624184fd838ef9f0bfb177d0a551113e5b03620",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/telarana_4.jpg",
+            "sha1": "2709310c0bd3edece3bcaa06146b5085b435f7b0",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/viento_1.jpg",
+            "sha1": "7dba92ed23d43b8c3116158c7020e7f570ea7238",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/viento_2.jpg",
+            "sha1": "be2694392f4b5e5892e4da10c9a315c1b350bec5",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/viento_3.jpg",
+            "sha1": "29f17f24329b1d56085f5e84b6bac9185ececda5",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval",
+            "file": "negativos/viento_4.jpg",
+            "sha1": "290aae396a42fd4bbd7a2ed36f87140a66018230",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/agachados_muro_1.jpg",
+            "sha1": "237bb1bf2f3022714dec98581b81cd7ab219f84b",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/agachados_muro_2.jpg",
+            "sha1": "320acdf842147c32dc63f95339ade26f29d3c1f2",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/agachados_muro_3.jpg",
+            "sha1": "8d09265755294a2ddd07df0b7d8471ce3900f28d",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/agachados_muro_4.jpg",
+            "sha1": "e2315b78c8174758b288f73f9f89347f503d7763",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/capucha_franja_1.jpg",
+            "sha1": "e57f0b7e8c6022ecfb16b0fbb721b0b8dcf7fcfb",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/capucha_franja_2.jpg",
+            "sha1": "09eebf18cd1283026d5d652b27fb91012b86c709",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/capucha_franja_3.jpg",
+            "sha1": "2c1a33f1a852ab7ea46de3254abe8efd8953c7cb",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/capucha_franja_4.jpg",
+            "sha1": "9d508f591b395ef38e856d4d8c7143fc81bc80b2",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/cortando_alambrado_1.jpg",
+            "sha1": "66d3754cc05a20ada3af7bb156b08ff9e32500a8",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/cortando_alambrado_2.jpg",
+            "sha1": "7aaa9f43e8d167fc2182c821e68846264c25afb6",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/cortando_alambrado_3.jpg",
+            "sha1": "573bc065267973ed39d713e957eb2e0087a616fd",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/cortando_alambrado_4.jpg",
+            "sha1": "f93c1edf3745e297e9ea13b49d4df9a0dfe9d01e",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/escalera_muro_1.jpg",
+            "sha1": "14e8f9cc8e6b15a003e598c12c954978ca873b73",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/escalera_muro_2.jpg",
+            "sha1": "fdd5bcf214d3365485b89d9656044eb42733d7e2",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/escalera_muro_3.jpg",
+            "sha1": "b36348b3cf968f66a6d307f065e771c2dfbc5292",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/escalera_muro_4.jpg",
+            "sha1": "d8914773990a4cca2b46ff810820ef0769f2ab38",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/escondido_arbustos_1.jpg",
+            "sha1": "f76fd6c21fdd5d5d7d8b37c92fb2647265a8ba4f",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/escondido_arbustos_2.jpg",
+            "sha1": "4a0452da0c584bd1943f51c2a4b71ea005648858",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/escondido_arbustos_3.jpg",
+            "sha1": "e53977a87372cce851e6830edef69066f302db13",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/escondido_arbustos_4.jpg",
+            "sha1": "eee623dddb839deccfdf53291faabb406017cbf1",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/forzando_porton_1.jpg",
+            "sha1": "a75d9153d4247c95f1969fa09f667e5c116d8aad",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/forzando_porton_2.jpg",
+            "sha1": "1aa1092dcde6bb471edca5814ff50da01385efb0",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/forzando_porton_3.jpg",
+            "sha1": "08a9ddd44b936bf26c4a01ed16bd2eb85f82fc7b",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/forzando_porton_4.jpg",
+            "sha1": "9bf2f1ea0ae3e3d76aea65daf541800f0a783a37",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/trepando_1.jpg",
+            "sha1": "cde759ad54da6f0114929617067095cdca03dd71",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/trepando_2.jpg",
+            "sha1": "06d78ecbaea295e0b7c8f393773981dde6641815",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/trepando_3.jpg",
+            "sha1": "a45fe9634fdfbc4508b4887cf5937a4022664797",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/trepando_4.jpg",
+            "sha1": "78b0ccb74c3ba9cbd61dfa098c2b0f0daac09ca9",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/ventana_1.jpg",
+            "sha1": "b3531046e9bf6370c49bf9d87dad5fca911b0ccf",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/ventana_2.jpg",
+            "sha1": "5054d16789f1f4cace68d9b77552a5fd49ac946a",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/ventana_3.jpg",
+            "sha1": "8cc9a7ed53faeb2d95abf4a4f8a17cab88d4c71d",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "positivos/ventana_4.jpg",
+            "sha1": "5bf9db59cc5cf554c1d81ace34d816970401eb20",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/faros_1.jpg",
+            "sha1": "0415a83232a062eef9d479d502638b1b979463b6",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/faros_2.jpg",
+            "sha1": "e483ed42c2880c2960b9d02f2369f51e69ad62e0",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/faros_3.jpg",
+            "sha1": "9b2ad8bd2c86be4b9cc30dd6cf276c47ea315a20",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/faros_4.jpg",
+            "sha1": "a6c4850f0a14fb24fd7bd0a785de8fb14269d228",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/gato_1.jpg",
+            "sha1": "0771fd5fcdc18f085f8de69a3f1a35ba679c23b1",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/gato_2.jpg",
+            "sha1": "141e404b0fd8a061862e1b4fe61c613d84d2a896",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/gato_3.jpg",
+            "sha1": "a207e136de2273f07caa2da25d51efdb7ed9666f",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/gato_4.jpg",
+            "sha1": "155926a33de5b73a3741f433df96907e74f00cdd",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/guardia_ronda_1.jpg",
+            "sha1": "4a1e436cb69d39fac2c76e7c130de816d1b8a7bf",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/guardia_ronda_2.jpg",
+            "sha1": "47e005ba2cf830eec8c150c7815f64e570e00b15",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/guardia_ronda_3.jpg",
+            "sha1": "175efcda5e0754bf0a90ee5e613990a813684a55",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/guardia_ronda_4.jpg",
+            "sha1": "bd385cc6f3ee9536d0feb0c73b10de60c930e2be",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/insectos_1.jpg",
+            "sha1": "6f336f75b1d891d002431b5a3b904224845bd4f4",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/insectos_2.jpg",
+            "sha1": "85a38c4d9a81ba40ad329e3dcdcf6e681d586e8f",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/insectos_3.jpg",
+            "sha1": "f4f751080647735a33c1063bc8daadb2f9b1306d",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/insectos_4.jpg",
+            "sha1": "60aa60741cd3e1d49440c34019edcc99042f4836",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/lluvia_1.jpg",
+            "sha1": "8846a3ea0946b3905e0b6601cefa489dba0db4da",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/lluvia_2.jpg",
+            "sha1": "89aecc3e937c242cff4b1a1e31e84c0c6a1779b3",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/lluvia_3.jpg",
+            "sha1": "b2700f8c2eac692e24e4b3135b7212b2c653f772",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/lluvia_4.jpg",
+            "sha1": "6ac992e0190e958d6ad9e357fa18a41335ae7f31",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/perro_1.jpg",
+            "sha1": "dc70d5e806a4840183f39012e475c96bd2b53030",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/perro_2.jpg",
+            "sha1": "5b53f98340edf6dc7a9dbb19c3ce1a4ea0bff452",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/perro_3.jpg",
+            "sha1": "b0c8de4f24d011e6cb25dd10aeab44dc73884cc3",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/perro_4.jpg",
+            "sha1": "fabf9ee06880694648728de372af5c3398549922",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/telarana_1.jpg",
+            "sha1": "90e2b4fa7bdf16c9b05086bfd0dd5b967bd8fceb",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/telarana_2.jpg",
+            "sha1": "efdb368b654cd632cf4071b3d78b2b95986edf4c",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/telarana_3.jpg",
+            "sha1": "72c346770ffe1d5581ac47643c401d3dafbaf9eb",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/telarana_4.jpg",
+            "sha1": "229a4d766c44dc40507fe49add3eac7c8cb85639",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/viento_1.jpg",
+            "sha1": "06a941ca8c8cabb6c366bf70972274a61fc45164",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/viento_2.jpg",
+            "sha1": "2203586dd3a7d7a51a5685a03c9c36b70276f774",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/viento_3.jpg",
+            "sha1": "5b69138c6e4fcb9610d6926be7bb6e4a30c03293",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/1_baja_resolucion",
+            "file": "negativos/viento_4.jpg",
+            "sha1": "7524db70e57ade22c347c83ea407bdc4ccdf0aa2",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/agachados_muro_1.jpg",
+            "sha1": "0e9ad083c96b4401c6e77b1780831d714c672aff",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/agachados_muro_2.jpg",
+            "sha1": "0658b8f4cb648e311e57d9f4de42d97c6257ebf3",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/agachados_muro_3.jpg",
+            "sha1": "d4626bf63c536eb59eb380d8ced32ee360ee79fe",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/agachados_muro_4.jpg",
+            "sha1": "d829768b9fbea8988c6af7c7ef1b8b106a05137e",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/capucha_franja_1.jpg",
+            "sha1": "700c615812a62e91c4619e2a8e3844feff7a22df",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/capucha_franja_2.jpg",
+            "sha1": "db0e1e223dc4303db8952a62f830555fb0b7187b",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/capucha_franja_3.jpg",
+            "sha1": "3a261a696e04e7799f66bc5b78283927016e0b68",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/capucha_franja_4.jpg",
+            "sha1": "7cbc0e634733640a1faa312f224768af3b50bdb8",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/cortando_alambrado_1.jpg",
+            "sha1": "57d176b8fc300920c195c6b04a33aedf6214bb88",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/cortando_alambrado_2.jpg",
+            "sha1": "2d746488a510b00a241c1269b525fcc45a3fce6a",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/cortando_alambrado_3.jpg",
+            "sha1": "acb32c3d9a5f16a247540385e2f3d4bc7f5c2155",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/cortando_alambrado_4.jpg",
+            "sha1": "98b35a7327325da1cde1847b3a685770f792d78f",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/escalera_muro_1.jpg",
+            "sha1": "18fa349e2c5db42367aff60802e417dbf78ed979",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/escalera_muro_2.jpg",
+            "sha1": "33c1d98735fe4ce9e01b9f3832a6057cc9a311c9",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/escalera_muro_3.jpg",
+            "sha1": "b5d776c01f03cf6a28939dafc7ea959834926ee3",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/escalera_muro_4.jpg",
+            "sha1": "9a5ab33a7c85a66c1ebd83d1a29d4c4d0960a8a1",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/escondido_arbustos_1.jpg",
+            "sha1": "34890684c1130e5efa44baaa88d439f763a4d1a0",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/escondido_arbustos_2.jpg",
+            "sha1": "30b9a3db73a1918cff7c55ebe16c107407371f6e",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/escondido_arbustos_3.jpg",
+            "sha1": "057da0cc6512d5b8006fe20f2c2e8f6bef31e02e",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/escondido_arbustos_4.jpg",
+            "sha1": "997ad2adb68a8834fb80c261f7d6598e7eaad1ca",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/forzando_porton_1.jpg",
+            "sha1": "d5896b4842c1ddf38eca7d06d1c20edbe072a7f1",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/forzando_porton_2.jpg",
+            "sha1": "4e50bcd1ddea26ab1f1a479b61ddcd9e5784de50",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/forzando_porton_3.jpg",
+            "sha1": "534e4117fd12ab8b678f5f17307922ba4463b144",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/forzando_porton_4.jpg",
+            "sha1": "b5ee286735edc0bbcb1706fcc262667be7e9c25f",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/trepando_1.jpg",
+            "sha1": "c87017daeef247cff315892321b027c874fa0cce",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/trepando_2.jpg",
+            "sha1": "312e0d159cc4465579f9f97f07869edffd22f942",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/trepando_3.jpg",
+            "sha1": "eeca5019bc16933bf6869572cc0dc72615ac8fd6",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/trepando_4.jpg",
+            "sha1": "4c8ad4a5bbe3748a96f4812a16e204c77acb8f37",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/ventana_1.jpg",
+            "sha1": "cfeca9b55d0fbca6c5502fe47dca17fdf3c219e3",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/ventana_2.jpg",
+            "sha1": "ce6755b61e672c8afac33b2a89bf9dd9e607e804",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/ventana_3.jpg",
+            "sha1": "43d0b360f270d5ce989de730f31bb0bf8be737aa",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "positivos/ventana_4.jpg",
+            "sha1": "a371e0f696a0d26117632eaa47d51e0c4b948979",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/faros_1.jpg",
+            "sha1": "2e3468fb5bcd349df5f11a6441c3c1e3a74020a0",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/faros_2.jpg",
+            "sha1": "2d23c08b0c8ca7a077b2d730f6a3330752bfacf0",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/faros_3.jpg",
+            "sha1": "7844be65b7cae6ee8eba621d7458ba557a794b45",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/faros_4.jpg",
+            "sha1": "6ffa176f0bb0852aec7a3d6f3eb5b8fda809b706",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/gato_1.jpg",
+            "sha1": "eff43fe05f5cfaf4525cacc699f4cf604ebbc5c7",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/gato_2.jpg",
+            "sha1": "4a56f5ea4caa00e6db421167a75b2a0207b54015",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/gato_3.jpg",
+            "sha1": "a1d24326ce7ccc38c06b9b85560f30c8765c6062",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/gato_4.jpg",
+            "sha1": "f8c0d6d63d8c88591e8b5cebc2332bea3dfc4a64",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/guardia_ronda_1.jpg",
+            "sha1": "7eac64a9339e6f3e278b733ae1e669f60cc59369",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/guardia_ronda_2.jpg",
+            "sha1": "36994bf09fe3f9347af8573c611206473aa0d1f5",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/guardia_ronda_3.jpg",
+            "sha1": "f7a549d42e25fd34a719cf8a32443148112fbd90",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/guardia_ronda_4.jpg",
+            "sha1": "b0bb0ddd3d27b9b63dd8a73917fbfb4b2e5e50b5",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/insectos_1.jpg",
+            "sha1": "cdbff2ca1e882c553a251c5869e3f3a28eff81e5",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/insectos_2.jpg",
+            "sha1": "6e95288c4f7eec145a3e59ea6119813005ed18a7",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/insectos_3.jpg",
+            "sha1": "494605525714fef59df636f58517f42787e3ad0c",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/insectos_4.jpg",
+            "sha1": "b465c56776dd67338f19959c2523f7c98f105073",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/lluvia_1.jpg",
+            "sha1": "ab4bd5a9fdd85d3c90078992dcc3d8d8d69c80c6",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/lluvia_2.jpg",
+            "sha1": "e0d8deb93da9cd7f5d25eec11f69ced5efe4f616",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/lluvia_3.jpg",
+            "sha1": "08cdd8dccf42a0aece7f5d42ff9cd518d87ceef8",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/lluvia_4.jpg",
+            "sha1": "aa41f412f1560bce2b529d73c313bd0b7f3f83cd",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/perro_1.jpg",
+            "sha1": "581dde62667fee92c69ddf511a96177bbba88eac",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/perro_2.jpg",
+            "sha1": "3177b4f83e47da895150f8ec3116ce4cc186c310",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/perro_3.jpg",
+            "sha1": "8f60cc4a59a207daa05cca1bc6a33243d87818bb",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/perro_4.jpg",
+            "sha1": "42c926b5e719b0c29f22859e5a469dda320f11e3",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/telarana_1.jpg",
+            "sha1": "f1481b5eca5b2d1f1cb192b51025191586729736",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/telarana_2.jpg",
+            "sha1": "5f27177e592df27f863a60e9ee58e0399835775d",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/telarana_3.jpg",
+            "sha1": "3bef0ff1b2da878ccafe93852889f4ad17fb549e",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/telarana_4.jpg",
+            "sha1": "67baf356ded1dfd17fe658921f71151eda178c1b",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/viento_1.jpg",
+            "sha1": "7ae624d7d5cff3d8d334d9cac531da0b86d48f1f",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/viento_2.jpg",
+            "sha1": "5eeea09e989c94a6742f315404ee64bd0090e3ba",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/viento_3.jpg",
+            "sha1": "26e9cd75c8a9adef8eabefce0e2cd4b7cf3eea47",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/2_muy_baja_resolucion",
+            "file": "negativos/viento_4.jpg",
+            "sha1": "e213f3951debb847588b2497b7e0c5905a935a5a",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/agachados_muro_1.jpg",
+            "sha1": "83b9ee559d67baa2936ba02b877fde3f4973411d",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/agachados_muro_2.jpg",
+            "sha1": "7e7bfe0473938429099165f6aa3629090b6b4040",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/agachados_muro_3.jpg",
+            "sha1": "0fcdeadf116fdc5d2044ffd488ba54f34577784d",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/agachados_muro_4.jpg",
+            "sha1": "191fa8e9bfd120b3ebf14c85d375dc886b4ea1cd",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/capucha_franja_1.jpg",
+            "sha1": "fd277d41ab15a50120561ec7656697cdb3039c1e",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/capucha_franja_2.jpg",
+            "sha1": "03640a7b235f2f82c7cae1f5a2b9a33636089318",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/capucha_franja_3.jpg",
+            "sha1": "1490ce2af7b8126cdfc5cce74e4d150ced318dd8",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/capucha_franja_4.jpg",
+            "sha1": "60f1a514514986694749f292766e3420eec9af62",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/cortando_alambrado_1.jpg",
+            "sha1": "8a8c21e104c210ca9fc358f143b9b88288450598",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/cortando_alambrado_2.jpg",
+            "sha1": "83cc0501a1e54df7b307750fccbe8f70a5f0e20a",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/cortando_alambrado_3.jpg",
+            "sha1": "278c1f9bbcb80980a94ae419cb351dd5bc6adec0",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/cortando_alambrado_4.jpg",
+            "sha1": "7a43007ddec7389549ee4c9be8f16fa529407f7b",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/escalera_muro_1.jpg",
+            "sha1": "316bf518dc0fdb3ff74b21fc3bf43ca93dcabfdc",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/escalera_muro_2.jpg",
+            "sha1": "932d45fab37528f36c6d41085f2caf5dfe7fd5f4",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/escalera_muro_3.jpg",
+            "sha1": "2404a2ae5f01f824efe1111a5b2d88c5279fa993",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/escalera_muro_4.jpg",
+            "sha1": "147e0d7bdf7cef3b3a90c9975cc4c655ccbc7663",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/escondido_arbustos_1.jpg",
+            "sha1": "4ddba94aaba5daeaf21dd596fd2505d541e18474",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/escondido_arbustos_2.jpg",
+            "sha1": "2814ed389828ca288f3388c3a0ddf15419fc8dbb",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/escondido_arbustos_3.jpg",
+            "sha1": "dc4a73671a3c0ec5109eedb3e99998e25aa68159",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/escondido_arbustos_4.jpg",
+            "sha1": "8f733f03aa67cb7f4a210ad1e722f73d4a1d6c7e",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/forzando_porton_1.jpg",
+            "sha1": "80c3813c5f9d2c04a6d4f1f46bc0a65cdd0e9368",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/forzando_porton_2.jpg",
+            "sha1": "6e48b8749888425adefb3a74049082b6b1d9f880",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/forzando_porton_3.jpg",
+            "sha1": "d714993e99ef41b0cc486caf4d135fab9b896ac5",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/forzando_porton_4.jpg",
+            "sha1": "638f38713e9fe8886b87bfcb261bff547333e84d",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/trepando_1.jpg",
+            "sha1": "6d7d5c27617183ad10df39e5b70b5f5aab17613f",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/trepando_2.jpg",
+            "sha1": "e0a383ea4db7487931dc1b104838d46d21f4a964",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/trepando_3.jpg",
+            "sha1": "30a2d246cb9626e2fdbe73d66d62adf20d6e84c8",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/trepando_4.jpg",
+            "sha1": "a81a3420d17dac681054617eb307603978896d17",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/ventana_1.jpg",
+            "sha1": "92bf97860a84d9ba769c29c68c6cc982dcde96d9",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/ventana_2.jpg",
+            "sha1": "eaca92eac0a76ce8d567f1588edba91c8f9788f6",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/ventana_3.jpg",
+            "sha1": "da1dbe1e405f8be7b021338bf5bd3d5886a89181",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "positivos/ventana_4.jpg",
+            "sha1": "7a71d9d3e96677d88c8de23789f342dead08c2a7",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/faros_1.jpg",
+            "sha1": "668e19cbe57ff327055c68ed226fbfa5880fdcac",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/faros_2.jpg",
+            "sha1": "853c96a4cd4bdd6f1a35bcf44896e4d492564477",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/faros_3.jpg",
+            "sha1": "8a75b1815ae80b4362684ac7e28a8c7f6d2e1397",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/faros_4.jpg",
+            "sha1": "dae76529555fb2ba8a04d3470e1fd03ff4424d77",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/gato_1.jpg",
+            "sha1": "d264a665f30cdf6c79316fe841d1b1ac83ea5036",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/gato_2.jpg",
+            "sha1": "863d194a4b215cf056c73a665eba0dddf24ee2a4",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/gato_3.jpg",
+            "sha1": "3f157173b6146846836d3abf18c276be7b5bd5af",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/gato_4.jpg",
+            "sha1": "def7927e92c8c6e7a6b97e7250ecd3bde0b2de30",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/guardia_ronda_1.jpg",
+            "sha1": "96f091bf9cef34ebd90e70c5f1a64c9a4e17d039",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/guardia_ronda_2.jpg",
+            "sha1": "eb6baaddfc8f99b0183d057f646f5b31349e5419",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/guardia_ronda_3.jpg",
+            "sha1": "85b80c367b50e81ead079a7b58b60a6365d01c87",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/guardia_ronda_4.jpg",
+            "sha1": "6ffcae6c1aa600c8b15484c4b839b03f4052f86c",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/insectos_1.jpg",
+            "sha1": "f569836790cbcff7f3e852be6ad3cf9ecb2bc461",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/insectos_2.jpg",
+            "sha1": "8d5bd446720f8a47c73efbfd0cc9a3754fbe91b4",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/insectos_3.jpg",
+            "sha1": "808bf76994bf9f2674dfc401b01fb302e21581d1",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/insectos_4.jpg",
+            "sha1": "26704f2f56cfd64e1a7c458dd773e445cd600a67",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/lluvia_1.jpg",
+            "sha1": "b948a912198b93704d58bc17192ae058b531a22f",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/lluvia_2.jpg",
+            "sha1": "0a421d62b8a3121c90f83d3d5e21e890fce21952",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/lluvia_3.jpg",
+            "sha1": "10e78519160f916223ec9098e44630c1c900b430",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/lluvia_4.jpg",
+            "sha1": "e31d3ca777d324cfc07e187a0d6ddbd0a3906b67",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/perro_1.jpg",
+            "sha1": "35608f6847aff3f046bb67778aeb3125ddd6591a",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/perro_2.jpg",
+            "sha1": "3b6512dd6a455844a46d2ccd285a072659a21194",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/perro_3.jpg",
+            "sha1": "a3c43638c3889bd261eff4c6778b4f3197ec60ed",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/perro_4.jpg",
+            "sha1": "90102f8e1bb6189e6a6bc22241f9a701162e2086",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/telarana_1.jpg",
+            "sha1": "8001e9f5c9a8cb21857cea7588af1bb3ecfdbc6e",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/telarana_2.jpg",
+            "sha1": "9e39a286b0b2082a6fb72d9d1401a7d1d7f57c4d",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/telarana_3.jpg",
+            "sha1": "4c50ed915217969d15cf7bf869723d0af8e7134a",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/telarana_4.jpg",
+            "sha1": "1f9cb5a7a97cdb3943c8ffbdd09ec29779862ec6",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/viento_1.jpg",
+            "sha1": "4446db00f68d09d870d5f203c6db8662a9aa4d3c",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/viento_2.jpg",
+            "sha1": "f81d389e923ba4c1b9531904d010c49d40671641",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/viento_3.jpg",
+            "sha1": "716e7c072d1d3ebf62225c5b7d14e6fd9685ce33",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/3_oscura_con_ruido",
+            "file": "negativos/viento_4.jpg",
+            "sha1": "9effdbc98863534183b9f050d11e2c3c1053b24d",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/agachados_muro_1.jpg",
+            "sha1": "4ea223b677224c15c3de5880218b73920dc3ce08",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/agachados_muro_2.jpg",
+            "sha1": "d212dd6d56d8d538eedcf152be2254da5b22f223",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/agachados_muro_3.jpg",
+            "sha1": "2e703058b3323553b5d929d1fe56416389e39d8e",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/agachados_muro_4.jpg",
+            "sha1": "f070c6e9b2ecf93bc4a2a1519d6dc634e92ccaa5",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/capucha_franja_1.jpg",
+            "sha1": "90933e5398b4dce0d5215a83cc7dea0b6bf9526d",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/capucha_franja_2.jpg",
+            "sha1": "78fffee17b8e05525dded0dfea2e087ed79fe58b",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/capucha_franja_3.jpg",
+            "sha1": "5c520649e2fd021f55f457fbc4dc55348669e040",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/capucha_franja_4.jpg",
+            "sha1": "c819029d34ff3d591de947e32d6b0666a1c81084",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/cortando_alambrado_1.jpg",
+            "sha1": "8f88d9ec0fccf56ac4f8467b40cb4f204c36268b",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/cortando_alambrado_2.jpg",
+            "sha1": "b4ead50fe16728289eb91c1569bde0db3e7c57ce",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/cortando_alambrado_3.jpg",
+            "sha1": "9d3ede48c4e76ba3d24fb8aa9d182475ae9306a0",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/cortando_alambrado_4.jpg",
+            "sha1": "a8e6fc50259a3a994dae73de14cd6c9f06ff0045",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/escalera_muro_1.jpg",
+            "sha1": "facd7250f31a1377450389732716e0fd7a16a088",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/escalera_muro_2.jpg",
+            "sha1": "ba11e714233a2abb41d124cfbd510f38f880feb9",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/escalera_muro_3.jpg",
+            "sha1": "83967a17c5e73bb63f1f3fae0b82f239e8ed1796",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/escalera_muro_4.jpg",
+            "sha1": "259a08f990d1d1bcb8fa6b9aeb0531aeef44ee01",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/escondido_arbustos_1.jpg",
+            "sha1": "6339f5f30e1933be0a139a7c7ca37eefa580985e",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/escondido_arbustos_2.jpg",
+            "sha1": "5abc809b70c4e0f159ce8c9f2560a1b570b7bd71",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/escondido_arbustos_3.jpg",
+            "sha1": "a91aa0094f8cda9e74c0b14a0feb377ebf01ebb5",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/escondido_arbustos_4.jpg",
+            "sha1": "fee4e7433d9cfa20c6266d8119a03bb744e8ab44",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/forzando_porton_1.jpg",
+            "sha1": "15f5122f97832145dd262e8fc567486f80f583cd",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/forzando_porton_2.jpg",
+            "sha1": "ddb2a7c69e9eea25e044095651cde70025369018",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/forzando_porton_3.jpg",
+            "sha1": "4f283d7720bc73e0b3c27f773dd4d51c54987b77",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/forzando_porton_4.jpg",
+            "sha1": "fc325f86e4b4a6beef9e6e27dfeec4a9124595a7",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/trepando_1.jpg",
+            "sha1": "b1a4c994ec73f902b89e0a62b3973649c322a6eb",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/trepando_2.jpg",
+            "sha1": "a16d5e93bed3b7fef39d3325bb2bb1bbd005bd6d",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/trepando_3.jpg",
+            "sha1": "e5e9350580ab7efcfbe003d1a5c363e400a573e1",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/trepando_4.jpg",
+            "sha1": "d101895fcead54331d526a7628014a4b5449ffd2",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/ventana_1.jpg",
+            "sha1": "b2e1ed23855ac079ceb552a86c8a833c631a1794",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/ventana_2.jpg",
+            "sha1": "4add633966182af6f2b16062ce8b5ba5f7118798",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/ventana_3.jpg",
+            "sha1": "6b1e8d53ceb9971975880862c33542464480766a",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "positivos/ventana_4.jpg",
+            "sha1": "9a49de2c9d9e077e99b4f5ab3a1fb1c919e0d24c",
+            "expected": true
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/faros_1.jpg",
+            "sha1": "442e5d38ec7374e235cfeb13bc2a48470c3ca7a6",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/faros_2.jpg",
+            "sha1": "4b539c2d2d676d8afcb47f6f93b5b2cade3e3d87",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/faros_3.jpg",
+            "sha1": "a60eff67424803fee7b7f9dda2b46412e2248134",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/faros_4.jpg",
+            "sha1": "7310aa97fe88915711d4c1ad7f8bb32ae1d242d7",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/gato_1.jpg",
+            "sha1": "a8db031dcbfee97824e3f3e03f70f91a4902d536",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/gato_2.jpg",
+            "sha1": "c89243fdf834da3196f9b30540cefd2984daf339",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/gato_3.jpg",
+            "sha1": "b7fa7547eef64af365304cf1ab225805e7475c59",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/gato_4.jpg",
+            "sha1": "db581e8a5b1002b7216d33508a0c913378971f6e",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/guardia_ronda_1.jpg",
+            "sha1": "043fc560c58b761ff77e5f9061e44317305d32c1",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/guardia_ronda_2.jpg",
+            "sha1": "b8c71803b0673a1fde08b58e2001459e683a67d4",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/guardia_ronda_3.jpg",
+            "sha1": "01452e9c916fbc657d78d687c43980c756a50e2c",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/guardia_ronda_4.jpg",
+            "sha1": "b36f855da6cd9254d9c84fb8b767049494eea0ba",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/insectos_1.jpg",
+            "sha1": "8220448e2a55e151b7fb670eff0c61aaf6bbf266",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/insectos_2.jpg",
+            "sha1": "603c8051ee573f55010aa0c6d36f3d0c744ac35e",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/insectos_3.jpg",
+            "sha1": "09905b76c066819b582a4c0eca6174138f9bc781",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/insectos_4.jpg",
+            "sha1": "b63e28fa3945531ad78b76cce413bc67148004ae",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/lluvia_1.jpg",
+            "sha1": "7898c84cb855a85fc66bfdf2cc8ed629d9a233ea",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/lluvia_2.jpg",
+            "sha1": "fbe3bb1f0fc91cf411bdee11443698808a141450",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/lluvia_3.jpg",
+            "sha1": "5109e4b60f910c441a4d515c7106cb23cd3257bb",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/lluvia_4.jpg",
+            "sha1": "dc97de8b16dd53ae6f3b3f9366f93d1fdc492797",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/perro_1.jpg",
+            "sha1": "ce6d94a774da50e97a69fb43fee9fcdb472aa462",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/perro_2.jpg",
+            "sha1": "59afeddad26ec6fff50ee3334c3be3c05a8f1e7f",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/perro_3.jpg",
+            "sha1": "47dfe15d809871007735399f71de5fe587b088ba",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/perro_4.jpg",
+            "sha1": "5f74c43afb567291b4e3b1bbc034390054ff97e1",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/telarana_1.jpg",
+            "sha1": "742674cd987422ef69cbefacfdae979c7bfcc81b",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/telarana_2.jpg",
+            "sha1": "a3e51bb2652458845ef98c90909e786e06f98bef",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/telarana_3.jpg",
+            "sha1": "bb7463270554d24f71728faf872deb182353f54d",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/telarana_4.jpg",
+            "sha1": "a5ec0ec355b4c6bf40cb4c1310c98cc3e7e48421",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/viento_1.jpg",
+            "sha1": "e8eaf5298cb06c21c60efa82072ffc98296fdb1f",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/viento_2.jpg",
+            "sha1": "04a4cc5927c2744dc9ddc9b1d6ccb0472ba29917",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/viento_3.jpg",
+            "sha1": "7bca5c1cfc4cd939a0255a66e72da7888645546e",
+            "expected": false
+        },
+        {
+            "set": "storage/app/eval-hard/4_desenfoque_niebla",
+            "file": "negativos/viento_4.jpg",
+            "sha1": "5d34d8b1e39466606e858fd0f4013f9ac7406d22",
+            "expected": false
+        }
+    ]
+}

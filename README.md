@@ -58,6 +58,13 @@ Edge nuevo: `php artisan seguria:edge-create {site_id} edge-norte` imprime el `S
   3. `seguria:eval-import <set>` puntúa y guarda la corrida. Las imágenes que ya juzgó el mismo juez con el mismo prompt se reutilizan.
 - **Corridas** (`storage/app/eval-runs`): todas en el mismo formato, comparables con `seguria:eval-compare`.
 
+### Control de calidad de la IA (en el CI)
+`platform/evals/` guarda qué respondió la IA a cada imagen de evaluación con el prompt y los modelos actuales. El CI corre `php artisan seguria:eval-gate` sin llamar a la API y falla si:
+- cambiaste el prompt, el modelo o el contexto y no volviste a evaluar;
+- algún set queda por debajo de sus umbrales (`evals/gate.json`).
+
+Para cambiar el prompt o el modelo, corré en local `php artisan seguria:eval-gate --record`. Necesita las imágenes en `storage/app/eval*` y la API key, y cuesta centavos con caché y batch. Si el cambio empeora alguna métrica, no guarda nada (salvo con `--accept-regression`). Commiteá la carpeta `evals/` junto con el cambio.
+
 ### Zonas
 Las zonas se dibujan en la consola, sobre una imagen en vivo de cada cámara (**Barrios → cámara → Dibujar zonas**). La consola es la fuente de verdad: el bridge baja las zonas por `/api/edge/commands`, las escribe en `config.yml` (guarda un `.bak`) y reinicia Frigate. Las cámaras que no tienen zonas dibujadas no se tocan.
 

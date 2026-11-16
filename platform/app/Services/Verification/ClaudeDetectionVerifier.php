@@ -126,6 +126,14 @@ class ClaudeDetectionVerifier implements DetectionVerifier
         );
     }
 
+    /**
+     * The exact text sent next to the image (part of the verdict cache key).
+     */
+    public function contextFor(Camera $camera, string $context): string
+    {
+        return $this->cameraContext($camera, $context);
+    }
+
     private function cameraContext(Camera $camera, string $context): string
     {
         return sprintf('Cámara: %s%s. %s', $camera->name, $camera->sector ? " ({$camera->sector})" : '', $context);

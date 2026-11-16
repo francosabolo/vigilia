@@ -48,6 +48,9 @@ jobs:
           touch database/database.sqlite
           php artisan test
 
+      - name: AI evaluation gate (offline, no API calls)
+        run: php artisan seguria:eval-gate
+
   edge:
     name: Edge bridge
     runs-on: ubuntu-latest

@@ -37,7 +37,7 @@ class EvaluateAi extends Command
 
     protected $description = 'Evaluate AI verification on a labeled image set: recall, false alarms, latency and real cost';
 
-    private const CONTEXT = 'Detector: persona (score 0.80). Zonas: alambrado (perímetro). Horario armado: nadie debería estar ahí.';
+    public const CONTEXT = 'Detector: persona (score 0.80). Zonas: alambrado (perímetro). Horario armado: nadie debería estar ahí.';
 
     public function handle(EvalRuns $runs): int
     {

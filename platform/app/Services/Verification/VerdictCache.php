@@ -14,7 +14,20 @@ class VerdictCache
 
     public function key(string $model, string $promptFingerprint, string $context, string $imageData): string
     {
-        return sha1(implode('|', [$model, $promptFingerprint, $context, sha1($imageData)]));
+        return self::keyFromImageHash($model, $promptFingerprint, $context, sha1($imageData));
+    }
+
+    /**
+     * Same key from the image hash alone: the evaluation gate checks verdicts without the images.
+     */
+    public static function keyFromImageHash(string $model, string $promptFingerprint, string $context, string $imageHash): string
+    {
+        return sha1(implode('|', [$model, $promptFingerprint, $context, $imageHash]));
+    }
+
+    public function pathFor(string $key): string
+    {
+        return Storage::path($this->path($key));
     }
 
     /**
