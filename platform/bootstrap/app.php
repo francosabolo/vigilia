@@ -24,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'resident' => EnsureResident::class,
         ]);
 
+        // Read by the Blade layout to render the chosen theme without a flash.
+        $middleware->encryptCookies(except: ['appearance']);
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,

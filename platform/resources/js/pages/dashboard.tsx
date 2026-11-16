@@ -1,10 +1,11 @@
 import { IncidentRow } from '@/components/console/incident-row';
+import { ItemActionHint } from '@/components/item-action';
 import { PushToggle } from '@/components/push-toggle';
 import { Button } from '@/components/ui/button';
 import { useLiveIncidents } from '@/hooks/use-live-incidents';
 import AppLayout from '@/layouts/app-layout';
-import { cn } from '@/lib/utils';
 import { formatDuration, plural, type IncidentStatus, type Metrics, type Severity } from '@/lib/seguria';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { Cctv, Cpu } from 'lucide-react';
@@ -40,7 +41,12 @@ interface Props {
     channel: string;
 }
 
-function WatchStatus({ openIncidents, openCount, escalatedCount, edgesOffline }: Pick<Props, 'openIncidents' | 'openCount' | 'escalatedCount' | 'edgesOffline'>) {
+function WatchStatus({
+    openIncidents,
+    openCount,
+    escalatedCount,
+    edgesOffline,
+}: Pick<Props, 'openIncidents' | 'openCount' | 'escalatedCount' | 'edgesOffline'>) {
     const first = openIncidents[0];
 
     if (escalatedCount > 0 && first) {
@@ -49,7 +55,9 @@ function WatchStatus({ openIncidents, openCount, escalatedCount, edgesOffline }:
                 <span className="bg-alarm size-4 shrink-0 animate-pulse rounded-full" aria-hidden />
                 <div className="min-w-0 flex-1">
                     <h1 className="font-display text-alarm text-3xl leading-tight font-semibold">
-                        {escalatedCount === 1 ? 'Un incidente sin respuesta de la guardia' : `${escalatedCount} incidentes sin respuesta de la guardia`}
+                        {escalatedCount === 1
+                            ? 'Un incidente sin respuesta de la guardia'
+                            : `${escalatedCount} incidentes sin respuesta de la guardia`}
                     </h1>
                     <p className="mt-1 text-[15px]">
                         {first.title} en {first.site}
@@ -85,7 +93,9 @@ function WatchStatus({ openIncidents, openCount, escalatedCount, edgesOffline }:
             <div>
                 <h1 className="font-display text-3xl leading-tight font-semibold">Todo en orden</h1>
                 <p className="text-muted-foreground mt-1 text-[15px]">
-                    {edgesOffline > 0 ? `Atención: ${plural(edgesOffline, 'equipo edge', 'equipos edge')} sin señal.` : 'No hay incidentes abiertos y todos los equipos están conectados.'}
+                    {edgesOffline > 0
+                        ? `Atención: ${plural(edgesOffline, 'equipo edge', 'equipos edge')} sin señal.`
+                        : 'No hay incidentes abiertos y todos los equipos están conectados.'}
                 </p>
             </div>
         </section>
@@ -111,7 +121,14 @@ function Funnel({ metrics }: { metrics: Metrics }) {
             <ol className="mt-4 grid grid-cols-2 gap-y-4 md:grid-cols-4">
                 {steps.map((step, index) => (
                     <li key={step.label} className={cn('pr-4', index > 0 && 'md:border-l md:pl-5')}>
-                        <div className={cn('font-display text-5xl leading-none font-semibold tabular-nums', index === 3 && step.value > 0 && 'text-alarm')}>{step.value}</div>
+                        <div
+                            className={cn(
+                                'font-display text-5xl leading-none font-semibold tabular-nums',
+                                index === 3 && step.value > 0 && 'text-alarm',
+                            )}
+                        >
+                            {step.value}
+                        </div>
                         <div className="text-muted-foreground mt-2 text-sm">{step.label}</div>
                     </li>
                 ))}
@@ -134,7 +151,10 @@ export default function Dashboard({ metrics, openIncidents, openCount, escalated
                         <div className="flex items-baseline justify-between">
                             <h2 className="text-lg font-semibold">Incidentes abiertos</h2>
                             {openCount > openIncidents.length && (
-                                <Link href="/incidents" className="text-muted-foreground hover:text-foreground text-sm underline-offset-4 hover:underline">
+                                <Link
+                                    href="/incidents"
+                                    className="text-muted-foreground hover:text-foreground text-sm underline-offset-4 hover:underline"
+                                >
                                     Ver los {openCount}
                                 </Link>
                             )}
@@ -145,7 +165,15 @@ export default function Dashboard({ metrics, openIncidents, openCount, escalated
                             </p>
                         ) : (
                             openIncidents.map((incident) => (
-                                <IncidentRow key={incident.id} id={incident.id} title={incident.title} status={incident.status} severity={incident.severity} detectedAt={incident.detected_at} meta={incident.site} />
+                                <IncidentRow
+                                    key={incident.id}
+                                    id={incident.id}
+                                    title={incident.title}
+                                    status={incident.status}
+                                    severity={incident.severity}
+                                    detectedAt={incident.detected_at}
+                                    meta={incident.site}
+                                />
                             ))
                         )}
                     </section>
@@ -156,8 +184,18 @@ export default function Dashboard({ metrics, openIncidents, openCount, escalated
                             {sites.map((site) => {
                                 const healthy = site.edges_offline === 0 && site.cameras_online === site.cameras;
                                 return (
-                                    <Link key={site.id} href={`/sites/${site.id}`} className="hover:bg-accent flex items-center gap-3 px-4 py-3">
-                                        <span className={cn('size-2.5 rounded-full', site.open_incidents > 0 ? 'bg-pending' : healthy ? 'bg-ok' : 'bg-alarm')} aria-hidden />
+                                    <Link
+                                        key={site.id}
+                                        href={`/sites/${site.id}`}
+                                        className="group hover:bg-accent flex items-center gap-3 px-4 py-3"
+                                    >
+                                        <span
+                                            className={cn(
+                                                'size-2.5 rounded-full',
+                                                site.open_incidents > 0 ? 'bg-pending' : healthy ? 'bg-ok' : 'bg-alarm',
+                                            )}
+                                            aria-hidden
+                                        />
                                         <span className="flex-1 truncate font-medium">{site.name}</span>
                                         <span className="text-muted-foreground flex items-center gap-1 text-sm" title="Cámaras online">
                                             <Cctv className="size-4" />
@@ -168,6 +206,7 @@ export default function Dashboard({ metrics, openIncidents, openCount, escalated
                                                 <Cpu className="size-4" /> sin señal
                                             </span>
                                         )}
+                                        <ItemActionHint kind="view" />
                                     </Link>
                                 );
                             })}

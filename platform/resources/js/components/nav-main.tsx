@@ -21,7 +21,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                 </Link>
                             </SidebarMenuButton>
                             {showBadge && (
-                                <SidebarMenuBadge className={cn('font-display rounded-full px-1.5 text-sm', alerts.escalated > 0 ? 'bg-alarm text-white' : 'bg-pending text-background')}>
+                                <SidebarMenuBadge className={cn('font-display rounded-full px-1.5 text-sm', alerts.escalated > 0 ? 'bg-alarm text-white' : 'bg-pending text-[#1b1d22]')}>
                                     {alerts.open}
                                 </SidebarMenuBadge>
                             )}

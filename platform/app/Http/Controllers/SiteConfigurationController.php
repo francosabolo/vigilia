@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ZoneKind;
 use App\Models\ArmingSchedule;
 use App\Models\Camera;
 use App\Models\Site;
@@ -10,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 /**
  * Site settings, camera labels, zones and arming schedules.
@@ -111,6 +113,7 @@ class SiteConfigurationController extends Controller
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:100'],
+            'kind' => ['nullable', Rule::enum(ZoneKind::class)],
             'frigate_zone' => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9_]+$/'],
             'lot' => ['nullable', 'string', 'max:20'],
             'watched_labels' => ['nullable', 'array'],

@@ -29,11 +29,14 @@ function Tile({ camera, onExpand }: { camera: CameraTile; onExpand: () => void }
     const stale = isStale(camera.preview_at);
 
     return (
-        <button onClick={onExpand} className="group focus-visible:ring-ring relative aspect-video overflow-hidden rounded-md bg-black text-left focus-visible:ring-2">
+        <button
+            onClick={onExpand}
+            className="group focus-visible:ring-ring relative aspect-video overflow-hidden rounded-md bg-black text-left focus-visible:ring-2"
+        >
             {camera.preview_url ? (
                 <img src={camera.preview_url} alt={camera.name} className={cn('size-full object-cover', stale && 'opacity-40 grayscale')} />
             ) : (
-                <div className="flex size-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                <div className="text-muted-foreground flex size-full flex-col items-center justify-center gap-2">
                     <VideoOff className="size-8" />
                     <span className="text-xs">Esperando imagen del edge…</span>
                 </div>
@@ -42,10 +45,12 @@ function Tile({ camera, onExpand }: { camera: CameraTile; onExpand: () => void }
                 <span className={cn('size-2 rounded-full', camera.is_online && !stale ? 'bg-ok' : 'bg-muted-foreground')} />
                 <span className="font-display text-sm font-semibold">{camera.name}</span>
                 {camera.sector && <span className="text-white/70">{camera.sector}</span>}
-                <Maximize2 className="ml-auto size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                <span className="ml-auto flex items-center gap-1 rounded bg-black/50 px-1.5 py-0.5 text-xs">
+                    <Maximize2 className="size-3.5" /> Ampliar
+                </span>
             </div>
             {stale && camera.preview_at && (
-                <div className="absolute inset-x-0 bottom-0 p-2 text-xs text-pending">Sin imagen nueva hace más de 30 s</div>
+                <div className="text-pending absolute inset-x-0 bottom-0 p-2 text-xs">Sin imagen nueva hace más de 30 s</div>
             )}
         </button>
     );
@@ -65,7 +70,8 @@ export default function CamerasIndex({ sites, interval }: Props) {
                 <div>
                     <h1 className="font-display text-3xl font-semibold">Cámaras</h1>
                     <p className="text-muted-foreground text-sm">
-                        {total} cámaras. La imagen se actualiza cada {interval} segundos mientras esta pantalla está abierta; el video completo se ve desde la red del barrio.
+                        {total} cámaras. La imagen se actualiza cada {interval} segundos mientras esta pantalla está abierta; el video completo se ve
+                        desde la red del barrio.
                     </p>
                 </div>
 

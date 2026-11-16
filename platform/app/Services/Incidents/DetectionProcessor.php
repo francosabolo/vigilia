@@ -130,7 +130,7 @@ class DetectionProcessor
             'camera_id' => $event->camera_id,
             'zone_id' => $zone?->id,
             'sector' => $event->camera->sector,
-            'severity' => $this->severity($event, $verdict),
+            'severity' => $this->severity($event, $verdict, $zone),
             'status' => IncidentStatus::New,
             'title' => "{$label} en {$place}",
             'description' => $verdict->description,
@@ -156,7 +156,7 @@ class DetectionProcessor
     {
         $event->forceFill(['status' => DetectionStatus::Threat, 'incident_id' => $incident->id])->save();
 
-        $severity = $this->severity($event, $verdict);
+        $severity = $this->severity($event, $verdict, $incident->zone);
         if ($this->rank($severity) > $this->rank($incident->severity)) {
             $incident->severity = $severity;
         }
@@ -175,8 +175,12 @@ class DetectionProcessor
         ]);
     }
 
-    private function severity(DetectionEvent $event, VerificationResult $verdict): Severity
+    private function severity(DetectionEvent $event, VerificationResult $verdict, ?Zone $zone = null): Severity
     {
+        if ($event->label === 'person' && $zone?->kind?->isAccessPoint()) {
+            return Severity::Critical;
+        }
+
         if ($event->label === 'person') {
             return $verdict->objectCount >= 2 ? Severity::Critical : Severity::High;
         }

@@ -3,6 +3,7 @@
 use App\Enums\DetectionStatus;
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
+use App\Enums\ZoneKind;
 use App\Events\IncidentChanged;
 use App\Events\IncidentOpened;
 use App\Models\ArmingSchedule;
@@ -120,4 +121,14 @@ it('watches the whole frame when the camera has no zones', function () {
     $camera = Camera::factory()->create();
 
     expect(app(DetectionProcessor::class)->process(detection($camera, ['zones' => []])))->toBeInstanceOf(Incident::class);
+});
+
+it('treats a person at a door, window or sensitive point as critical', function () {
+    fakeVerdict();
+    $this->zone->update(['kind' => ZoneKind::Door, 'name' => 'Puerta de servicio']);
+
+    $incident = app(DetectionProcessor::class)->process(detection($this->camera));
+
+    expect($incident->severity)->toBe(Severity::Critical)
+        ->and($incident->title)->toBe('Persona en Puerta de servicio (Perímetro Norte)');
 });

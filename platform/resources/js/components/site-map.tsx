@@ -1,13 +1,15 @@
+import { ItemActionButton, ItemActionLink, ItemActions } from '@/components/item-action';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { CAMERA_MODELS, fovPolygon, perimeterCoverage, planCoverage, type CameraPlacement, type LatLng } from '@/lib/geo';
+import { CAMERA_MODELS, fovPolygon, insertVertex, perimeterCoverage, planCoverage, type CameraPlacement, type LatLng } from '@/lib/geo';
 import { cn } from '@/lib/utils';
-import { Link, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapPin, VideoOff } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { CircleMarker, MapContainer, Polygon, Polyline, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
+import { CircleMarker, MapContainer, Marker, Polygon, Polyline, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 
 export interface MapCamera extends CameraPlacement {
     name: string;
@@ -28,6 +30,14 @@ interface Props {
 type Mode = 'view' | 'perimeter' | 'camera';
 
 const DEFAULT_CENTER: LatLng = [-34.4587, -58.9142];
+
+/** Draggable perimeter vertex: a round handle with a × to remove it (same rule as the zone editor). */
+const vertexIcon = L.divIcon({
+    className: 'seguria-vertex',
+    html: '<span class="seguria-vertex-dot"></span><span class="seguria-vertex-remove" data-remove="1" aria-label="Borrar punto">×</span>',
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+});
 const COLORS = { covered: '#34c77b', gap: '#ef3640', cone: '#ffffff', coneOffline: '#ef3640', draft: '#f5a524' };
 
 function FitBounds({ points }: { points: LatLng[] }) {
@@ -76,7 +86,7 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
     const fitPoints: LatLng[] = focus ?? [...perimeter, ...cameras.flatMap((camera) => (camera.position ? [camera.position] : []))];
 
     function handleMapClick(point: LatLng) {
-        if (mode === 'perimeter') setDraftPerimeter([...draftPerimeter, point]);
+        if (mode === 'perimeter') setDraftPerimeter(insertVertex(draftPerimeter, point));
         if (mode === 'camera' && placement) setPlacement({ ...placement, position: point });
     }
 
@@ -91,12 +101,43 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
         router.patch(
             `/cameras/${placement.id}/placement`,
             { lat: placement.position[0], lng: placement.position[1], heading: placement.heading, fov: placement.fov, range_m: placement.range_m },
-            { preserveScroll: true, onSuccess: () => { setMode('view'); setPlacement(null); } },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setMode('view');
+                    setPlacement(null);
+                },
+            },
         );
     }
 
+    const [confirming, setConfirming] = useState<'save' | 'discard' | null>(null);
+    const perimeterChanged = JSON.stringify(draftPerimeter) !== JSON.stringify(perimeter);
+    const before = useMemo(() => perimeterCoverage(perimeter, cameras), [perimeter, cameras]);
+    const after = useMemo(() => perimeterCoverage(draftPerimeter, cameras), [draftPerimeter, cameras]);
+
     function savePerimeter() {
-        router.patch(`/sites/${siteId}/perimeter`, { perimeter: draftPerimeter, center: mapCenter }, { preserveScroll: true, onSuccess: () => setMode('view') });
+        router.patch(
+            `/sites/${siteId}/perimeter`,
+            { perimeter: draftPerimeter, center: mapCenter },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setConfirming(null);
+                    setMode('view');
+                },
+            },
+        );
+    }
+
+    function cancelPerimeter() {
+        if (perimeterChanged && confirming !== 'discard') {
+            setConfirming('discard');
+            return;
+        }
+        setConfirming(null);
+        setDraftPerimeter(perimeter);
+        setMode('view');
     }
 
     return (
@@ -127,10 +168,36 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                         />
                     ))}
 
+                    {mode === 'perimeter' &&
+                        draftPerimeter.map((vertex, index) => (
+                            <Marker
+                                key={`vertex-${index}-${vertex.join(',')}`}
+                                position={vertex}
+                                icon={vertexIcon}
+                                draggable
+                                eventHandlers={{
+                                    click: (event) => {
+                                        const target = event.originalEvent.target as HTMLElement;
+                                        if (target.dataset.remove) setDraftPerimeter(draftPerimeter.filter((_, i) => i !== index));
+                                    },
+                                    dragend: (event) => {
+                                        const { lat, lng } = (event.target as L.Marker).getLatLng();
+                                        setDraftPerimeter(draftPerimeter.map((current, i) => (i === index ? [lat, lng] : current)));
+                                    },
+                                }}
+                            />
+                        ))}
+
                     {mode === 'perimeter'
-                        ? draftPerimeter.length > 0 && <Polygon positions={draftPerimeter} pathOptions={{ color: COLORS.draft, weight: 3, fillOpacity: 0.05, dashArray: '6 4' }} />
+                        ? draftPerimeter.length > 1 && (
+                              <Polygon positions={draftPerimeter} pathOptions={{ color: COLORS.draft, weight: 3, fillOpacity: 0.08 }} />
+                          )
                         : coverage.segments.map((segment, index) => (
-                              <Polyline key={index} positions={segment.points} pathOptions={{ color: segment.covered ? COLORS.covered : COLORS.gap, weight: 5, opacity: 0.95 }} />
+                              <Polyline
+                                  key={index}
+                                  positions={segment.points}
+                                  pathOptions={{ color: segment.covered ? COLORS.covered : COLORS.gap, weight: 5, opacity: 0.95 }}
+                              />
                           ))}
 
                     {plan?.suggestions.map((suggestion, index) => (
@@ -141,8 +208,17 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                         />
                     ))}
                     {plan?.suggestions.map((suggestion, index) => (
-                        <CircleMarker key={`suggestion-marker-${index}`} center={suggestion.position} radius={9} pathOptions={{ color: COLORS.draft, weight: 2, fillColor: '#131418', fillOpacity: 1 }}>
-                            <Tooltip direction="center" permanent className="!border-0 !bg-transparent !p-0 !font-semibold !text-[#f5a524] !shadow-none">
+                        <CircleMarker
+                            key={`suggestion-marker-${index}`}
+                            center={suggestion.position}
+                            radius={9}
+                            pathOptions={{ color: COLORS.draft, weight: 2, fillColor: '#131418', fillOpacity: 1 }}
+                        >
+                            <Tooltip
+                                direction="center"
+                                permanent
+                                className="!border-0 !bg-transparent !p-0 !font-semibold !text-[#f5a524] !shadow-none"
+                            >
                                 {index + 1}
                             </Tooltip>
                         </CircleMarker>
@@ -163,11 +239,89 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                     ))}
                 </MapContainer>
 
-                {mode !== 'view' && (
+                {mode === 'camera' && (
                     <div className="bg-card/95 absolute top-3 left-1/2 z-[1000] -translate-x-1/2 rounded-lg border px-4 py-2 text-sm shadow-lg">
-                        {mode === 'perimeter' ? 'Hacé click siguiendo el borde del barrio para marcar el perímetro.' : 'Hacé click donde está instalada la cámara.'}
+                        Hacé click donde está instalada la cámara.
                     </div>
                 )}
+
+                {mode === 'perimeter' && (
+                    <div className="bg-card/95 absolute inset-x-3 bottom-3 z-[1000] flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 shadow-lg">
+                        <span className="bg-pending size-2.5 animate-pulse rounded-full" aria-hidden />
+                        <div className="min-w-0 flex-1">
+                            <p className="font-semibold">Editando el perímetro</p>
+                            <p className="text-muted-foreground text-sm">
+                                {draftPerimeter.length < 3
+                                    ? `Marcá al menos 3 esquinas (${draftPerimeter.length} de 3).`
+                                    : `${draftPerimeter.length} puntos, ${Math.round(after.lengthM)} m de perímetro.${perimeterChanged ? ' Cambios sin guardar.' : ''}`}
+                            </p>
+                        </div>
+                        <Button variant="ghost" onClick={cancelPerimeter}>
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={() => setConfirming('save')}
+                            disabled={!perimeterChanged || (draftPerimeter.length > 0 && draftPerimeter.length < 3)}
+                        >
+                            Confirmar perímetro
+                        </Button>
+                    </div>
+                )}
+
+                <Dialog open={confirming !== null} onOpenChange={(open) => !open && setConfirming(null)}>
+                    <DialogContent>
+                        {confirming === 'save' ? (
+                            <>
+                                <DialogHeader>
+                                    <DialogTitle>¿Guardar el nuevo perímetro?</DialogTitle>
+                                    <DialogDescription>
+                                        El perímetro se usa para medir qué parte del borde del barrio ven las cámaras. No cambia cómo se detectan las
+                                        intrusiones.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <dl className="grid grid-cols-2 gap-4 rounded-lg border p-4 text-sm">
+                                    <div>
+                                        <dt className="text-muted-foreground">Antes</dt>
+                                        <dd>
+                                            {perimeter.length >= 3
+                                                ? `${Math.round(before.lengthM)} m, ${Math.round(before.coveredRatio * 100)}% cubierto`
+                                                : 'Sin perímetro'}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-muted-foreground">Después</dt>
+                                        <dd className="font-semibold">
+                                            {draftPerimeter.length >= 3
+                                                ? `${Math.round(after.lengthM)} m, ${Math.round(after.coveredRatio * 100)}% cubierto`
+                                                : 'Sin perímetro'}
+                                        </dd>
+                                    </div>
+                                </dl>
+                                <DialogFooter>
+                                    <Button variant="ghost" onClick={() => setConfirming(null)}>
+                                        Seguir editando
+                                    </Button>
+                                    <Button onClick={savePerimeter}>Guardar perímetro</Button>
+                                </DialogFooter>
+                            </>
+                        ) : (
+                            <>
+                                <DialogHeader>
+                                    <DialogTitle>¿Descartar los cambios?</DialogTitle>
+                                    <DialogDescription>El perímetro vuelve a como estaba antes de editarlo.</DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter>
+                                    <Button variant="ghost" onClick={() => setConfirming(null)}>
+                                        Seguir editando
+                                    </Button>
+                                    <Button variant="destructive" onClick={cancelPerimeter}>
+                                        Descartar cambios
+                                    </Button>
+                                </DialogFooter>
+                            </>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </div>
 
             <aside className="flex flex-col gap-4">
@@ -182,24 +336,37 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                     />
                 ) : mode === 'perimeter' ? (
                     <section className="bg-card flex flex-col gap-3 rounded-xl border p-4">
-                        <h3 className="font-semibold">Dibujar perímetro</h3>
-                        <p className="text-muted-foreground text-sm">{draftPerimeter.length} puntos marcados. Cerrá la vuelta completa al barrio; el último punto se une con el primero.</p>
-                        <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setDraftPerimeter(draftPerimeter.slice(0, -1))} disabled={!draftPerimeter.length}>
-                                Deshacer punto
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => setDraftPerimeter([])} disabled={!draftPerimeter.length}>
-                                Empezar de nuevo
-                            </Button>
-                        </div>
-                        <div className="flex gap-2">
-                            <Button onClick={savePerimeter} disabled={draftPerimeter.length > 0 && draftPerimeter.length < 3}>
-                                Guardar perímetro
-                            </Button>
-                            <Button variant="ghost" onClick={() => { setDraftPerimeter(perimeter); setMode('view'); }}>
-                                Cancelar
-                            </Button>
-                        </div>
+                        <h3 className="font-semibold">Cómo dibujar el perímetro</h3>
+                        <ol className="flex flex-col gap-3 text-sm">
+                            <li className="flex gap-3">
+                                <span className="font-display bg-surface-2 flex size-6 shrink-0 items-center justify-center rounded-full">1</span>
+                                <span>
+                                    <span className="font-medium">Marcá las esquinas</span> del barrio con un click, en cualquier orden. La figura se
+                                    cierra sola.
+                                </span>
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="font-display bg-surface-2 flex size-6 shrink-0 items-center justify-center rounded-full">2</span>
+                                <span>
+                                    <span className="font-medium">Ajustá</span> arrastrando los puntos. Para borrar uno, pasá el mouse y tocá la ×.
+                                </span>
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="font-display bg-surface-2 flex size-6 shrink-0 items-center justify-center rounded-full">3</span>
+                                <span>
+                                    <span className="font-medium">Confirmá</span> con el botón de abajo del mapa.
+                                </span>
+                            </li>
+                        </ol>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="self-start"
+                            onClick={() => setDraftPerimeter([])}
+                            disabled={!draftPerimeter.length}
+                        >
+                            Borrar todo y empezar de nuevo
+                        </Button>
                     </section>
                 ) : mode === 'camera' && placement ? (
                     <section className="bg-card flex flex-col gap-4 rounded-xl border p-4">
@@ -225,7 +392,7 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                                     max={control.max}
                                     value={placement[control.key]}
                                     onChange={(event) => setPlacement({ ...placement, [control.key]: Number(event.target.value) })}
-                                    className="accent-white"
+                                    style={{ accentColor: 'var(--foreground)' }}
                                 />
                             </div>
                         ))}
@@ -233,7 +400,13 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                             <Button onClick={savePlacement} disabled={!placement.position}>
                                 Guardar ubicación
                             </Button>
-                            <Button variant="ghost" onClick={() => { setPlacement(null); setMode('view'); }}>
+                            <Button
+                                variant="ghost"
+                                onClick={() => {
+                                    setPlacement(null);
+                                    setMode('view');
+                                }}
+                            >
                                 Cancelar
                             </Button>
                         </div>
@@ -259,21 +432,21 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                                     {selected.sector ? `${selected.sector}. ` : ''}Ve {selected.fov}° hasta {selected.range_m} m.
                                 </p>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                <Button asChild size="sm" variant="secondary">
-                                    <Link href={`/cameras?site=${siteId}`}>Ver en vivo</Link>
-                                </Button>
+                            <ItemActions className="-ml-2.5 flex-wrap">
+                                <ItemActionLink kind="view" href={`/cameras?site=${siteId}`}>
+                                    Ver en vivo
+                                </ItemActionLink>
                                 {canManage && (
                                     <>
-                                        <Button size="sm" variant="secondary" onClick={() => startPlacing(selected)}>
-                                            Mover o reorientar
-                                        </Button>
-                                        <Button asChild size="sm" variant="ghost">
-                                            <Link href={`/cameras/${selected.id}/zones`}>Zonas</Link>
-                                        </Button>
+                                        <ItemActionButton kind="edit" onClick={() => startPlacing(selected)}>
+                                            Mover o girar
+                                        </ItemActionButton>
+                                        <ItemActionLink kind="edit" href={`/cameras/${selected.id}/zones`}>
+                                            Editar zonas
+                                        </ItemActionLink>
                                     </>
                                 )}
-                            </div>
+                            </ItemActions>
                         </div>
                     </section>
                 ) : (
@@ -281,9 +454,12 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                         <h3 className="font-semibold">Cobertura del perímetro</h3>
                         {perimeter.length >= 3 ? (
                             <>
-                                <p className="font-display text-5xl leading-none font-semibold tabular-nums">{Math.round(coverage.coveredRatio * 100)}%</p>
+                                <p className="font-display text-5xl leading-none font-semibold tabular-nums">
+                                    {Math.round(coverage.coveredRatio * 100)}%
+                                </p>
                                 <p className="text-muted-foreground text-sm">
-                                    de {Math.round(coverage.lengthM)} m de perímetro lo ve al menos una cámara online. Los tramos en rojo no los ve ninguna.
+                                    de {Math.round(coverage.lengthM)} m de perímetro lo ve al menos una cámara online. Los tramos en rojo no los ve
+                                    ninguna.
                                 </p>
                             </>
                         ) : (
@@ -295,7 +471,14 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
 
                 {canManage && mode === 'view' && variant === 'overview' && (
                     <section className="bg-card flex flex-col gap-3 rounded-xl border p-4">
-                        <Button variant="secondary" onClick={() => { setDraftPerimeter(perimeter); setMode('perimeter'); setSelectedId(null); }}>
+                        <Button
+                            variant="secondary"
+                            onClick={() => {
+                                setDraftPerimeter(perimeter);
+                                setMode('perimeter');
+                                setSelectedId(null);
+                            }}
+                        >
                             {perimeter.length ? 'Editar perímetro' : 'Dibujar perímetro'}
                         </Button>
                         {unplaced.length > 0 && (
@@ -304,7 +487,10 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                                 <ul className="flex flex-col gap-1">
                                     {unplaced.map((camera) => (
                                         <li key={camera.id}>
-                                            <button onClick={() => startPlacing(camera)} className="hover:bg-accent flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm">
+                                            <button
+                                                onClick={() => startPlacing(camera)}
+                                                className="hover:bg-accent flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
+                                            >
                                                 <MapPin className="text-pending size-4" />
                                                 {camera.name}
                                             </button>
@@ -352,12 +538,16 @@ function CoveragePlan({
             <section className="bg-card flex flex-col gap-4 rounded-xl border p-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <p className="font-display text-4xl leading-none font-semibold tabular-nums">{Math.round(plan.current.coveredRatio * 100)}%</p>
+                        <p className="font-display text-4xl leading-none font-semibold tabular-nums">
+                            {Math.round(plan.current.coveredRatio * 100)}%
+                        </p>
                         <p className="text-muted-foreground mt-1 text-sm">cubierto hoy</p>
                     </div>
                     {plan.suggestions.length > 0 && (
                         <div>
-                            <p className="font-display text-pending text-4xl leading-none font-semibold tabular-nums">{Math.round(plan.projectedRatio * 100)}%</p>
+                            <p className="font-display text-pending text-4xl leading-none font-semibold tabular-nums">
+                                {Math.round(plan.projectedRatio * 100)}%
+                            </p>
                             <p className="text-muted-foreground mt-1 text-sm">
                                 con {plan.suggestions.length} {plan.suggestions.length === 1 ? 'cámara nueva' : 'cámaras nuevas'}
                             </p>
@@ -366,7 +556,12 @@ function CoveragePlan({
                 </div>
                 <div className="grid gap-1.5">
                     <Label htmlFor="model">Modelo para las sugerencias</Label>
-                    <select id="model" value={modelId} onChange={(event) => onModelChange(event.target.value)} className="border-input bg-background h-9 rounded-md border px-3 text-sm">
+                    <select
+                        id="model"
+                        value={modelId}
+                        onChange={(event) => onModelChange(event.target.value)}
+                        className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                    >
                         {CAMERA_MODELS.map((candidate) => (
                             <option key={candidate.id} value={candidate.id}>
                                 {candidate.name} ({candidate.fov}°, {candidate.range_m} m)
@@ -389,11 +584,19 @@ function CoveragePlan({
                             const near = gap.nearestCamera ? cameraName(gap.nearestCamera.id) : null;
                             return (
                                 <li key={index}>
-                                    <button onClick={() => onFocus(gap.points)} className="hover:bg-accent w-full rounded-md px-2 py-2 text-left text-sm">
+                                    <button
+                                        onClick={() => onFocus(gap.points)}
+                                        className="hover:bg-accent w-full rounded-md px-2 py-2 text-left text-sm"
+                                    >
                                         <span className="font-medium">Tramo de {Math.round(gap.lengthM)} m sin cubrir</span>
-                                        {near && <span className="text-muted-foreground">, a {Math.round(gap.nearestCamera!.distanceM)} m de {near}</span>}
+                                        {near && (
+                                            <span className="text-muted-foreground">
+                                                , a {Math.round(gap.nearestCamera!.distanceM)} m de {near}
+                                            </span>
+                                        )}
                                         <span className="text-pending block">
-                                            {suggested === 1 ? `Sugerencia ${first}` : `Sugerencias ${first} a ${first + suggested - 1}`}: {suggested} {suggested === 1 ? 'cámara' : 'cámaras'} sobre el alambrado
+                                            {suggested === 1 ? `Sugerencia ${first}` : `Sugerencias ${first} a ${first + suggested - 1}`}: {suggested}{' '}
+                                            {suggested === 1 ? 'cámara' : 'cámaras'} sobre el alambrado
                                         </span>
                                     </button>
                                 </li>
@@ -402,11 +605,16 @@ function CoveragePlan({
                     </ol>
                 )}
                 {plan.gaps.length > 0 && (
-                    <button onClick={() => onFocus(null)} className="text-muted-foreground hover:text-foreground self-start text-sm underline-offset-4 hover:underline">
+                    <button
+                        onClick={() => onFocus(null)}
+                        className="text-muted-foreground hover:text-foreground self-start text-sm underline-offset-4 hover:underline"
+                    >
                         Ver todo el barrio
                     </button>
                 )}
-                <p className="text-muted-foreground text-xs">Las cámaras sin señal no cuentan como cobertura. El cálculo es una estimación: confirmalo recorriendo el perímetro de noche.</p>
+                <p className="text-muted-foreground text-xs">
+                    Las cámaras sin señal no cuentan como cobertura. El cálculo es una estimación: confirmalo recorriendo el perímetro de noche.
+                </p>
             </section>
         </>
     );

@@ -1,6 +1,7 @@
 import { StatusSignal } from '@/components/incident-badges';
-import { cn } from '@/lib/utils';
+import { ItemActionHint } from '@/components/item-action';
 import { severityStripe, timeAgo, type IncidentStatus, type Severity } from '@/lib/seguria';
+import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 
@@ -38,6 +39,7 @@ export function IncidentRow({ id, title, status, severity, detectedAt, meta, thu
             <time className="font-display text-muted-foreground shrink-0 text-base tabular-nums" dateTime={detectedAt}>
                 {timeAgo(detectedAt)}
             </time>
+            <ItemActionHint kind="view" className="hidden sm:inline-flex" />
         </Link>
     );
 }

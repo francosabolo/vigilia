@@ -34,6 +34,7 @@ class ZoneEditorController extends Controller
             'zones' => $camera->zones()->with('armingSchedules')->orderBy('id')->get()->map(fn (Zone $zone): array => [
                 'id' => $zone->id,
                 'name' => $zone->name,
+                'kind' => $zone->kind->value,
                 'frigate_zone' => $zone->frigate_zone,
                 'lot' => $zone->lot,
                 'watched_labels' => $zone->watched_labels ?? [],

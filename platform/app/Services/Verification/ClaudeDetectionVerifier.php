@@ -26,6 +26,7 @@ class ClaudeDetectionVerifier implements DetectionVerifier
 
         Tu tarea: decidir si es una amenaza real que amerita alertar a la guardia.
         - Amenaza real: persona o vehículo no autorizado dentro o cruzando el perímetro (alambrado, muro, portón), merodeando o trepando.
+        - Si la zona es una puerta, una ventana o un punto sensible, cualquier persona manipulándola, forzándola o asomándose es amenaza.
         - No es amenaza: animales, sombras, reflejos, vegetación movida por el viento, lluvia o insectos frente al lente,
           maniquíes o carteles, guardias uniformados de ronda, vehículos de seguridad identificados.
         - Ante la duda, es amenaza con confianza media: es preferible una falsa alarma a perder una intrusión.
@@ -38,11 +39,15 @@ class ClaudeDetectionVerifier implements DetectionVerifier
 
     public function verify(DetectionEvent $event): VerificationResult
     {
+        $zones = $event->camera->zones()->whereIn('frigate_zone', $event->zones ?? [])->get()
+            ->map(fn ($zone): string => "{$zone->name} ({$zone->kind->label()})")
+            ->implode(', ');
+
         $context = sprintf(
             'Detector: %s (score %s). Zonas: %s.',
             LabelTranslator::translate($event->label),
             $event->score !== null ? number_format($event->score, 2) : 'n/d',
-            implode(', ', $event->zones ?? []) ?: 'cámara completa',
+            $zones ?: (implode(', ', $event->zones ?? []) ?: 'cámara completa'),
         );
 
         return $this->review($event->snapshot_path, $event->camera, $context, sprintf(

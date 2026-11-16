@@ -63,7 +63,11 @@ export interface CoverageSegment {
 /**
  * Walks the perimeter every `step` meters and marks which stretches fall inside an online camera's view.
  */
-export function perimeterCoverage(perimeter: LatLng[], cameras: CameraPlacement[], step = 2): { segments: CoverageSegment[]; coveredRatio: number; lengthM: number } {
+export function perimeterCoverage(
+    perimeter: LatLng[],
+    cameras: CameraPlacement[],
+    step = 2,
+): { segments: CoverageSegment[]; coveredRatio: number; lengthM: number } {
     if (perimeter.length < 3) return { segments: [], coveredRatio: 0, lengthM: 0 };
 
     const ring = [...perimeter, perimeter[0]];
@@ -140,7 +144,10 @@ function along(points: LatLng[], meters: number): { point: LatLng; heading: numb
         const segment = distanceMeters(points[i - 1], points[i]);
         if (walked + segment >= meters || i === points.length - 1) {
             const t = segment === 0 ? 0 : Math.min(1, (meters - walked) / segment);
-            const point: LatLng = [points[i - 1][0] + (points[i][0] - points[i - 1][0]) * t, points[i - 1][1] + (points[i][1] - points[i - 1][1]) * t];
+            const point: LatLng = [
+                points[i - 1][0] + (points[i][0] - points[i - 1][0]) * t,
+                points[i - 1][1] + (points[i][1] - points[i - 1][1]) * t,
+            ];
             return { point, heading: bearing(points[i - 1], points[i]) };
         }
         walked += segment;
@@ -185,4 +192,20 @@ export function planCoverage(perimeter: LatLng[], cameras: CameraPlacement[], mo
     ]);
 
     return { current, gaps, suggestions, projectedRatio: projected.coveredRatio };
+}
+
+/** Inserts a vertex on the closest side of the polygon (cheapest insertion), so it never self-intersects. */
+export function insertVertex(points: LatLng[], point: LatLng): LatLng[] {
+    if (points.length < 3) return [...points, point];
+    let best = 0;
+    let bestCost = Infinity;
+    points.forEach((current, i) => {
+        const next = points[(i + 1) % points.length];
+        const cost = distanceMeters(current, point) + distanceMeters(point, next) - distanceMeters(current, next);
+        if (cost < bestCost) {
+            bestCost = cost;
+            best = i;
+        }
+    });
+    return [...points.slice(0, best + 1), point, ...points.slice(best + 1)];
 }

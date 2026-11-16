@@ -25,7 +25,7 @@ class ZoneSync
                     ->mapWithKeys(fn (Zone $zone): array => [
                         $zone->frigate_zone => [
                             'coordinates' => $zone->frigateCoordinates(),
-                            'objects' => array_values($zone->watched_labels ?: ['person', 'car', 'motorcycle']),
+                            'objects' => array_values($zone->watched_labels ?: $zone->kind->defaultLabels()),
                         ],
                     ])
                     ->all(),

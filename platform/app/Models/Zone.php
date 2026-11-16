@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ZoneKind;
 use Database\Factories\ZoneFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,16 +14,22 @@ class Zone extends Model
     /** @use HasFactory<ZoneFactory> */
     use HasFactory;
 
-    protected $fillable = ['camera_id', 'name', 'frigate_zone', 'coordinates', 'is_perimeter', 'lot', 'watched_labels'];
+    protected $fillable = ['camera_id', 'name', 'kind', 'frigate_zone', 'coordinates', 'is_perimeter', 'lot', 'watched_labels'];
 
     protected function casts(): array
     {
         return [
             'is_perimeter' => 'boolean',
+            'kind' => ZoneKind::class,
             'watched_labels' => 'array',
             'coordinates' => 'array',
         ];
     }
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = ['kind' => 'perimeter'];
 
     /**
      * Frigate's relative coordinates format: "x1,y1,x2,y2,...".

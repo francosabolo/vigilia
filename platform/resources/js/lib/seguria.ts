@@ -68,6 +68,17 @@ export const objectLabels: Record<string, string> = {
     dog: 'Perros',
 };
 
+export type ZoneKind = 'perimeter' | 'door' | 'window' | 'sensitive';
+
+export const zoneKinds: { id: ZoneKind; label: string; example: string; labels: string[] }[] = [
+    { id: 'perimeter', label: 'Perímetro', example: 'Ej: alambrado norte', labels: ['person', 'car', 'motorcycle'] },
+    { id: 'door', label: 'Puerta o portón', example: 'Ej: puerta de servicio', labels: ['person'] },
+    { id: 'window', label: 'Ventana', example: 'Ej: ventanal del SUM', labels: ['person'] },
+    { id: 'sensitive', label: 'Punto sensible', example: 'Ej: tablero eléctrico', labels: ['person'] },
+];
+
+export const zoneKindLabel: Record<ZoneKind, string> = Object.fromEntries(zoneKinds.map((kind) => [kind.id, kind.label])) as Record<ZoneKind, string>;
+
 export const severityLabel: Record<Severity, string> = {
     low: 'Baja',
     medium: 'Media',

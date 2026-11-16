@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
         Route::get('sites/{site}', [SiteController::class, 'show'])->name('sites.show');
         Route::patch('sites/{site}', [SiteConfigurationController::class, 'updateSite'])->name('sites.update');
         Route::post('sites/{site}/residents', [ResidentAdminController::class, 'store'])->name('residents.store');
+        Route::patch('sites/{site}/residents/{resident}', [ResidentAdminController::class, 'update'])->name('residents.update');
         Route::delete('sites/{site}/residents/{resident}', [ResidentAdminController::class, 'destroy'])->name('residents.destroy');
         Route::patch('sites/{site}/perimeter', [SiteConfigurationController::class, 'updatePerimeter'])->name('sites.perimeter');
         Route::patch('cameras/{camera}', [SiteConfigurationController::class, 'updateCamera'])->name('cameras.update');

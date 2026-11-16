@@ -1,16 +1,26 @@
 import InputError from '@/components/input-error';
+import { ItemActionButton, ItemActionLink, ItemActions } from '@/components/item-action';
+import { SiteMap } from '@/components/site-map';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
-import { cn } from '@/lib/utils';
-import { formatDuration, plural, timeAgo, type EdgeStatus, type Metrics } from '@/lib/seguria';
-import { type BreadcrumbItem } from '@/types';
-import { SiteMap } from '@/components/site-map';
 import { type LatLng } from '@/lib/geo';
+import { formatDuration, plural, timeAgo, zoneKindLabel, type EdgeStatus, type Metrics, type ZoneKind } from '@/lib/seguria';
+import { cn } from '@/lib/utils';
+import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
-import { Cctv, PenTool, Siren, Trash2, VideoOff } from 'lucide-react';
+import { Cctv, Siren, VideoOff } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 
 type Tab = 'resumen' | 'cobertura' | 'camaras' | 'vecinos' | 'ajustes';
@@ -24,6 +34,7 @@ interface Schedule {
 interface Zone {
     id: number;
     name: string;
+    kind: ZoneKind;
     lot: string | null;
     has_polygon: boolean;
     schedules: Schedule[];
@@ -114,7 +125,13 @@ function WatchHeader({ site }: { site: Props['site'] }) {
             <div>
                 <h1 className="font-display text-4xl leading-tight font-semibold">{site.name}</h1>
                 {site.address && <p className="text-muted-foreground">{site.address}</p>}
-                <p className={cn('mt-2 flex items-center gap-2 font-medium', tone === 'alarm' && 'text-alarm', tone === 'muted' && 'text-muted-foreground')}>
+                <p
+                    className={cn(
+                        'mt-2 flex items-center gap-2 font-medium',
+                        tone === 'alarm' && 'text-alarm',
+                        tone === 'muted' && 'text-muted-foreground',
+                    )}
+                >
                     <span
                         className={cn(
                             'size-2.5 rounded-full',
@@ -129,7 +146,10 @@ function WatchHeader({ site }: { site: Props['site'] }) {
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                 {/* Header links are navigation, not actions: they never compete with the tab's primary action. */}
-                <Link href={`/cameras?site=${site.id}`} className="hover:text-foreground text-muted-foreground flex items-center gap-1.5 text-[15px] font-medium underline-offset-4 hover:underline">
+                <Link
+                    href={`/cameras?site=${site.id}`}
+                    className="hover:text-foreground text-muted-foreground flex items-center gap-1.5 text-[15px] font-medium underline-offset-4 hover:underline"
+                >
                     <Cctv className="size-4" />
                     Cámaras en vivo
                     <span className="tabular-nums">
@@ -137,7 +157,10 @@ function WatchHeader({ site }: { site: Props['site'] }) {
                     </span>
                 </Link>
                 {site.open_incidents > 0 && !site.escalated_incident_id && (
-                    <Link href="/incidents" className="hover:text-foreground text-muted-foreground text-[15px] font-medium underline-offset-4 hover:underline">
+                    <Link
+                        href="/incidents"
+                        className="hover:text-foreground text-muted-foreground text-[15px] font-medium underline-offset-4 hover:underline"
+                    >
                         Incidentes en curso
                     </Link>
                 )}
@@ -153,7 +176,19 @@ function WatchHeader({ site }: { site: Props['site'] }) {
     );
 }
 
-function Tabs({ siteId, tab, canManage, residentsCount, camerasCount }: { siteId: number; tab: Tab; canManage: boolean; residentsCount: number; camerasCount: number }) {
+function Tabs({
+    siteId,
+    tab,
+    canManage,
+    residentsCount,
+    camerasCount,
+}: {
+    siteId: number;
+    tab: Tab;
+    canManage: boolean;
+    residentsCount: number;
+    camerasCount: number;
+}) {
     const tabs: { id: Tab; label: string; count?: number }[] = [
         { id: 'resumen', label: 'Resumen' },
         { id: 'cobertura', label: 'Cobertura' },
@@ -190,7 +225,8 @@ function NoCameras({ siteId }: { siteId: number }) {
         <div className="rounded-xl border border-dashed p-8 text-center">
             <p className="text-lg font-semibold">Este barrio todavía no tiene cámaras</p>
             <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm">
-                Las cámaras aparecen solas cuando el equipo edge del barrio se conecta. Para registrar uno, corré <code className="bg-surface-2 rounded px-1">php artisan seguria:edge-create {siteId} edge-1</code> y cargá el token en el equipo.
+                Las cámaras aparecen solas cuando el equipo edge del barrio se conecta. Para registrar uno, corré{' '}
+                <code className="bg-surface-2 rounded px-1">php artisan seguria:edge-create {siteId} edge-1</code> y cargá el token en el equipo.
             </p>
         </div>
     );
@@ -232,7 +268,9 @@ function Summary({ site, metrics, canManage }: Pick<Props, 'site' | 'metrics' | 
                                 <li key={edge.id} className="flex items-center gap-2">
                                     <span className={cn('size-2 rounded-full', edge.online ? 'bg-ok' : 'bg-alarm')} />
                                     <span className="font-medium">{edge.name}</span>
-                                    <span className="text-muted-foreground ml-auto">{edge.online ? 'conectado' : `sin señal ${timeAgo(edge.last_seen_at)}`}</span>
+                                    <span className="text-muted-foreground ml-auto">
+                                        {edge.online ? 'conectado' : `sin señal ${timeAgo(edge.last_seen_at)}`}
+                                    </span>
                                 </li>
                             ))}
                         </ul>
@@ -274,6 +312,7 @@ function CamerasTab({ site, canManage }: Pick<Props, 'site' | 'canManage'>) {
                                 {camera.zones.map((zone) => (
                                     <li key={zone.id}>
                                         <span className="font-medium">{zone.name}</span>
+                                        <span className="text-muted-foreground"> ({zoneKindLabel[zone.kind].toLowerCase()})</span>
                                         {zone.lot && <span className="text-muted-foreground">, lote {zone.lot}</span>}
                                         <span className="text-muted-foreground">. {scheduleText(zone.schedules)}.</span>
                                         {!zone.has_polygon && <span className="text-pending"> Falta dibujarla.</span>}
@@ -282,13 +321,16 @@ function CamerasTab({ site, canManage }: Pick<Props, 'site' | 'canManage'>) {
                             </ul>
                         )}
                     </div>
-                    {canManage && (
-                        <Button asChild variant="secondary" className="shrink-0">
-                            <Link href={`/cameras/${camera.id}/zones`}>
-                                <PenTool className="mr-1 size-4" /> Editar zonas y horarios
-                            </Link>
-                        </Button>
-                    )}
+                    <ItemActions>
+                        <ItemActionLink kind="view" href={`/cameras?site=${site.id}`}>
+                            Ver en vivo
+                        </ItemActionLink>
+                        {canManage && (
+                            <ItemActionLink kind="edit" href={`/cameras/${camera.id}/zones`}>
+                                Editar zonas
+                            </ItemActionLink>
+                        )}
+                    </ItemActions>
                 </div>
             ))}
         </div>
@@ -331,14 +373,27 @@ function InviteResident({ siteId, sectors, alarmActive }: { siteId: number; sect
                         <DialogTitle>Invitar vecino</DialogTitle>
                         <DialogDescription>Le llega un mail para crear su contraseña y entrar a la app de vecinos.</DialogDescription>
                     </DialogHeader>
-                    {field('name', 'Nombre y apellido', <Input id="name" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} autoFocus />)}
-                    {field('email', 'Email', <Input id="email" type="email" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} />)}
+                    {field(
+                        'name',
+                        'Nombre y apellido',
+                        <Input id="name" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} autoFocus />,
+                    )}
+                    {field(
+                        'email',
+                        'Email',
+                        <Input id="email" type="email" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} />,
+                    )}
                     <div className="grid grid-cols-2 gap-3">
                         {field('lot', 'Lote', <Input id="lot" value={form.data.lot} onChange={(e) => form.setData('lot', e.target.value)} />)}
                         {field(
                             'sector',
                             'Sector',
-                            <select id="sector" value={form.data.sector} onChange={(e) => form.setData('sector', e.target.value)} className="border-input bg-background h-9 rounded-md border px-3 text-sm">
+                            <select
+                                id="sector"
+                                value={form.data.sector}
+                                onChange={(e) => form.setData('sector', e.target.value)}
+                                className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                            >
                                 <option value="">Sin sector</option>
                                 {sectors.map((sector) => (
                                     <option key={sector} value={sector}>
@@ -348,7 +403,16 @@ function InviteResident({ siteId, sectors, alarmActive }: { siteId: number; sect
                             </select>,
                         )}
                     </div>
-                    {field('phone', 'Celular (opcional, para que la guardia pueda llamarlo)', <Input id="phone" placeholder="+5491155550000" value={form.data.phone} onChange={(e) => form.setData('phone', e.target.value)} />)}
+                    {field(
+                        'phone',
+                        'Celular (opcional, para que la guardia pueda llamarlo)',
+                        <Input
+                            id="phone"
+                            placeholder="+5491155550000"
+                            value={form.data.phone}
+                            onChange={(e) => form.setData('phone', e.target.value)}
+                        />,
+                    )}
                     <DialogFooter>
                         <DialogClose asChild>
                             <Button type="button" variant="ghost">
@@ -365,24 +429,99 @@ function InviteResident({ siteId, sectors, alarmActive }: { siteId: number; sect
     );
 }
 
+function EditResident({ siteId, resident, sectors }: { siteId: number; resident: Resident; sectors: string[] }) {
+    const [open, setOpen] = useState(false);
+    const form = useForm({ name: resident.name, lot: resident.lot ?? '', sector: resident.sector ?? '', phone: resident.phone ?? '' });
+
+    function submit(event: FormEvent) {
+        event.preventDefault();
+        form.patch(`/sites/${siteId}/residents/${resident.id}`, { preserveScroll: true, onSuccess: () => setOpen(false) });
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <ItemActionButton kind="edit" aria-label={`Editar a ${resident.name}`} />
+            </DialogTrigger>
+            <DialogContent>
+                <form onSubmit={submit} className="flex flex-col gap-4">
+                    <DialogHeader>
+                        <DialogTitle>Editar a {resident.name}</DialogTitle>
+                        <DialogDescription>El email no se cambia acá: es con el que entra a la app.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-1.5">
+                        <Label htmlFor={`name-${resident.id}`}>Nombre y apellido</Label>
+                        <Input id={`name-${resident.id}`} value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} />
+                        <InputError message={form.errors.name} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="grid gap-1.5">
+                            <Label htmlFor={`lot-${resident.id}`}>Lote</Label>
+                            <Input id={`lot-${resident.id}`} value={form.data.lot} onChange={(e) => form.setData('lot', e.target.value)} />
+                            <InputError message={form.errors.lot} />
+                        </div>
+                        <div className="grid gap-1.5">
+                            <Label htmlFor={`sector-${resident.id}`}>Sector</Label>
+                            <select
+                                id={`sector-${resident.id}`}
+                                value={form.data.sector}
+                                onChange={(e) => form.setData('sector', e.target.value)}
+                                className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                            >
+                                <option value="">Sin sector</option>
+                                {sectors.map((sector) => (
+                                    <option key={sector} value={sector}>
+                                        {sector}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="grid gap-1.5">
+                        <Label htmlFor={`phone-${resident.id}`}>Celular</Label>
+                        <Input id={`phone-${resident.id}`} value={form.data.phone} onChange={(e) => form.setData('phone', e.target.value)} />
+                        <InputError message={form.errors.phone} />
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="ghost">
+                                Cancelar
+                            </Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={form.processing || !form.isDirty}>
+                            Guardar cambios
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function RemoveResident({ siteId, resident }: { siteId: number; resident: Resident }) {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-alarm size-8" aria-label={`Quitar a ${resident.name}`}>
-                    <Trash2 className="size-4" />
-                </Button>
+                <ItemActionButton kind="delete" aria-label={`Quitar a ${resident.name}`}>
+                    Quitar
+                </ItemActionButton>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>¿Quitar a {resident.name}?</DialogTitle>
-                    <DialogDescription>Pierde el acceso a la app de vecinos: el botón de pánico, los avisos y el modo vacaciones. Lo podés volver a invitar cuando quieras.</DialogDescription>
+                    <DialogDescription>
+                        Pierde el acceso a la app de vecinos: el botón de pánico, los avisos y el modo vacaciones. Lo podés volver a invitar cuando
+                        quieras.
+                    </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
                     <DialogClose asChild>
                         <Button variant="ghost">Cancelar</Button>
                     </DialogClose>
-                    <Button variant="destructive" onClick={() => router.delete(`/sites/${siteId}/residents/${resident.id}`, { preserveScroll: true })}>
+                    <Button
+                        variant="destructive"
+                        onClick={() => router.delete(`/sites/${siteId}/residents/${resident.id}`, { preserveScroll: true })}
+                    >
                         Quitar vecino
                     </Button>
                 </DialogFooter>
@@ -406,7 +545,9 @@ function AppUsage({ resident }: { resident: Resident }) {
             </div>
             <div className="text-muted-foreground">
                 {resident.devices.length > 0 && `${resident.devices.join(', ')}. `}
-                {resident.push_devices > 0 ? `Recibe alertas en ${resident.push_devices === 1 ? '1 dispositivo' : `${resident.push_devices} dispositivos`}.` : 'Sin alertas activadas.'}
+                {resident.push_devices > 0
+                    ? `Recibe alertas en ${resident.push_devices === 1 ? '1 dispositivo' : `${resident.push_devices} dispositivos`}.`
+                    : 'Sin alertas activadas.'}
             </div>
         </div>
     );
@@ -416,14 +557,18 @@ function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-muted-foreground max-w-xl text-sm">Los vecinos usan su propia app: botón de pánico, avisos y modo vacaciones. No ven cámaras ni imágenes.</p>
+                <p className="text-muted-foreground max-w-xl text-sm">
+                    Los vecinos usan su propia app: botón de pánico, avisos y modo vacaciones. No ven cámaras ni imágenes.
+                </p>
                 {canManage && <InviteResident siteId={site.id} sectors={sectors} alarmActive={!!site.escalated_incident_id} />}
             </div>
 
             {residents.length === 0 ? (
                 <div className="rounded-xl border border-dashed p-8 text-center">
                     <p className="text-lg font-semibold">Todavía no hay vecinos en la app</p>
-                    <p className="text-muted-foreground mt-1 text-sm">{canManage ? 'Invitá al primero con su email y su lote.' : 'La administración del barrio los puede invitar.'}</p>
+                    <p className="text-muted-foreground mt-1 text-sm">
+                        {canManage ? 'Invitá al primero con su email y su lote.' : 'La administración del barrio los puede invitar.'}
+                    </p>
                 </div>
             ) : (
                 <div className="bg-card overflow-x-auto rounded-xl border">
@@ -436,7 +581,7 @@ function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site
                                 <th className="hidden px-4 py-2.5 font-medium md:table-cell">Celular</th>
                                 <th className="px-4 py-2.5 font-medium">Uso de la app</th>
                                 <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Estado</th>
-                                {canManage && <th className="w-12" />}
+                                {canManage && <th className="px-4 py-2.5 text-right font-medium">Acciones</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y">
@@ -453,11 +598,18 @@ function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site
                                         <AppUsage resident={resident} />
                                     </td>
                                     <td className="hidden px-4 py-3 text-sm lg:table-cell">
-                                        {resident.away_until ? `De vacaciones hasta el ${new Date(resident.away_until + 'T12:00').toLocaleDateString('es-AR')}` : <span className="text-muted-foreground">En casa</span>}
+                                        {resident.away_until ? (
+                                            `De vacaciones hasta el ${new Date(resident.away_until + 'T12:00').toLocaleDateString('es-AR')}`
+                                        ) : (
+                                            <span className="text-muted-foreground">En casa</span>
+                                        )}
                                     </td>
                                     {canManage && (
                                         <td className="px-2 py-3">
-                                            <RemoveResident siteId={site.id} resident={resident} />
+                                            <ItemActions className="justify-end">
+                                                <EditResident siteId={site.id} resident={resident} sectors={sectors} />
+                                                <RemoveResident siteId={site.id} resident={resident} />
+                                            </ItemActions>
                                         </td>
                                     )}
                                 </tr>
@@ -485,8 +637,15 @@ function SettingsTab({ site }: Pick<Props, 'site'>) {
         <form onSubmit={submit} className="flex max-w-xl flex-col gap-6">
             <div className="grid gap-1.5">
                 <Label htmlFor="guard_whatsapp">WhatsApp de la guardia</Label>
-                <Input id="guard_whatsapp" placeholder="+5491155550000" value={form.data.guard_whatsapp} onChange={(e) => form.setData('guard_whatsapp', e.target.value)} />
-                <p className="text-muted-foreground text-sm">Recibe cada alerta con la foto y los botones para responder. Es el celular de la garita, no el de una persona.</p>
+                <Input
+                    id="guard_whatsapp"
+                    placeholder="+5491155550000"
+                    value={form.data.guard_whatsapp}
+                    onChange={(e) => form.setData('guard_whatsapp', e.target.value)}
+                />
+                <p className="text-muted-foreground text-sm">
+                    Recibe cada alerta con la foto y los botones para responder. Es el celular de la garita, no el de una persona.
+                </p>
                 <InputError message={form.errors.guard_whatsapp} />
             </div>
 
@@ -534,7 +693,14 @@ export default function SiteShow({ tab, canManage, site, residents, residentsCou
 
                 {tab === 'resumen' && <Summary site={site} metrics={metrics} canManage={canManage} />}
                 {tab === 'cobertura' && (
-                    <SiteMap siteId={site.id} perimeter={site.perimeter} center={site.center} cameras={site.cameras} canManage={canManage} variant="coverage" />
+                    <SiteMap
+                        siteId={site.id}
+                        perimeter={site.perimeter}
+                        center={site.center}
+                        cameras={site.cameras}
+                        canManage={canManage}
+                        variant="coverage"
+                    />
                 )}
                 {tab === 'camaras' && <CamerasTab site={site} canManage={canManage} />}
                 {tab === 'vecinos' && residents && <ResidentsTab site={site} residents={residents} sectors={sectors} canManage={canManage} />}

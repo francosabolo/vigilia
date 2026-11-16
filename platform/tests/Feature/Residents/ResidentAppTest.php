@@ -111,3 +111,16 @@ it('lets the site administration invite residents', function () {
     expect($ana->role)->toBe(UserRole::Resident)->and($ana->site_id)->toBe($this->site->id);
     Notification::assertSentTo($ana, ResetPassword::class);
 });
+
+it('lets the site administration edit a resident', function () {
+    $siteAdmin = User::factory()->create(['role' => UserRole::SiteAdmin, 'site_id' => $this->site->id]);
+
+    $this->actingAs($siteAdmin)->patch("/sites/{$this->site->id}/residents/{$this->resident->id}", [
+        'name' => 'Laura Gómez', 'lot' => '43', 'sector' => 'Sur', 'phone' => '+5491155550001',
+    ])->assertRedirect();
+
+    expect($this->resident->fresh()->only('lot', 'sector', 'phone'))->toBe(['lot' => '43', 'sector' => 'Sur', 'phone' => '+5491155550001']);
+
+    $otherSite = Site::factory()->create();
+    $this->actingAs($siteAdmin)->patch("/sites/{$otherSite->id}/residents/{$this->resident->id}", ['name' => 'X', 'lot' => '1'])->assertForbidden();
+});

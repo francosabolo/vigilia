@@ -86,6 +86,7 @@ class SiteController extends Controller
                         'zones' => $camera->zones->map(fn (Zone $zone): array => [
                             'id' => $zone->id,
                             'name' => $zone->name,
+                            'kind' => $zone->kind->value,
                             'lot' => $zone->lot,
                             'has_polygon' => ! empty($zone->coordinates),
                             'schedules' => $zone->armingSchedules->map(fn (ArmingSchedule $schedule): array => [

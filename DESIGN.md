@@ -38,12 +38,13 @@ La lente de cámara con un barrido de vigilancia (`platform/resources/js/compone
 - **Vecino**: celular, uso esporádico, a veces en un momento de miedo (pánico). No es técnico.
 
 ## Design system
-- Tokens: `platform/resources/css/app.css` (tema de la consola en `:root`, tema de vecinos en `.theme-vecinos`).
+- Tokens: `platform/resources/css/app.css`. La consola usa `:root` en modo claro y `.dark` en modo oscuro (el que va por defecto); los vecinos usan `.theme-vecinos`. El tema se guarda en la cookie `appearance`.
 - Componentes: shadcn/ui en `platform/resources/js/components/ui`, más los componentes propios en `components/console`, `incident-badges.tsx` y `site-switcher.tsx`.
 - Lienzo aprobado: todavía no hay.
 
 ## Tipografía, color y espaciado
-- La consola es siempre oscura, en grafito, sin modo claro — porque se usa de noche y las imágenes de las cámaras tienen que resaltar. (origen: confirmado por Franco, 16/11/2026)
+- La consola es oscura por defecto, en grafito — porque se usa de noche y las imágenes de las cámaras tienen que resaltar. (origen: confirmado por Franco, 16/11/2026)
+- La consola tiene un botón en el header para pasar a modo claro (blanco, grafito y rojo, con las mismas reglas de señal), y la elección se recuerda por dispositivo — porque de día, en una oficina con luz, la administración lee mejor en claro. (origen: pedido de Franco, 16/11/2026)
 - La app de vecinos es clara — porque se usa de día, desde el celular, y tiene que transmitir calma. (origen: confirmado por Franco, 16/11/2026)
 
 ## Layout y navegación
@@ -57,14 +58,37 @@ Hay cuatro niveles y en pantalla nunca conviven dos del mismo nivel alto:
 | Nivel | Cómo se ve | Cuándo |
 |---|---|---|
 | Alarma | Botón rojo relleno ("Atender incidente") | Solo si hay un incidente escalado. Es la única acción que puede estar por encima de la principal. |
-| Principal | Botón blanco relleno (grafito en vecinos) | Uno por pantalla: la acción del contenido activo ("Invitar vecino", "Guardar ajustes", "Recibido, voy en camino"). |
+| Principal | Botón relleno: blanco en modo oscuro, grafito en modo claro y en vecinos | Uno por pantalla: la acción del contenido activo ("Invitar vecino", "Guardar ajustes", "Recibido, voy en camino"). |
 | Secundaria | Botón gris (`secondary`) o con borde (`outline`) | Acciones alternativas del mismo contenido. |
 | Navegación | Link de texto con ícono, sin relleno | Ir a otra pantalla ("Cámaras en vivo", "Incidentes en curso"). |
 
 - La acción principal pertenece al contenido activo (la pestaña o el formulario), no al encabezado. En el encabezado van links de navegación y, si hay una alarma, el botón rojo — porque una acción de navegación en blanco compite con la acción real de la pantalla. (origen: corrección de Franco sobre la pantalla del barrio, 16/11/2026)
 - Si hay una alarma activa, la acción principal de la pestaña baja a secundaria: en pantalla queda un solo botón que se destaca, el de atender. (origen: corrección de Franco, 16/11/2026)
 - Ir a otra pantalla nunca se diseña como botón relleno: es un link. Un botón ejecuta algo, un link lleva a otro lugar. (origen: corrección de Franco, 16/11/2026)
-- Las acciones destructivas dentro de una fila (como el tacho) van atenuadas y se ponen rojas solo al pasar el mouse, siempre con confirmación — porque no deberían pesar más que el contenido de la fila. (origen: corrección de Franco, 16/11/2026)
+- Las acciones destructivas dentro de una fila van atenuadas y se ponen rojas solo al pasar el mouse, siempre con confirmación — porque no deberían pesar más que el contenido de la fila. Se resuelven con `ItemAction` de tipo `delete` (ver Acciones sobre elementos). (origen: corrección de Franco, 16/11/2026)
+
+## Acciones sobre elementos (componente `ItemAction`)
+Todo elemento que se ve en pantalla (fila, tarjeta, cámara, zona, vecino, barrio) muestra sus acciones posibles de forma explícita, con ícono y verbo, a la derecha del elemento. No alcanza con que la fila sea clickeable — porque si no se ve qué se puede hacer, la gente no lo descubre. (origen: pedido de Franco, 16/11/2026)
+
+| Acción | Verbo | Ícono | Cuándo |
+|---|---|---|---|
+| `view` | Ver (o "Ver en vivo", "Ver barrio") | ojo | Abre el elemento o su detalle |
+| `edit` | Editar (o "Editar zonas", "Mover o girar") | lápiz | Cambia el elemento |
+| `delete` | Borrar / Quitar | tacho | Siempre con diálogo de confirmación que dice qué se pierde. Gris; rojo solo al pasar el mouse |
+| `expand` | Ampliar | flechas | Vista más grande en la misma pantalla |
+
+- Componente: `platform/resources/js/components/item-action.tsx`:
+  - `ItemActionLink` navega;
+  - `ItemActionButton` actúa en el lugar (por ejemplo, abre un diálogo);
+  - `ItemActionHint` es solo visual, para cuando toda la fila ya es un link (por ejemplo, una fila de incidente que muestra "Ver");
+  - `ItemActions` agrupa las acciones de un elemento.
+- Siempre los mismos verbos y el mismo orden: Ver, Editar, Borrar. Los verbos pueden precisarse ("Ver en vivo", "Editar zonas") pero no cambiarse por sinónimos ("Abrir", "Modificar") — porque la consistencia es lo que hace que se aprendan. (origen: pedido de Franco, 16/11/2026)
+- Estas acciones son de nivel secundario o de navegación según la Jerarquía de acciones: nunca son el botón principal relleno de la pantalla.
+
+## Editores de dibujo (zonas sobre la imagen, perímetro sobre el mapa)
+- Cada punto dibujado se puede mover arrastrándolo y borrar con una × que aparece sobre el punto (siempre visible en pantallas táctiles). Los puntos son círculos de tamaño fijo, que no se deforman con la imagen — porque si no se entiende cómo corregir un dibujo, la gente lo abandona o lo deja mal. (origen: corrección de Franco sobre el editor de zonas, 16/11/2026)
+- Un punto nuevo se inserta en el lado más cercano de la figura, no al final de la lista, para que el polígono nunca se cruce sobre sí mismo. (origen: corrección de Franco, 16/11/2026)
+- Las instrucciones del editor se muestran como acciones concretas (Agregar, Mover, Borrar) mientras se dibuja. *(principio base de Tónica)*
 
 ## Listados y tablas
 - En los incidentes, la severidad se lee en la franja de color a la izquierda de la fila, y el estado en un punto con texto. Nada de pastillas de colores — porque así la fila se lee de un vistazo y el color queda reservado para las señales. (origen: confirmado por Franco, 16/11/2026)

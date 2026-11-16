@@ -41,6 +41,21 @@ class ResidentAdminController extends Controller
         return back();
     }
 
+    public function update(Request $request, Site $site, User $resident): RedirectResponse
+    {
+        Gate::authorize('manage', $site);
+        abort_unless($resident->isResident() && $resident->site_id === $site->id, 404);
+
+        $resident->update($request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'lot' => ['required', 'string', 'max:20'],
+            'sector' => ['nullable', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'regex:/^\+?\d{8,15}$/'],
+        ]));
+
+        return back();
+    }
+
     public function destroy(Site $site, User $resident): RedirectResponse
     {
         Gate::authorize('manage', $site);
