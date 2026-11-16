@@ -19,7 +19,7 @@ class Camera extends Model
      */
     protected $attributes = ['view_status' => 'ok', 'view_anomaly_count' => 0, 'heading' => 0, 'fov' => 90, 'range_m' => 40];
 
-    protected $fillable = ['site_id', 'edge_device_id', 'name', 'frigate_name', 'sector', 'lat', 'lng', 'heading', 'fov', 'range_m', 'view_status', 'view_shift_deg', 'view_anomaly_count', 'view_checked_at', 'is_online', 'last_seen_at'];
+    protected $fillable = ['site_id', 'edge_device_id', 'name', 'frigate_name', 'sector', 'lat', 'lng', 'heading', 'fov', 'range_m', 'view_status', 'view_shift_deg', 'view_anomaly_count', 'view_checked_at', 'is_online', 'last_seen_at', 'offline_since'];
 
     protected function casts(): array
     {
@@ -34,6 +34,7 @@ class Camera extends Model
             'view_shift_deg' => 'integer',
             'view_checked_at' => 'datetime',
             'last_seen_at' => 'datetime',
+            'offline_since' => 'datetime',
         ];
     }
 

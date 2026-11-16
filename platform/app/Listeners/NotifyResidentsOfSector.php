@@ -2,6 +2,7 @@
 
 namespace App\Listeners;
 
+use App\Enums\IncidentSource;
 use App\Enums\UserRole;
 use App\Events\IncidentChanged;
 use App\Events\IncidentOpened;
@@ -27,7 +28,8 @@ class NotifyResidentsOfSector implements ShouldQueue
 
     private function notify(Incident $incident, bool $closed): void
     {
-        if (! $incident->sector) {
+        // Technical incidents (equipment down, camera moved) are for staff, not residents.
+        if (! $incident->sector || in_array($incident->source, [IncidentSource::Equipment, IncidentSource::Tamper], true)) {
             return;
         }
 

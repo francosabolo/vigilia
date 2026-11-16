@@ -52,6 +52,7 @@ class OperationSimulator
         private readonly DetectionProcessor $processor,
         private readonly IncidentWorkflow $workflow,
         private readonly ResidentAlerts $residentAlerts,
+        private readonly DemoImages $images,
     ) {}
 
     /**
@@ -231,10 +232,31 @@ class OperationSimulator
             'zones' => $event['in_zone'] ? ['alambrado'] : [],
             'started_at' => $event['at'],
             'ended_at' => $event['at']->addSeconds(random_int(4, 40)),
+            'snapshot_path' => $this->images->pathFor($this->imageGroup($event)),
         ]);
         $detection->setRelation('camera', $event['camera']);
 
         return $this->processor->process($detection);
+    }
+
+    /**
+     * Which picture dresses a simulated detection, so what the AI "saw" matches what really happened.
+     *
+     * @param  array{camera: Camera, truth: Truth}  $event
+     */
+    private function imageGroup(array $event): string
+    {
+        $isDoor = $event['camera']->zones->contains(fn ($zone) => $zone->kind->isAccessPoint());
+
+        return match ($event['truth']) {
+            Truth::Intrusion => $isDoor ? 'intrusion_door' : 'intrusion',
+            Truth::Loitering => 'loitering',
+            Truth::Animal => 'animal',
+            Truth::Weather => 'weather',
+            Truth::GuardPatrol => 'guard_patrol',
+            Truth::Vehicle => 'vehicle',
+            Truth::Resident => 'empty',
+        };
     }
 
     /**

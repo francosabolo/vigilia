@@ -26,6 +26,13 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Demo users share the password "password": never seed them into a real deployment by accident.
+        if (app()->isProduction() && ! config('seguria.seed_demo')) {
+            $this->command?->warn('Demo data is not seeded in production (set SEGURIA_SEED_DEMO=true to force it).');
+
+            return;
+        }
+
         $organization = Organization::firstOrCreate(['slug' => 'seguria'], ['name' => 'Seguria Central']);
 
         $site = Site::firstOrCreate(['name' => 'Country Los Álamos'], [

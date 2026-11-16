@@ -100,7 +100,10 @@ class IncidentController extends Controller
         Gate::authorize('act', $incident);
 
         $data = $request->validate([
-            'resolution' => ['required', Rule::enum(IncidentResolution::class)],
+            // Equipment faults close as "recovered"; security incidents as confirmed or false alarm.
+            'resolution' => ['required', Rule::enum(IncidentResolution::class)->only($incident->source === IncidentSource::Equipment
+                ? [IncidentResolution::Recovered]
+                : [IncidentResolution::Confirmed, IncidentResolution::FalseAlarm])],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 

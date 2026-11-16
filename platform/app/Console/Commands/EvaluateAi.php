@@ -227,10 +227,10 @@ class EvaluateAi extends Command
      */
     private function cost(array $usage, float $factor): float
     {
-        return collect($usage)->sum(function (array $tokens, string $model) use ($factor) {
+        return collect($usage)->map(function (array $tokens, string $model) use ($factor) {
             [$in, $out] = config("seguria.ai.prices.{$model}", [0, 0]);
 
             return (array_sum((array) $tokens['input']) * $in + array_sum((array) $tokens['output']) * $out) / 1_000_000 * $factor;
-        });
+        })->sum();
     }
 }

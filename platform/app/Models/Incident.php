@@ -24,7 +24,7 @@ class Incident extends Model
     protected $attributes = ['status' => 'new', 'source' => 'detection'];
 
     protected $fillable = [
-        'site_id', 'camera_id', 'zone_id', 'source', 'sector', 'reported_by', 'severity', 'status', 'title', 'description', 'ai_confidence',
+        'site_id', 'camera_id', 'edge_device_id', 'zone_id', 'source', 'sector', 'reported_by', 'severity', 'status', 'title', 'description', 'ai_confidence',
         'snapshot_path', 'clip_path', 'detected_at', 'notified_at', 'acknowledged_at', 'acknowledged_by',
         'escalated_at', 'resolved_at', 'resolution',
     ];

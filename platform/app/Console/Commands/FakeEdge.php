@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\RefusesInProduction;
 use App\Jobs\ReviewReportedSnapshot;
 use App\Models\Camera;
 use App\Models\EdgeDevice;
@@ -9,6 +10,7 @@ use App\Models\SnapshotRequest;
 use App\Services\Cameras\CameraViewMonitor;
 use App\Services\Cameras\CameraWall;
 use App\Services\Zones\ZoneSync;
+use App\Simulation\DemoImages;
 use Illuminate\Console\Command;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -19,6 +21,8 @@ use Illuminate\Support\Facades\Storage;
  */
 class FakeEdge extends Command
 {
+    use RefusesInProduction;
+
     protected $signature = 'seguria:fake-edge
         {--once : Run a single cycle and exit}
         {--health-every=30 : Seconds between health frames (real edges: 300)}
@@ -29,6 +33,10 @@ class FakeEdge extends Command
 
     public function handle(CameraWall $wall, ZoneSync $zones, CameraViewMonitor $monitor): int
     {
+        if ($this->refusesInProduction()) {
+            return self::FAILURE;
+        }
+
         $this->info('Fake edge running. Ctrl+C to stop.');
         $lastHealth = 0;
 
@@ -99,6 +107,81 @@ class FakeEdge extends Command
         $width = 1280;
         $height = 720;
         mt_srand($camera->id * 7919);
+        $image = $this->realScene($camera, $width, $height) ?? $this->syntheticScene($camera, $width, $height);
+        $gray = fn (int $v) => imagecolorallocate($image, max(0, min(255, $v)), max(0, min(255, $v)), max(0, min(255, $v)));
+
+        // Simulated sabotage for demos: turned (--move=id:deg) or covered (--cover=id).
+        [$movedId, $movedDeg] = array_pad(explode(':', (string) $this->option('move')), 2, 0);
+        if ((int) $movedId === $camera->id && (int) $movedDeg !== 0) {
+            $shift = (int) round((int) $movedDeg / max(1, $camera->fov) * $width);
+            $turned = imagecreatetruecolor($width, $height);
+            imagefill($turned, 0, 0, $gray(20));
+            imagecopy($turned, $image, -$shift, 0, 0, 0, $width, $height);
+            imagedestroy($image);
+            $image = $turned;
+        }
+        if ((int) $this->option('cover') === $camera->id) {
+            imagefilledrectangle($image, 0, 0, $width, $height, $gray(8));
+        }
+
+        // OSD like a Hikvision camera.
+        $white = imagecolorallocate($image, 240, 240, 240);
+        $black = imagecolorallocate($image, 0, 0, 0);
+        $font = collect(['/System/Library/Fonts/Supplemental/Arial.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'])->first(fn ($path) => is_file($path));
+        $stamp = now()->setTimezone('America/Argentina/Buenos_Aires')->locale('es')->isoFormat('DD-MM-YYYY ddd HH:mm:ss');
+        $osd = function (string $text, int $x, int $y, int $size) use ($image, $font, $white, $black): void {
+            if ($font) {
+                foreach ([[-2, 0], [2, 0], [0, -2], [0, 2]] as [$dx, $dy]) {
+                    imagettftext($image, $size, 0, $x + $dx, $y + $dy, $black, $font, $text);
+                }
+                imagettftext($image, $size, 0, $x, $y, $white, $font, $text);
+            } else {
+                imagestring($image, 5, $x, $y - 15, $text, $white);
+            }
+        };
+        $osd($stamp, 28, 48, 22);
+        $osd($camera->name, $width - 40 - (int) (strlen($camera->name) * 13), $height - 34, 20);
+        $osd('Simulación', 28, $height - 34, 13);
+
+        $path = tempnam(sys_get_temp_dir(), 'frame').'.jpg';
+        imagejpeg($image, $path, 72);
+        imagedestroy($image);
+
+        return new UploadedFile($path, 'frame.jpg', 'image/jpeg', null, true);
+    }
+
+    /**
+     * A real-looking empty night scene for this camera (from the demo image library), with live sensor noise
+     * and the current time over the old timestamp burned into the generated image.
+     */
+    private function realScene(Camera $camera, int $width, int $height): ?\GdImage
+    {
+        $file = app(DemoImages::class)->sceneFile($camera->id);
+        if (! $file) {
+            return null;
+        }
+
+        $source = imagecreatefromjpeg($file);
+        $image = imagecreatetruecolor($width, $height);
+        imagecopyresampled($image, $source, 0, 0, 0, 0, $width, $height, imagesx($source), imagesy($source));
+        imagedestroy($source);
+
+        // Hide the generated timestamp; the OSD below writes the real one.
+        imagefilledrectangle($image, 0, 0, 780, 115, imagecolorallocate($image, 18, 18, 18));
+        mt_srand();
+        for ($i = 0; $i < 25000; $i++) {
+            $x = mt_rand(0, $width - 1);
+            $y = mt_rand(0, $height - 1);
+            $v = (imagecolorat($image, $x, $y) & 0xFF) + mt_rand(-18, 18);
+            $v = max(0, min(255, $v));
+            imagesetpixel($image, $x, $y, imagecolorallocate($image, $v, $v, $v));
+        }
+
+        return $image;
+    }
+
+    private function syntheticScene(Camera $camera, int $width, int $height): \GdImage
+    {
         $image = imagecreatetruecolor($width, $height);
         $gray = fn (int $v) => imagecolorallocate($image, max(0, min(255, $v)), max(0, min(255, $v)), max(0, min(255, $v)));
 
@@ -187,43 +270,6 @@ class FakeEdge extends Command
             imagerectangle($image, $r, $r, $width - 1 - $r, $height - 1 - $r, imagecolorallocatealpha($image, 0, 0, 0, 127 - (int) (14 * (1 - $r / 140) ** 2)));
         }
 
-        // Simulated sabotage for demos: turned (--move=id:deg) or covered (--cover=id).
-        [$movedId, $movedDeg] = array_pad(explode(':', (string) $this->option('move')), 2, 0);
-        if ((int) $movedId === $camera->id && (int) $movedDeg !== 0) {
-            $shift = (int) round((int) $movedDeg / max(1, $camera->fov) * $width);
-            $turned = imagecreatetruecolor($width, $height);
-            imagefill($turned, 0, 0, $gray(20));
-            imagecopy($turned, $image, -$shift, 0, 0, 0, $width, $height);
-            imagedestroy($image);
-            $image = $turned;
-        }
-        if ((int) $this->option('cover') === $camera->id) {
-            imagefilledrectangle($image, 0, 0, $width, $height, $gray(8));
-        }
-
-        // OSD like a Hikvision camera.
-        $white = imagecolorallocate($image, 240, 240, 240);
-        $black = imagecolorallocate($image, 0, 0, 0);
-        $font = collect(['/System/Library/Fonts/Supplemental/Arial.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'])->first(fn ($path) => is_file($path));
-        $stamp = now()->setTimezone('America/Argentina/Buenos_Aires')->locale('es')->isoFormat('DD-MM-YYYY ddd HH:mm:ss');
-        $osd = function (string $text, int $x, int $y, int $size) use ($image, $font, $white, $black): void {
-            if ($font) {
-                foreach ([[-2, 0], [2, 0], [0, -2], [0, 2]] as [$dx, $dy]) {
-                    imagettftext($image, $size, 0, $x + $dx, $y + $dy, $black, $font, $text);
-                }
-                imagettftext($image, $size, 0, $x, $y, $white, $font, $text);
-            } else {
-                imagestring($image, 5, $x, $y - 15, $text, $white);
-            }
-        };
-        $osd($stamp, 28, 48, 22);
-        $osd($camera->name, $width - 40 - (int) (strlen($camera->name) * 13), $height - 34, 20);
-        $osd('Simulación', 28, $height - 34, 13);
-
-        $path = tempnam(sys_get_temp_dir(), 'frame').'.jpg';
-        imagejpeg($image, $path, 72);
-        imagedestroy($image);
-
-        return new UploadedFile($path, 'frame.jpg', 'image/jpeg', null, true);
+        return $image;
     }
 }

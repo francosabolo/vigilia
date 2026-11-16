@@ -8,4 +8,5 @@ enum IncidentSource: string
     case ResidentReport = 'resident_report';
     case Panic = 'panic';
     case Tamper = 'tamper';
+    case Equipment = 'equipment';
 }

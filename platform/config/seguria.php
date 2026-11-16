@@ -16,7 +16,29 @@ return [
      */
     'dedup_seconds' => (int) env('SEGURIA_DEDUP_SECONDS', 120),
 
+    /*
+     * Realistic images that dress simulated detections and cameras (the generated evaluation set).
+     */
+    'demo_images_path' => env('SEGURIA_DEMO_IMAGES_PATH'),
+
+    /*
+     * Days to keep detection images and clips. Evidence of open or confirmed incidents is always kept.
+     */
+    'retention_days' => (int) env('SEGURIA_RETENTION_DAYS', 30),
+
+    /*
+     * Allow the demo seeder in production (demo environments only).
+     */
+    'seed_demo' => (bool) env('SEGURIA_SEED_DEMO', false),
+
+    /*
+     * Require two-factor authentication for the central (admins and operators). On by default in production.
+     */
+    'require_two_factor' => (bool) env('SEGURIA_REQUIRE_2FA', env('APP_ENV') === 'production'),
+
     'ai' => [
+        // Verifications per site per day before falling back to alerting without AI (0 = no cap).
+        'daily_cap_per_site' => (int) env('SEGURIA_AI_DAILY_CAP', 3000),
         // On when there is a non-empty key (an empty ANTHROPIC_API_KEY= must not turn it on), unless forced.
         'enabled' => (bool) env('SEGURIA_AI_ENABLED', filled(env('ANTHROPIC_API_KEY'))),
         // Fast/cheap first pass, and a stronger model for ambiguous verdicts.

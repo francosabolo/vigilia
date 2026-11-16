@@ -67,7 +67,7 @@ class IncidentWorkflow
             'acknowledged_by' => $incident->acknowledged_by ?? $user?->id,
         ])->save();
 
-        $this->record($incident, $resolution === IncidentResolution::Confirmed ? 'confirmed' : 'false_alarm', $user, $channel, $notes);
+        $this->record($incident, $resolution->value, $user, $channel, $notes);
 
         return true;
     }

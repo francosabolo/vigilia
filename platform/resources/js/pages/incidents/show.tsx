@@ -26,7 +26,11 @@ function Media({ incident }: { incident: IncidentDetail }) {
     }
     return (
         <div className="text-muted-foreground flex aspect-video items-center justify-center text-sm">
-            {incident.source === 'detection' ? 'El edge no envió imagen de esta detección.' : 'Aviso sin imagen: lo reportó una persona.'}
+            {incident.source === 'detection'
+                ? 'El edge no envió imagen de esta detección.'
+                : incident.source === 'equipment'
+                  ? 'Aviso técnico: el equipo no está enviando imagen.'
+                  : 'Aviso sin imagen: lo reportó una persona.'}
         </div>
     );
 }
@@ -73,7 +77,7 @@ function TamperComparison({ incident }: { incident: IncidentDetail }) {
 }
 
 function ResponsePanel({ incident }: { incident: IncidentDetail }) {
-    const [confirming, setConfirming] = useState<'confirmed' | 'false_alarm' | null>(null);
+    const [confirming, setConfirming] = useState<'confirmed' | 'false_alarm' | 'recovered' | null>(null);
     const post = (url: string, data = {}) => router.post(url, data, { preserveScroll: true, onFinish: () => setConfirming(null) });
 
     if (incident.status === 'resolved') {
@@ -82,7 +86,11 @@ function ResponsePanel({ incident }: { incident: IncidentDetail }) {
                 <span className="bg-ok mt-1.5 size-2.5 rounded-full" />
                 <div>
                     <p className="font-semibold">
-                        {incident.resolution === 'confirmed' ? 'Cerrado como intrusión confirmada' : 'Cerrado como falsa alarma'}
+                        {incident.resolution === 'confirmed'
+                            ? 'Cerrado como intrusión confirmada'
+                            : incident.resolution === 'recovered'
+                              ? 'Cerrado: el equipo volvió a funcionar'
+                              : 'Cerrado como falsa alarma'}
                     </p>
                     <p className="text-muted-foreground text-sm">{timeAgo(incident.resolved_at)}</p>
                 </div>
@@ -104,7 +112,13 @@ function ResponsePanel({ incident }: { incident: IncidentDetail }) {
 
             {confirming ? (
                 <div className="bg-surface-2 flex flex-col gap-2 rounded-lg p-3">
-                    <p className="text-sm">{confirming === 'confirmed' ? '¿Cerrar como intrusión confirmada?' : '¿Cerrar como falsa alarma?'}</p>
+                    <p className="text-sm">
+                        {confirming === 'confirmed'
+                            ? '¿Cerrar como intrusión confirmada?'
+                            : confirming === 'recovered'
+                              ? '¿Cerrar? Confirmá que el equipo ya funciona.'
+                              : '¿Cerrar como falsa alarma?'}
+                    </p>
                     <div className="flex gap-2">
                         <Button
                             variant={confirming === 'confirmed' ? 'destructive' : 'secondary'}
@@ -117,6 +131,10 @@ function ResponsePanel({ incident }: { incident: IncidentDetail }) {
                         </Button>
                     </div>
                 </div>
+            ) : incident.source === 'equipment' ? (
+                <Button variant="outline" onClick={() => setConfirming('recovered')}>
+                    Ya funciona, cerrar aviso
+                </Button>
             ) : (
                 <div className="grid grid-cols-2 gap-2">
                     <Button

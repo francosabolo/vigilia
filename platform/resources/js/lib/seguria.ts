@@ -3,7 +3,7 @@ export type IncidentStatus = 'new' | 'notified' | 'acknowledged' | 'escalated' |
 
 export interface IncidentSummary {
     id: number;
-    source: 'detection' | 'resident_report' | 'panic' | 'tamper';
+    source: 'detection' | 'resident_report' | 'panic' | 'tamper' | 'equipment';
     title: string;
     status: IncidentStatus;
     severity: Severity;
@@ -33,7 +33,7 @@ export interface IncidentDetail extends IncidentSummary {
     acknowledged_at: string | null;
     acknowledged_by: string | null;
     resolved_at: string | null;
-    resolution: 'confirmed' | 'false_alarm' | null;
+    resolution: 'confirmed' | 'false_alarm' | 'recovered' | null;
     decisions: ActivityItem[];
     tamper: {
         camera_id: number;
@@ -167,6 +167,8 @@ export const actionLabel: Record<string, string> = {
     escalated: 'Escalado a la central',
     confirmed: 'Cerrado: intrusión confirmada',
     false_alarm: 'Cerrado: falsa alarma',
+    recovered: 'Cerrado: el equipo se recuperó solo',
+    equipment_down: 'Equipo sin señal',
     note: 'Nota',
     panic: 'Botón de pánico activado por un vecino',
     resident_report: 'Reporte de un vecino',

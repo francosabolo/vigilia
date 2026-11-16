@@ -75,15 +75,27 @@ Hay que crear en Meta la plantilla `alerta_intrusion` (idioma `es_AR`, categorí
 
 El webhook va en `https://<host>/api/webhooks/whatsapp`. Para la verificación se usa `WHATSAPP_VERIFY_TOKEN`, y la firma se valida con `WHATSAPP_APP_SECRET`.
 
-### Laravel Cloud
-Hace falta:
-- Postgres;
-- un bucket de object storage (`SEGURIA_MEDIA_DISK=s3`);
-- un queue worker;
-- Reverb (WebSockets);
-- el scheduler.
+### Laravel Cloud (checklist de salida)
+Infraestructura:
+- [ ] Postgres (no SQLite).
+- [ ] Bucket de object storage privado y `SEGURIA_MEDIA_DISK=s3`. Las imágenes se sirven con URLs firmadas.
+- [ ] Queue worker (`php artisan queue:work`): alertas, escalamiento y revisión de IA.
+- [ ] Scheduler activo. Corre `seguria:watch-equipment` cada minuto (edge o cámara caída) y `seguria:prune-media` a diario (retención).
+- [ ] Reverb (WebSockets) para la consola en vivo.
+- [ ] Servicio de mail (`MAIL_*`) para invitaciones y recuperación de contraseña.
+- [ ] Dominio con HTTPS: el push y la PWA lo exigen.
 
-Hay que cargar las variables de `.env.example`: `ANTHROPIC_API_KEY`, las de WhatsApp y VAPID.
+Variables (ver `.env.example`):
+- [ ] `APP_ENV=production`, `APP_DEBUG=false`.
+- [ ] `ANTHROPIC_API_KEY`.
+- [ ] `WHATSAPP_*`, con la plantilla aprobada por Meta.
+- [ ] `VAPID_*`, generadas con `php artisan webpush:vapid`.
+- [ ] `SEGURIA_RETENTION_DAYS`: 30 por defecto.
+
+Antes de abrir:
+- [ ] `php artisan migrate --force`. El seeder de demo **no corre en producción** salvo con `SEGURIA_SEED_DEMO=true`. Los simuladores (`seguria:fake-edge`, `seguria:simulate*`) se niegan a correr.
+- [ ] Crear el usuario administrador real y dar de alta edificios, countries y edges.
+- [ ] Probar una alerta de punta a punta: edge, IA, WhatsApp, push y escalamiento.
 
 ## Edge (demo con videos grabados)
 ```bash

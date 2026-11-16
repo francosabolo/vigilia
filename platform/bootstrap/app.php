@@ -3,6 +3,7 @@
 use App\Http\Middleware\AuthenticateEdgeDevice;
 use App\Http\Middleware\EnsureResident;
 use App\Http\Middleware\EnsureStaff;
+use App\Http\Middleware\EnsureTwoFactorEnabled;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'edge' => AuthenticateEdgeDevice::class,
             'staff' => EnsureStaff::class,
             'resident' => EnsureResident::class,
+            'two-factor' => EnsureTwoFactorEnabled::class,
         ]);
 
         // Read by the Blade layout to render the chosen theme without a flash.

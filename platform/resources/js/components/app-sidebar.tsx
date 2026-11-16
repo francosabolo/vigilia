@@ -2,8 +2,8 @@ import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { Building2, Cctv, LayoutGrid, Siren } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { Building2, Cctv, LayoutGrid, Siren, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -29,7 +29,17 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
+const adminNavItems: NavItem[] = [
+    {
+        title: 'Equipo',
+        url: '/team',
+        icon: Users,
+    },
+];
+
 export function AppSidebar() {
+    const { auth } = usePage<{ auth: { user: { role?: string } } }>().props;
+    const items = auth.user.role === 'admin' ? [...mainNavItems, ...adminNavItems] : mainNavItems;
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -45,7 +55,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={items} />
             </SidebarContent>
 
             <SidebarFooter>

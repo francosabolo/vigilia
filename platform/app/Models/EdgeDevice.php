@@ -14,13 +14,13 @@ class EdgeDevice extends Model
     /** @use HasFactory<EdgeDeviceFactory> */
     use HasFactory;
 
-    protected $fillable = ['site_id', 'name', 'token_hash', 'version', 'zones_version', 'last_ip', 'last_seen_at'];
+    protected $fillable = ['site_id', 'name', 'token_hash', 'version', 'zones_version', 'last_ip', 'last_seen_at', 'offline_since'];
 
     protected $hidden = ['token_hash'];
 
     protected function casts(): array
     {
-        return ['last_seen_at' => 'datetime'];
+        return ['last_seen_at' => 'datetime', 'offline_since' => 'datetime'];
     }
 
     /**

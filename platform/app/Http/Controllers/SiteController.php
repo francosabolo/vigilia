@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\IncidentStatus;
+use App\Enums\SiteKind;
+use App\Enums\UserRole;
 use App\Models\ArmingSchedule;
 use App\Models\Camera;
 use App\Models\EdgeDevice;
@@ -13,8 +15,11 @@ use App\Services\Cameras\CameraWall;
 use App\Services\Reports\SiteMetrics;
 use App\Services\Residents\ResidentDevices;
 use App\Services\Sites\SiteScope;
+use App\Services\Verification\AiBudget;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -40,10 +45,28 @@ class SiteController extends Controller
                 'edges' => $site->edgeDevices->map(fn (EdgeDevice $edge): array => $this->edge($edge)),
             ]);
 
-        return Inertia::render('sites/index', ['sites' => $sites]);
+        return Inertia::render('sites/index', ['sites' => $sites, 'canCreate' => $request->user()->role === UserRole::Admin]);
     }
 
-    public function show(Request $request, Site $site, SiteMetrics $metrics, CameraWall $wall, ResidentDevices $devices): Response
+    /**
+     * New building or country. The perimeter and the cameras are drawn next, on its map.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->role === UserRole::Admin, 403);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'kind' => ['required', Rule::enum(SiteKind::class)],
+            'address' => ['required', 'string', 'max:200'],
+        ]);
+
+        $site = Site::create($data + ['organization_id' => $request->user()->organization_id]);
+
+        return to_route('sites.show', ['site' => $site, 'tab' => 'cobertura']);
+    }
+
+    public function show(Request $request, Site $site, SiteMetrics $metrics, CameraWall $wall, ResidentDevices $devices, AiBudget $budget): Response
     {
         Gate::authorize('view', $site);
 
@@ -59,6 +82,10 @@ class SiteController extends Controller
         return Inertia::render('sites/show', [
             'tab' => $tab,
             'canManage' => $canManage,
+            'canManageEdges' => $request->user()->isCentral(),
+            'newEdge' => $request->session()->get('new_edge'),
+            'edgeServerUrl' => url('/'),
+            'aiUsage' => $canManage ? ['used' => $budget->usedToday($site->id), 'cap' => $budget->cap()] : null,
             'site' => [
                 'id' => $site->id,
                 'name' => $site->name,

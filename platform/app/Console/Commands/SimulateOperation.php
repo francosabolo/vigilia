@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\RefusesInProduction;
 use App\Enums\IncidentStatus;
 use App\Enums\UserRole;
 use App\Events\DetectionActivity;
@@ -27,6 +28,8 @@ use Illuminate\Support\Facades\Storage;
  */
 class SimulateOperation extends Command
 {
+    use RefusesInProduction;
+
     protected $signature = 'seguria:simulate-operation
         {--sites=8 : Simulated gated communities to create}
         {--cameras=20-40 : Cameras per site (range)}
@@ -46,6 +49,10 @@ class SimulateOperation extends Command
 
     public function handle(SimulatedWorld $world): int
     {
+        if ($this->refusesInProduction()) {
+            return self::FAILURE;
+        }
+
         if ($this->option('reset')) {
             $this->info('Simulated sites deleted: '.$world->destroy());
         }

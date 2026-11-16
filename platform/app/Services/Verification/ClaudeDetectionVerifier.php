@@ -31,6 +31,9 @@ class ClaudeDetectionVerifier implements DetectionVerifier
         - Si la zona es una puerta, una ventana o un punto sensible, cualquier persona manipulándola, forzándola o asomándose es amenaza.
         - No es amenaza: animales, sombras, reflejos, vegetación movida por el viento, lluvia o insectos frente al lente,
           maniquíes o carteles, guardias uniformados de ronda, vehículos de seguridad identificados.
+        - Vehículos del lado de afuera del perímetro (circulando por la calle o el camino, o sus faros encandilando)
+          no son amenaza por sí solos. Solo lo son si están adentro, cruzando, o si se ve a alguien bajando o
+          manipulando el alambrado o el portón.
         - Ante la duda, es amenaza con confianza media: es preferible una falsa alarma a perder una intrusión.
 
         La descripción va para el guardia que la lee en el celular: concreta, en español rioplatense, sin rodeos.
@@ -162,6 +165,10 @@ class ClaudeDetectionVerifier implements DetectionVerifier
         }
 
         $context = $this->cameraContext($camera, $context);
+
+        if ($camera->site_id && ! app(AiBudget::class)->consume($camera->site_id)) {
+            return $this->fallback($fallbackSubject, 'Tope diario de verificaciones IA alcanzado: alerta sin verificar.');
+        }
 
         try {
             $result = $this->ask(config('seguria.ai.model'), $context, $image, $fallbackSubject);

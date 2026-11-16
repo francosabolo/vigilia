@@ -4,6 +4,7 @@ namespace App\Services\Reports;
 
 use App\Enums\DetectionStatus;
 use App\Enums\IncidentResolution;
+use App\Enums\IncidentSource;
 use App\Models\DetectionEvent;
 use App\Models\Incident;
 use Carbon\CarbonInterface;
@@ -26,7 +27,8 @@ class SiteMetrics
             ->groupBy('status')
             ->pluck('total', 'status');
 
-        $incidents = Incident::query()->whereIn('site_id', $siteIds)->whereBetween('detected_at', [$from, $to]);
+        $incidents = Incident::query()->whereIn('site_id', $siteIds)->whereBetween('detected_at', [$from, $to])
+            ->where('source', '!=', IncidentSource::Equipment);
 
         $ackSeconds = (clone $incidents)->whereNotNull('acknowledged_at')->get(['detected_at', 'acknowledged_at'])
             ->map(fn (Incident $incident): int => (int) $incident->detected_at->diffInSeconds($incident->acknowledged_at));

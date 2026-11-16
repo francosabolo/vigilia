@@ -31,7 +31,7 @@ import {
 } from '@/lib/seguria';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage, usePoll } from '@inertiajs/react';
 import { BarChart3, Cctv, Cpu, Siren, VideoOff } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 
@@ -85,6 +85,10 @@ interface Resident {
 interface Props {
     tab: Tab;
     canManage: boolean;
+    canManageEdges: boolean;
+    newEdge: { id: number; name: string; token: string } | null;
+    edgeServerUrl: string;
+    aiUsage: { used: number; cap: number } | null;
     site: {
         id: number;
         name: string;
@@ -668,8 +672,9 @@ function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site
 
 /* ---------- Ajustes ---------- */
 
-function SettingsTab({ site }: Pick<Props, 'site'>) {
+function SettingsTab({ site, aiUsage }: Pick<Props, 'site' | 'aiUsage'>) {
     const alarmActive = !!site.escalated_incident_id;
+    const { retentionDays } = usePage<{ retentionDays: number }>().props;
     const form = useForm({ guard_whatsapp: site.guard_whatsapp ?? '', ack_timeout_seconds: Math.round(site.ack_timeout_seconds / 60) * 60 });
 
     function submit(event: FormEvent) {
@@ -710,6 +715,36 @@ function SettingsTab({ site }: Pick<Props, 'site'>) {
                 <InputError message={form.errors.ack_timeout_seconds} />
             </div>
 
+            {aiUsage && aiUsage.cap > 0 && (
+                <div className="bg-muted/60 grid gap-2 rounded-2xl p-4">
+                    <div className="flex items-baseline justify-between gap-3">
+                        <p className="text-sm font-semibold">Verificaciones de IA hoy</p>
+                        <p className="font-display text-lg tabular-nums">
+                            {aiUsage.used.toLocaleString('es-AR')}{' '}
+                            <span className="text-muted-foreground text-sm">de {aiUsage.cap.toLocaleString('es-AR')}</span>
+                        </p>
+                    </div>
+                    <div className="bg-background h-1.5 overflow-hidden rounded-full">
+                        <div
+                            className={cn('h-full rounded-full', aiUsage.used >= aiUsage.cap ? 'bg-alarm' : 'bg-foreground/70')}
+                            style={{ width: `${Math.min(100, (aiUsage.used / aiUsage.cap) * 100)}%` }}
+                        />
+                    </div>
+                    <p className="text-muted-foreground text-sm">
+                        {aiUsage.used >= aiUsage.cap
+                            ? 'Se alcanzó el tope de hoy: las detecciones se alertan sin el filtro de IA hasta mañana. Revisá qué cámara genera tantas.'
+                            : 'Al llegar al tope, las detecciones se siguen alertando, pero sin el filtro de IA, y avisamos por mail a los administradores.'}
+                    </p>
+                </div>
+            )}
+
+            <div className="bg-muted/60 grid gap-1 rounded-2xl p-4">
+                <p className="text-sm font-semibold">Imágenes guardadas por {retentionDays} días</p>
+                <p className="text-muted-foreground text-sm">
+                    Pasado ese plazo se borran solas. Las de incidentes abiertos o confirmados como intrusión se conservan como evidencia.
+                </p>
+            </div>
+
             <div className="flex items-center gap-3">
                 <Button variant={alarmActive ? 'secondary' : 'default'} disabled={form.processing || !form.isDirty}>
                     Guardar ajustes
@@ -720,9 +755,153 @@ function SettingsTab({ site }: Pick<Props, 'site'>) {
     );
 }
 
+/* ---------- Equipos edge ---------- */
+
+function EdgesSection({ site, newEdge, serverUrl }: Pick<Props, 'site' | 'newEdge'> & { serverUrl: string }) {
+    const [open, setOpen] = useState(false);
+    const form = useForm({ name: '' });
+
+    function submit(event: FormEvent) {
+        event.preventDefault();
+        form.post(`/sites/${site.id}/edges`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setOpen(false);
+                form.reset();
+            },
+        });
+    }
+
+    return (
+        <section className="flex max-w-2xl flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <SectionTitle icon={Cpu}>Equipos edge</SectionTitle>
+                    <p className="text-muted-foreground mt-1 text-sm">
+                        El equipo instalado en el lugar que analiza las cámaras y envía las detecciones.
+                    </p>
+                </div>
+                <Dialog open={open} onOpenChange={setOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="secondary">Agregar equipo edge</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <form onSubmit={submit} className="flex flex-col gap-4">
+                            <DialogHeader>
+                                <DialogTitle>Agregar equipo edge</DialogTitle>
+                                <DialogDescription>Te mostramos una clave de conexión una sola vez para cargarla en el equipo.</DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="edge-name">Nombre</Label>
+                                <Input
+                                    id="edge-name"
+                                    placeholder="Garita principal"
+                                    value={form.data.name}
+                                    onChange={(e) => form.setData('name', e.target.value)}
+                                    autoFocus
+                                />
+                                <InputError message={form.errors.name} />
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button type="button" variant="ghost">
+                                        Cancelar
+                                    </Button>
+                                </DialogClose>
+                                <Button type="submit" disabled={form.processing}>
+                                    Crear y ver la clave
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            {newEdge && (
+                <div className="border-foreground/20 bg-muted/60 grid gap-3 rounded-2xl border p-4">
+                    <div>
+                        <p className="font-semibold">Clave de conexión de {newEdge.name}</p>
+                        <p className="text-muted-foreground text-sm">
+                            Copiala ahora en el archivo <code>.env</code> del equipo: no la vamos a volver a mostrar. Si se pierde, quitá el equipo y
+                            creá uno nuevo.
+                        </p>
+                    </div>
+                    <pre className="bg-background overflow-x-auto rounded-lg p-3 font-mono text-xs select-all">
+                        {`SEGURIA_URL=${serverUrl}\nSEGURIA_TOKEN=${newEdge.token}`}
+                    </pre>
+                </div>
+            )}
+
+            {site.edges.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Todavía no hay equipos. Sin un equipo edge, las cámaras de este lugar no se analizan.</p>
+            ) : (
+                <ul className="bg-card divide-y rounded-2xl border">
+                    {site.edges.map((edge) => (
+                        <li key={edge.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
+                            <span className={cn('size-2.5 rounded-full', edge.online ? 'bg-ok' : 'bg-alarm')} />
+                            <div className="min-w-40 flex-1">
+                                <p className="font-semibold">{edge.name}</p>
+                                <p className="text-muted-foreground text-sm">
+                                    {edge.last_seen_at
+                                        ? edge.online
+                                            ? 'En línea'
+                                            : `Sin señal desde ${timeAgo(edge.last_seen_at)}`
+                                        : 'Esperando la primera conexión'}
+                                    {edge.version && `. Versión ${edge.version}`}
+                                </p>
+                            </div>
+                            <RemoveEdge siteId={site.id} edge={edge} />
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </section>
+    );
+}
+
+function RemoveEdge({ siteId, edge }: { siteId: number; edge: EdgeStatus }) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <ItemActionButton kind="delete" aria-label={`Quitar ${edge.name}`}>
+                    Quitar
+                </ItemActionButton>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>¿Quitar {edge.name}?</DialogTitle>
+                    <DialogDescription>
+                        Su clave deja de funcionar y las cámaras que analiza dejan de enviar detecciones hasta que conectes otro equipo.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="ghost">Cancelar</Button>
+                    </DialogClose>
+                    <Button variant="destructive" onClick={() => router.delete(`/sites/${siteId}/edges/${edge.id}`, { preserveScroll: true })}>
+                        Quitar equipo
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 /* ---------- Page ---------- */
 
-export default function SiteShow({ tab, canManage, site, residents, residentsCount, sectors, metrics }: Props) {
+export default function SiteShow({
+    tab,
+    canManage,
+    canManageEdges,
+    newEdge,
+    edgeServerUrl,
+    aiUsage,
+    site,
+    residents,
+    residentsCount,
+    sectors,
+    metrics,
+}: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Edificios y countries', href: '/sites' },
         { title: site.name, href: `/sites/${site.id}` },
@@ -748,7 +927,12 @@ export default function SiteShow({ tab, canManage, site, residents, residentsCou
                 )}
                 {tab === 'camaras' && <CamerasTab site={site} canManage={canManage} />}
                 {tab === 'vecinos' && residents && <ResidentsTab site={site} residents={residents} sectors={sectors} canManage={canManage} />}
-                {tab === 'ajustes' && canManage && <SettingsTab site={site} />}
+                {tab === 'ajustes' && canManage && (
+                    <div className="flex flex-col gap-10">
+                        <SettingsTab site={site} aiUsage={aiUsage} />
+                        {canManageEdges && <EdgesSection site={site} newEdge={newEdge} serverUrl={edgeServerUrl} />}
+                    </div>
+                )}
             </div>
         </AppLayout>
     );

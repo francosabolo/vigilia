@@ -43,6 +43,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -58,7 +60,23 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'away_until' => 'datetime',
             'last_login_at' => 'datetime',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    public function hasTwoFactor(): bool
+    {
+        return $this->two_factor_confirmed_at !== null && $this->two_factor_secret !== null;
+    }
+
+    /**
+     * The central sees cameras of every building: a stolen password must not be enough.
+     */
+    public function mustUseTwoFactor(): bool
+    {
+        return config('seguria.require_two_factor') && $this->isCentral();
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\RefusesInProduction;
 use App\Events\DetectionEventReceived;
 use App\Models\Camera;
 use App\Models\DetectionEvent;
@@ -15,6 +16,8 @@ use Illuminate\Support\Str;
  */
 class SimulateDetection extends Command
 {
+    use RefusesInProduction;
+
     protected $signature = 'seguria:simulate
         {camera? : Camera ID (defaults to the first camera)}
         {--label=person : person|car|motorcycle|dog}
@@ -25,6 +28,10 @@ class SimulateDetection extends Command
 
     public function handle(): int
     {
+        if ($this->refusesInProduction()) {
+            return self::FAILURE;
+        }
+
         $camera = $this->argument('camera')
             ? Camera::find($this->argument('camera'))
             : Camera::whereNotNull('edge_device_id')->whereHas('zones', fn ($query) => $query->doesntHave('armingSchedules'))->first()

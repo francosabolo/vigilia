@@ -3,6 +3,7 @@
 use App\Http\Controllers\CameraWallController;
 use App\Http\Controllers\CurrentSiteController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EdgeDeviceController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IncidentMediaController;
 use App\Http\Controllers\PushSubscriptionController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\ResidentAdminController;
 use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\SiteConfigurationController;
 use App\Http\Controllers\SiteController;
+use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ZoneEditorController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,7 +36,7 @@ Route::middleware('auth')->group(function () {
         Route::put('away', [ResidentController::class, 'updateAway'])->name('away');
     });
 
-    Route::middleware('staff')->group(function () {
+    Route::middleware(['staff', 'two-factor'])->group(function () {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
         Route::put('current-site', CurrentSiteController::class)->name('current-site');
 
@@ -51,6 +53,13 @@ Route::middleware('auth')->group(function () {
         Route::post('incidents/{incident}/camera-view', [IncidentController::class, 'fixCameraView'])->name('incidents.camera-view');
 
         Route::get('sites', [SiteController::class, 'index'])->name('sites.index');
+        Route::post('sites', [SiteController::class, 'store'])->name('sites.store');
+        Route::post('sites/{site}/edges', [EdgeDeviceController::class, 'store'])->name('edges.store');
+        Route::delete('sites/{site}/edges/{edge}', [EdgeDeviceController::class, 'destroy'])->name('edges.destroy');
+        Route::get('team', [TeamController::class, 'index'])->name('team.index');
+        Route::post('team', [TeamController::class, 'store'])->name('team.store');
+        Route::patch('team/{member}', [TeamController::class, 'update'])->name('team.update');
+        Route::delete('team/{member}', [TeamController::class, 'destroy'])->name('team.destroy');
         Route::get('sites/{site}', [SiteController::class, 'show'])->name('sites.show');
         Route::patch('sites/{site}', [SiteConfigurationController::class, 'updateSite'])->name('sites.update');
         Route::post('sites/{site}/residents', [ResidentAdminController::class, 'store'])->name('residents.store');
