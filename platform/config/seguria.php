@@ -19,6 +19,20 @@ return [
     /*
      * Following someone across cameras: a person seen by a nearby camera shortly after joins the same incident.
      */
+    /*
+     * Autonomy levels per zone. Deterrence fires only on clear threats and must be earned with closed alerts.
+     */
+    'autonomy' => [
+        'deterrence_confidence' => (float) env('SEGURIA_DETERRENCE_CONFIDENCE', 0.85),
+        'deterrence_message' => env('SEGURIA_DETERRENCE_MESSAGE', 'Atención: esta zona está vigilada. Lo estamos viendo y la guardia ya fue avisada.'),
+        'eligibility_days' => 30,
+        'eligibility_min_alerts' => 10,
+        'eligibility_max_false_alarm_rate' => 0.10,
+        // Two deterrences closed as false alarms within this many days demote the zone back to assisted.
+        'demotion_window_days' => 7,
+        'demotion_false_alarms' => 2,
+    ],
+
     'tracking' => [
         'window_seconds' => (int) env('SEGURIA_TRACKING_WINDOW', 180),
         'max_distance_m' => (int) env('SEGURIA_TRACKING_DISTANCE', 150),

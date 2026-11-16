@@ -73,6 +73,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('cameras/{camera}/placement', [SiteConfigurationController::class, 'updatePlacement'])->name('cameras.placement');
         Route::post('cameras/{camera}/zones', [SiteConfigurationController::class, 'storeZone'])->name('zones.store');
         Route::patch('zones/{zone}', [SiteConfigurationController::class, 'updateZone'])->name('zones.update');
+        Route::patch('zones/{zone}/autonomy', [SiteConfigurationController::class, 'updateAutonomy'])->name('zones.autonomy');
         Route::delete('zones/{zone}', [SiteConfigurationController::class, 'destroyZone'])->name('zones.destroy');
         Route::post('zones/{zone}/schedules', [SiteConfigurationController::class, 'storeSchedule'])->name('schedules.store');
         Route::delete('schedules/{schedule}', [SiteConfigurationController::class, 'destroySchedule'])->name('schedules.destroy');

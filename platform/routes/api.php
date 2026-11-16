@@ -11,6 +11,7 @@ Route::prefix('edge')->middleware(['edge', 'throttle:1200,1'])->group(function (
     Route::post('heartbeat', HeartbeatController::class)->name('edge.heartbeat');
     Route::get('commands', [CommandController::class, 'index'])->name('edge.commands');
     Route::post('snapshots/{snapshotRequest}', [CommandController::class, 'storeSnapshot'])->name('edge.snapshots.store');
+    Route::post('deterrence/{deterrenceCommand}', [CommandController::class, 'storeDeterrenceResult'])->name('edge.deterrence.store');
     Route::post('previews', [CommandController::class, 'storePreview'])->name('edge.previews.store');
     Route::post('health-frames', [CommandController::class, 'storeHealthFrame'])->name('edge.health-frames.store');
 });

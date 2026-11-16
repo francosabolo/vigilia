@@ -6,6 +6,7 @@ use App\Enums\DetectionStatus;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
+use App\Enums\ZoneAutonomy;
 use App\Events\DetectionActivity;
 use App\Events\IncidentChanged;
 use App\Events\IncidentOpened;
@@ -14,6 +15,7 @@ use App\Models\DetectionEvent;
 use App\Models\Incident;
 use App\Models\Zone;
 use App\Services\Activity\ActivityFeed;
+use App\Services\Autonomy\AutonomyPolicy;
 use App\Services\Rules\ArmingEvaluator;
 use App\Services\Shadow\ShadowMode;
 use App\Services\Verification\DetectionVerifier;
@@ -98,6 +100,15 @@ class DetectionProcessor
 
         $this->step('ai', $agent, 'alert', "Es una amenaza: {$verdict->description}{$confidence}");
 
+        if ($zone?->autonomy === ZoneAutonomy::Calibration) {
+            $this->step('decision', 'Seguria', 'stop', "La zona {$zone->name} está en calibración: quedó registrado y no se avisó a nadie.");
+            $event->forceFill(['status' => DetectionStatus::Observed, 'trace' => $this->trace])->save();
+            $this->broadcast($event);
+            app(ShadowMode::class)->consider($event);
+
+            return null;
+        }
+
         $incident = DB::transaction(function () use ($event, $zone, $verdict): Incident {
             $incident = $this->findOpenIncident($event, $zone);
 
@@ -122,6 +133,9 @@ class DetectionProcessor
 
             $incident = $this->open($event, $zone, $verdict);
             $this->step('decision', 'Seguria', 'alert', "Abrió el incidente #{$incident->id} con severidad {$incident->severity->value} y avisó a la guardia.");
+            if (app(AutonomyPolicy::class)->deterIfEnabled($incident, $event, $verdict, $zone)) {
+                $this->step('decision', 'Seguria', 'alert', "Disuasión automática: activó el altavoz de {$event->camera->name} sin esperar a la guardia.");
+            }
             IncidentOpened::dispatch($incident);
             IncidentChanged::dispatch($incident, 'opened');
 

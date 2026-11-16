@@ -43,10 +43,14 @@ interface Schedule {
     ends_at: string;
 }
 
+type Autonomy = 'calibration' | 'assisted' | 'deterrence';
+
 interface Zone {
     id: number;
     name: string;
     kind: ZoneKind;
+    autonomy: Autonomy;
+    autonomy_eligibility: { eligible: boolean; alerts: number; false_alarms: number; false_alarm_rate: number | null; reason: string } | null;
     lot: string | null;
     has_polygon: boolean;
     schedules: Schedule[];
@@ -359,7 +363,8 @@ function CamerasTab({ site, canManage }: Pick<Props, 'site' | 'canManage'>) {
                                             </span>
                                         )}
                                         <span className="text-muted-foreground">. {scheduleText(zone.schedules)}.</span>
-                                        {!zone.has_polygon && <span className="text-pending"> Falta dibujarla.</span>}
+                                        {!zone.has_polygon && <span className="text-pending"> Falta dibujarla.</span>}{' '}
+                                        <AutonomyControl zone={zone} canManage={canManage} />
                                     </li>
                                 ))}
                             </ul>
@@ -752,6 +757,109 @@ function SettingsTab({ site, aiUsage }: Pick<Props, 'site' | 'aiUsage'>) {
                 {form.recentlySuccessful && <span className="text-ok text-sm">Guardado</span>}
             </div>
         </form>
+    );
+}
+
+/* ---------- Autonomía por zona ---------- */
+
+const AUTONOMY: Record<Autonomy, { label: string; help: string }> = {
+    calibration: { label: 'Calibración', help: 'La IA analiza y registra, pero no avisa a nadie. Para la primera semana de una zona nueva.' },
+    assisted: { label: 'Asistida', help: 'La IA descarta lo obvio y alerta a la guardia, que decide qué hacer.' },
+    deterrence: {
+        label: 'Disuasión automática',
+        help: 'Además, ante una amenaza clara, activa enseguida el altavoz o la sirena de la cámara, sin esperar a la guardia.',
+    },
+};
+
+function AutonomyControl({ zone, canManage }: { zone: Zone; canManage: boolean }) {
+    const [open, setOpen] = useState(false);
+    const form = useForm({ autonomy: zone.autonomy });
+    const eligibility = zone.autonomy_eligibility;
+
+    const badge = (
+        <span
+            className={cn(
+                'rounded-full px-2 py-0.5 text-xs font-semibold',
+                zone.autonomy === 'calibration' && 'bg-pending/15 text-pending',
+                zone.autonomy === 'assisted' && 'bg-muted text-muted-foreground',
+                zone.autonomy === 'deterrence' && 'bg-alarm/15 text-alarm',
+            )}
+        >
+            {AUTONOMY[zone.autonomy].label}
+        </span>
+    );
+
+    if (!canManage) return badge;
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <button type="button" className="inline-flex items-center gap-1" aria-label={`Cambiar el nivel de ${zone.name}`}>
+                    {badge}
+                    <span className="text-muted-foreground text-xs underline underline-offset-2">Cambiar</span>
+                </button>
+            </DialogTrigger>
+            <DialogContent>
+                <form
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        form.patch(`/zones/${zone.id}/autonomy`, { preserveScroll: true, onSuccess: () => setOpen(false) });
+                    }}
+                    className="flex flex-col gap-4"
+                >
+                    <DialogHeader>
+                        <DialogTitle>Qué hace sola la IA en {zone.name}</DialogTitle>
+                        <DialogDescription>
+                            Los niveles se ganan con datos: la disuasión automática pide un historial de alertas confiables.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <fieldset className="grid gap-2">
+                        {(Object.keys(AUTONOMY) as Autonomy[]).map((level) => {
+                            const locked = level === 'deterrence' && zone.autonomy !== 'deterrence' && !eligibility?.eligible;
+                            return (
+                                <label
+                                    key={level}
+                                    className={cn(
+                                        'has-[:checked]:border-foreground has-[:checked]:bg-muted/60 flex gap-3 rounded-xl border p-3',
+                                        locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
+                                    )}
+                                >
+                                    <input
+                                        type="radio"
+                                        name={`autonomy-${zone.id}`}
+                                        checked={form.data.autonomy === level}
+                                        disabled={locked}
+                                        onChange={() => form.setData('autonomy', level)}
+                                        className="accent-foreground mt-1"
+                                    />
+                                    <span>
+                                        <span className="block text-sm font-semibold">{AUTONOMY[level].label}</span>
+                                        <span className="text-muted-foreground block text-sm">{AUTONOMY[level].help}</span>
+                                        {level === 'deterrence' && eligibility && (
+                                            <span className={cn('mt-1 block text-sm', eligibility.eligible ? 'text-ok' : 'text-pending')}>
+                                                {eligibility.eligible ? 'La zona la ganó: ' : 'Todavía no: '}
+                                                {eligibility.reason}
+                                            </span>
+                                        )}
+                                    </span>
+                                </label>
+                            );
+                        })}
+                    </fieldset>
+                    <InputError message={form.errors.autonomy} />
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="ghost">
+                                Cancelar
+                            </Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={form.processing || !form.isDirty}>
+                            Guardar nivel
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 

@@ -8,6 +8,7 @@ use App\Events\IncidentChanged;
 use App\Models\DetectionEvent;
 use App\Models\Incident;
 use App\Models\User;
+use App\Services\Autonomy\AutonomyPolicy;
 
 /**
  * State transitions of an incident. Every transition is audited in incident_actions and broadcast.
@@ -69,6 +70,8 @@ class IncidentWorkflow
         ])->save();
 
         $this->record($incident, $resolution->value, $user, $channel, $notes);
+
+        app(AutonomyPolicy::class)->afterResolved($incident);
 
         // A closed security incident tells what its detections really were (shadow mode and evaluations use it).
         if (in_array($resolution, [IncidentResolution::Confirmed, IncidentResolution::FalseAlarm], true)) {

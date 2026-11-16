@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ZoneAutonomy;
 use App\Enums\ZoneKind;
 use Database\Factories\ZoneFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,13 +15,15 @@ class Zone extends Model
     /** @use HasFactory<ZoneFactory> */
     use HasFactory;
 
-    protected $fillable = ['camera_id', 'name', 'kind', 'frigate_zone', 'coordinates', 'is_perimeter', 'lot', 'watched_labels'];
+    protected $fillable = ['camera_id', 'name', 'kind', 'autonomy', 'autonomy_changed_at', 'frigate_zone', 'coordinates', 'is_perimeter', 'lot', 'watched_labels'];
 
     protected function casts(): array
     {
         return [
             'is_perimeter' => 'boolean',
             'kind' => ZoneKind::class,
+            'autonomy' => ZoneAutonomy::class,
+            'autonomy_changed_at' => 'datetime',
             'watched_labels' => 'array',
             'coordinates' => 'array',
         ];
@@ -29,7 +32,7 @@ class Zone extends Model
     /**
      * @var array<string, mixed>
      */
-    protected $attributes = ['kind' => 'perimeter'];
+    protected $attributes = ['kind' => 'perimeter', 'autonomy' => 'assisted'];
 
     /**
      * Frigate's relative coordinates format: "x1,y1,x2,y2,...".

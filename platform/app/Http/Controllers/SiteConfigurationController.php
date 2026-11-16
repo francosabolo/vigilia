@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ZoneAutonomy;
 use App\Enums\ZoneKind;
 use App\Models\ArmingSchedule;
 use App\Models\Camera;
 use App\Models\Site;
 use App\Models\Zone;
+use App\Services\Autonomy\AutonomyPolicy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -93,6 +95,19 @@ class SiteConfigurationController extends Controller
         $data['frigate_zone'] ??= $this->uniqueFrigateName($camera, $data['name']);
 
         $camera->zones()->updateOrCreate(['frigate_zone' => $data['frigate_zone']], $data);
+
+        return back();
+    }
+
+    /**
+     * Autonomy level of a zone. Automatic deterrence is refused until the zone earned it.
+     */
+    public function updateAutonomy(Request $request, Zone $zone, AutonomyPolicy $policy): RedirectResponse
+    {
+        Gate::authorize('manage', $zone->camera->site);
+        $data = $request->validate(['autonomy' => ['required', Rule::enum(ZoneAutonomy::class)]]);
+
+        $policy->set($zone, ZoneAutonomy::from($data['autonomy']));
 
         return back();
     }

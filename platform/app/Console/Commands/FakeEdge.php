@@ -3,8 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Console\Commands\Concerns\RefusesInProduction;
+use App\Events\IncidentChanged;
 use App\Jobs\ReviewReportedSnapshot;
 use App\Models\Camera;
+use App\Models\DeterrenceCommand;
 use App\Models\EdgeDevice;
 use App\Models\SnapshotRequest;
 use App\Services\Cameras\CameraViewMonitor;
@@ -84,6 +86,14 @@ class FakeEdge extends Command
                     }
                 }
             }
+
+            DeterrenceCommand::where('edge_device_id', $device->id)->where('status', 'pending')->with(['camera', 'incident'])->get()
+                ->each(function (DeterrenceCommand $command): void {
+                    $command->forceFill(['status' => 'done', 'sent_at' => now(), 'done_at' => now(), 'result' => 'Altavoz simulado: aviso reproducido.'])->save();
+                    $command->incident->actions()->create(['type' => 'deterrence_done', 'channel' => 'edge', 'notes' => 'Altavoz simulado: aviso reproducido.']);
+                    IncidentChanged::dispatch($command->incident, 'deterrence');
+                    $this->line("Deterrence played on {$command->camera->name}");
+                });
 
             SnapshotRequest::where('edge_device_id', $device->id)->where('status', 'pending')->with('camera')->get()
                 ->each(function (SnapshotRequest $request): void {

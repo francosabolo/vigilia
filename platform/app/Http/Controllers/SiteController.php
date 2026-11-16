@@ -11,6 +11,7 @@ use App\Models\EdgeDevice;
 use App\Models\Site;
 use App\Models\User;
 use App\Models\Zone;
+use App\Services\Autonomy\AutonomyPolicy;
 use App\Services\Cameras\CameraWall;
 use App\Services\Reports\SiteMetrics;
 use App\Services\Residents\ResidentDevices;
@@ -66,7 +67,7 @@ class SiteController extends Controller
         return to_route('sites.show', ['site' => $site, 'tab' => 'cobertura']);
     }
 
-    public function show(Request $request, Site $site, SiteMetrics $metrics, CameraWall $wall, ResidentDevices $devices, AiBudget $budget): Response
+    public function show(Request $request, Site $site, SiteMetrics $metrics, CameraWall $wall, ResidentDevices $devices, AiBudget $budget, AutonomyPolicy $autonomy): Response
     {
         Gate::authorize('view', $site);
 
@@ -100,7 +101,7 @@ class SiteController extends Controller
                 'escalated_incidents' => $site->incidents()->where('status', IncidentStatus::Escalated)->count(),
                 'escalated_incident_id' => $site->incidents()->where('status', IncidentStatus::Escalated)->latest('detected_at')->value('id'),
                 'edges' => $site->edgeDevices->map(fn (EdgeDevice $edge): array => $this->edge($edge)),
-                'cameras' => $site->cameras->sortBy([['sector', 'asc'], ['name', 'asc']])->values()->map(function (Camera $camera) use ($wall): array {
+                'cameras' => $site->cameras->sortBy([['sector', 'asc'], ['name', 'asc']])->values()->map(function (Camera $camera) use ($wall, $autonomy, $canManage): array {
                     $previewAt = $wall->previewAt($camera);
 
                     return [
@@ -119,6 +120,8 @@ class SiteController extends Controller
                             'id' => $zone->id,
                             'name' => $zone->name,
                             'kind' => $zone->kind->value,
+                            'autonomy' => $zone->autonomy->value,
+                            'autonomy_eligibility' => $canManage ? $autonomy->eligibility($zone) : null,
                             'lot' => $zone->lot,
                             'has_polygon' => ! empty($zone->coordinates),
                             'schedules' => $zone->armingSchedules->map(fn (ArmingSchedule $schedule): array => [

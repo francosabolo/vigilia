@@ -22,7 +22,7 @@ import paho.mqtt.client as mqtt
 import requests
 from ruamel.yaml import YAML
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 API_URL = os.environ["SEGURIA_API_URL"].rstrip("/")
 TOKEN = os.environ["SEGURIA_TOKEN"]
 MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
@@ -231,6 +231,34 @@ def latest_frame(camera: str) -> bytes | None:
         return None
 
 
+DETER_COMMAND = os.environ.get("SEGURIA_DETER_COMMAND", "").strip()
+
+
+def deter(command: dict) -> None:
+    """Plays the deterrence on the site's speaker / siren through a site-specific hook, and reports the result.
+
+    SEGURIA_DETER_COMMAND is a shell command run with SEGURIA_CAMERA and SEGURIA_MESSAGE in its environment,
+    e.g. a curl to the camera's two-way audio or alarm-output API (Hikvision ISAPI, Reolink siren) or a TTS script.
+    """
+    if not DETER_COMMAND:
+        ok, result = False, "El equipo no tiene altavoz ni sirena configurados (SEGURIA_DETER_COMMAND)."
+    else:
+        try:
+            done = subprocess.run(
+                DETER_COMMAND, shell=True, capture_output=True, text=True, timeout=30,
+                env={**os.environ, "SEGURIA_CAMERA": command["camera"], "SEGURIA_MESSAGE": command["message"]},
+            )
+            ok = done.returncode == 0
+            result = "Aviso reproducido." if ok else f"Falló (código {done.returncode}): {done.stderr.strip()[:200]}"
+        except subprocess.SubprocessError as exc:
+            ok, result = False, f"Falló: {exc}"[:255]
+    log.info("deterrence %s on %s: %s", command["id"], command["camera"], result)
+    try:
+        session.post(f"{API_URL}/api/edge/deterrence/{command['id']}", json={"ok": ok, "result": result}, timeout=10)
+    except requests.RequestException as exc:
+        log.warning("could not report deterrence %s: %s", command["id"], exc)
+
+
 def command_loop() -> None:
     last_preview = 0.0
     last_health = 0.0
@@ -248,6 +276,10 @@ def command_loop() -> None:
                 apply_zones(zones)
             except Exception as exc:  # never let a bad config stop the bridge
                 log.error("could not apply zones: %s", exc)
+
+        # Deterrence first: every second counts.
+        for command in commands.get("deterrence", []):
+            threading.Thread(target=deter, args=(command,), daemon=True).start()
 
         for snapshot in commands.get("snapshots", []):
             frame = latest_frame(snapshot["camera"])

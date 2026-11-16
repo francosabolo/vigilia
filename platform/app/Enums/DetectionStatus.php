@@ -8,4 +8,6 @@ enum DetectionStatus: string
     case Threat = 'threat';
     case Dismissed = 'dismissed';
     case Ignored = 'ignored';
+    /** Verified while the zone is in calibration: recorded, nobody alerted. */
+    case Observed = 'observed';
 }

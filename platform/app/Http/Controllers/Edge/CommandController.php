@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Edge;
 
+use App\Events\IncidentChanged;
 use App\Http\Controllers\Controller;
 use App\Jobs\ReviewReportedSnapshot;
 use App\Models\Camera;
+use App\Models\DeterrenceCommand;
 use App\Models\EdgeDevice;
 use App\Models\SnapshotRequest;
 use App\Services\Cameras\CameraViewMonitor;
@@ -32,10 +34,24 @@ class CommandController extends Controller
 
         SnapshotRequest::whereIn('id', $snapshots->pluck('id'))->update(['status' => 'sent', 'sent_at' => now()]);
 
+        // A deterrence that waited more than a minute is useless: the moment passed.
+        $deterrence = DeterrenceCommand::query()
+            ->with('camera:id,frigate_name')
+            ->where('edge_device_id', $device->id)
+            ->where('status', 'pending')
+            ->where('created_at', '>', now()->subMinute())
+            ->get();
+        DeterrenceCommand::whereIn('id', $deterrence->pluck('id'))->update(['status' => 'sent', 'sent_at' => now()]);
+
         return response()->json([
             'snapshots' => $snapshots->map(fn (SnapshotRequest $snapshot): array => [
                 'id' => $snapshot->id,
                 'camera' => $snapshot->camera->frigate_name,
+            ]),
+            'deterrence' => $deterrence->map(fn (DeterrenceCommand $command): array => [
+                'id' => $command->id,
+                'camera' => $command->camera->frigate_name,
+                'message' => $command->message,
             ]),
             'preview' => $wall->isWatched($device->site_id)
                 ? ['cameras' => $device->cameras()->pluck('frigate_name'), 'interval' => CameraWall::PREVIEW_INTERVAL]
@@ -46,6 +62,28 @@ class CommandController extends Controller
                 'cameras' => $device->cameras()->pluck('frigate_name'),
             ],
         ]);
+    }
+
+    /**
+     * The edge reports whether the speaker / siren actually played.
+     */
+    public function storeDeterrenceResult(Request $request, DeterrenceCommand $deterrenceCommand): JsonResponse
+    {
+        /** @var EdgeDevice $device */
+        $device = $request->attributes->get('edgeDevice');
+        abort_unless($deterrenceCommand->edge_device_id === $device->id, 404);
+
+        $data = $request->validate(['ok' => ['required', 'boolean'], 'result' => ['nullable', 'string', 'max:255']]);
+        $deterrenceCommand->forceFill(['status' => $data['ok'] ? 'done' : 'failed', 'done_at' => now(), 'result' => $data['result'] ?? null])->save();
+
+        $deterrenceCommand->incident->actions()->create([
+            'type' => $data['ok'] ? 'deterrence_done' : 'deterrence_failed',
+            'channel' => 'edge',
+            'notes' => $data['result'] ?? null,
+        ]);
+        IncidentChanged::dispatch($deterrenceCommand->incident, 'deterrence');
+
+        return response()->json(['ok' => true]);
     }
 
     public function storeSnapshot(Request $request, SnapshotRequest $snapshotRequest): JsonResponse
