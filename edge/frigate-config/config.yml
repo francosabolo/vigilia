@@ -1,0 +1,58 @@
+# Frigate config for the demo. In a real site replace the inputs with the
+# NVR/camera RTSP URLs (e.g. rtsp://user:pass@192.168.1.64:554/Streaming/Channels/102).
+mqtt:
+  host: mosquitto
+  topic_prefix: frigate
+
+detectors:
+  cpu:            # demo on laptop. Production: edgetpu (Coral) or openvino (Intel iGPU)
+    type: cpu
+
+objects:
+  track: [person, car, motorcycle, bicycle, dog]
+
+record:
+  enabled: true
+  retain:
+    days: 0
+  alerts:
+    retain:
+      days: 7
+  detections:
+    retain:
+      days: 7
+
+snapshots:
+  enabled: true
+  bounding_box: true
+  retain:
+    default: 7
+
+cameras:
+  perimetro_norte:
+    ffmpeg:
+      inputs:
+        - path: "{FRIGATE_RTSP_BASE}/perimetro_norte"
+          roles: [detect, record]
+    detect:
+      width: 1280
+      height: 720
+      fps: 5
+    zones:
+      alambrado:   # adjust polygon to the fence line in the image (Frigate UI > Settings > Masks/Zones)
+        coordinates: 0,0.55,1,0.55,1,1,0,1
+        objects: [person, car, motorcycle]
+
+  perimetro_sur:
+    ffmpeg:
+      inputs:
+        - path: "{FRIGATE_RTSP_BASE}/perimetro_sur"
+          roles: [detect, record]
+    detect:
+      width: 1280
+      height: 720
+      fps: 5
+    zones:
+      alambrado:
+        coordinates: 0,0.55,1,0.55,1,1,0,1
+        objects: [person, car, motorcycle]

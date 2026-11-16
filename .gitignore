@@ -1,0 +1,4 @@
+.DS_Store
+edge/media/
+edge/frigate-config/*.db
+edge/.env

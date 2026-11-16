@@ -1,0 +1,8 @@
+# Loops each demo video as an RTSP stream: rtsp://mediamtx:8554/<name>
+paths:
+  perimetro_norte:
+    runOnInit: ffmpeg -re -stream_loop -1 -i /videos/perimetro_norte.mp4 -c copy -f rtsp rtsp://localhost:$RTSP_PORT/$MTX_PATH
+    runOnInitRestart: yes
+  perimetro_sur:
+    runOnInit: ffmpeg -re -stream_loop -1 -i /videos/perimetro_sur.mp4 -c copy -f rtsp rtsp://localhost:$RTSP_PORT/$MTX_PATH
+    runOnInitRestart: yes

@@ -1,0 +1,14 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "php",
+            "args": [
+                "platform/artisan",
+                "boost:mcp"
+            ],
+            "env": {
+                "XDEBUG_MODE": "off"
+            }
+        }
+    }
+}
