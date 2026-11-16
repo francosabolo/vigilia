@@ -38,12 +38,12 @@ class MediaRetention
 
         DetectionEvent::query()
             ->where('created_at', '<', $cutoff)
-            ->where(fn ($query) => $query->whereNotNull('snapshot_path')->orWhereNotNull('clip_path'))
+            ->where(fn ($query) => $query->whereNotNull('snapshot_path')->orWhereNotNull('clip_path')->orWhereNotNull('frame_paths'))
             ->where(fn ($query) => $query->whereNull('incident_id')->orWhereNotIn('incident_id', $kept))
             ->chunkById(500, function ($events) use ($disk, &$stats) {
                 foreach ($events as $event) {
-                    $stats['files'] += $this->delete($disk, $event->snapshot_path, $event->clip_path);
-                    $event->forceFill(['snapshot_path' => null, 'clip_path' => null])->saveQuietly();
+                    $stats['files'] += $this->delete($disk, $event->snapshot_path, $event->clip_path, ...($event->frame_paths ?? []));
+                    $event->forceFill(['snapshot_path' => null, 'clip_path' => null, 'frame_paths' => null])->saveQuietly();
                     $stats['detections']++;
                 }
             });

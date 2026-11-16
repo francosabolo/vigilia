@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 import threading
 import time
 from pathlib import Path
@@ -21,7 +22,7 @@ import paho.mqtt.client as mqtt
 import requests
 from ruamel.yaml import YAML
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 API_URL = os.environ["SEGURIA_API_URL"].rstrip("/")
 TOKEN = os.environ["SEGURIA_TOKEN"]
 MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
@@ -75,6 +76,43 @@ def fetch_media(event_id: str, target: Path) -> None:
             time.sleep(CLIP_WAIT_SECONDS)
 
 
+FRAME_COUNT = int(os.environ.get("SEGURIA_FRAMES", "4"))
+FRAME_WIDTH = 768  # enough to see a person at the fence, and ~3x fewer tokens than 1280px
+
+
+def extract_frames(directory: Path) -> list[Path]:
+    """Evenly spaced frames from the clip (best effort): frame_0.jpg … frame_N.jpg, in time order."""
+    clip = directory / "clip.mp4"
+    if FRAME_COUNT < 2 or not clip.exists() or not shutil.which("ffmpeg"):
+        return []
+    try:
+        probe = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(clip)],
+            capture_output=True, text=True, timeout=20, check=True,
+        )
+        duration = float(probe.stdout.strip() or 0)
+    except (subprocess.SubprocessError, ValueError) as exc:
+        log.warning("ffprobe failed on %s: %s", clip, exc)
+        return []
+    if duration <= 0:
+        return []
+
+    frames = []
+    for i in range(FRAME_COUNT):
+        at = duration * (i + 0.5) / FRAME_COUNT
+        target = directory / f"frame_{i}.jpg"
+        try:
+            subprocess.run(
+                ["ffmpeg", "-v", "error", "-y", "-ss", f"{at:.2f}", "-i", str(clip), "-frames:v", "1",
+                 "-vf", f"scale={FRAME_WIDTH}:-2", "-q:v", "4", str(target)],
+                capture_output=True, timeout=20, check=True,
+            )
+            frames.append(target)
+        except subprocess.SubprocessError as exc:
+            log.warning("frame %s of %s failed: %s", i, clip, exc)
+    return frames
+
+
 def upload(directory: Path) -> bool:
     """POST a queued event to the cloud. Returns True when accepted (or permanently rejected)."""
     payload = json.loads((directory / "event.json").read_text())
@@ -87,6 +125,8 @@ def upload(directory: Path) -> bool:
             path = directory / name
             if path.exists():
                 files[field] = (name, path.open("rb"), mime)
+        for i, path in enumerate(sorted(directory.glob("frame_*.jpg"))):
+            files[f"frames[{i}]"] = (path.name, path.open("rb"), "image/jpeg")
         r = session.post(f"{API_URL}/api/edge/events", data=data, files=files, timeout=60)
     except requests.RequestException as exc:
         log.warning("upload %s failed, will retry: %s", payload["id"], exc)
@@ -112,6 +152,7 @@ def handle_event(event: dict) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "event.json").write_text(json.dumps(to_payload(event)))
     fetch_media(event["id"], directory)
+    extract_frames(directory)
     with queue_lock:
         if upload(directory):
             shutil.rmtree(directory, ignore_errors=True)

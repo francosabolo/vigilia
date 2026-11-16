@@ -41,6 +41,21 @@ class ClaudeDetectionVerifier implements DetectionVerifier
         PROMPT;
 
     /**
+     * Added to the system prompt when the AI gets several frames of the clip instead of a single photo.
+     * Kept separate so the single-photo prompt (and its evaluation) does not change.
+     */
+    public const SEQUENCE_ADDENDUM = <<<'PROMPT'
+        Esta vez no recibís una sola captura sino varios cuadros del mismo clip, en orden temporal (el primero es el
+        más antiguo). Usá el movimiento para decidir:
+        - Es amenaza si la secuencia muestra a alguien acercándose al perímetro, agachándose, trepando, cortando o
+          cruzando, o manipulando una puerta o ventana, aunque en algún cuadro suelto no se vea claro.
+        - No es amenaza si solo pasa de largo del lado de afuera, si es un guardia haciendo su ronda, o si lo que cambia
+          entre cuadros es lluvia, insectos, sombras, faros o vegetación.
+        - Si la persona aparece en un solo cuadro y no se entiende qué hace, es amenaza con confianza media.
+        En la descripción contá lo que pasa en la secuencia ("se acerca al alambrado y empieza a trepar").
+        PROMPT;
+
+    /**
      * Tokens actually consumed, by model (used by the evaluation command to report real cost).
      *
      * @var array<string, array{calls: int, input: int, output: int}>
@@ -63,6 +78,11 @@ class ClaudeDetectionVerifier implements DetectionVerifier
         return substr(sha1(($systemPrompt ?? self::SYSTEM_PROMPT).json_encode(StructuredOutput::toJsonSchema(DetectionVerdict::class)).'|effort=low'), 0, 12);
     }
 
+    public static function sequencePrompt(?string $systemPrompt = null): string
+    {
+        return ($systemPrompt ?? self::SYSTEM_PROMPT)."\n\n".self::SEQUENCE_ADDENDUM;
+    }
+
     /**
      * The exact image and context a snapshot verification sends (shared by live calls and batch evaluations).
      *
@@ -76,11 +96,13 @@ class ClaudeDetectionVerifier implements DetectionVerifier
     }
 
     /**
-     * @param  array{data: string, media_type: string}  $image
+     * @param  array{data: string, media_type: string}|array<int, array{data: string, media_type: string}>  $images  one image or frames in time order
      * @return array<string, mixed>
      */
-    public function requestParams(string $model, string $context, array $image, ?string $systemPrompt = null): array
+    public function requestParams(string $model, string $context, array $images, ?string $systemPrompt = null): array
     {
+        $images = isset($images['data']) ? [$images] : array_values($images);
+
         return [
             'model' => $model,
             'maxTokens' => 2048,
@@ -88,7 +110,7 @@ class ClaudeDetectionVerifier implements DetectionVerifier
             'messages' => [[
                 'role' => 'user',
                 'content' => [
-                    ['type' => 'image', 'source' => ['type' => 'base64', 'mediaType' => $image['media_type'], 'data' => $image['data']]],
+                    ...array_map(fn (array $image): array => ['type' => 'image', 'source' => ['type' => 'base64', 'mediaType' => $image['media_type'], 'data' => $image['data']]], $images),
                     ['type' => 'text', 'text' => $context],
                 ],
             ]],
@@ -141,7 +163,9 @@ class ClaudeDetectionVerifier implements DetectionVerifier
 
     public function verify(DetectionEvent $event): VerificationResult
     {
-        return $this->review($event->snapshot_path, $event->camera, $this->eventContext($event), $this->eventSubject($event));
+        ['images' => $images, 'sequence' => $sequence] = $this->material($event);
+
+        return $this->review($images, $event->camera, $this->eventContext($event, $sequence ? count($images) : 0), $this->eventSubject($event), $sequence);
     }
 
     /**
@@ -152,13 +176,14 @@ class ClaudeDetectionVerifier implements DetectionVerifier
      */
     public function challenge(DetectionEvent $event, string $model, string $systemPrompt): ?array
     {
-        $image = $this->loadImage($event->snapshot_path);
-        if ($image === null) {
+        ['images' => $images, 'sequence' => $sequence] = $this->material($event);
+        if ($images === []) {
             return null;
         }
 
+        $context = $this->cameraContext($event->camera, $this->eventContext($event, $sequence ? count($images) : 0));
         $started = microtime(true);
-        $message = $this->client->messages->create(...$this->requestParams($model, $this->cameraContext($event->camera, $this->eventContext($event)), $image, $systemPrompt));
+        $message = $this->client->messages->create(...$this->requestParams($model, $context, $images, $sequence ? self::sequencePrompt($systemPrompt) : $systemPrompt));
 
         return [
             'result' => $this->verdictFromMessage($message, $model) ?? $this->fallback($this->eventSubject($event), 'La IA no devolvió un veredicto.', $model),
@@ -168,13 +193,36 @@ class ClaudeDetectionVerifier implements DetectionVerifier
         ];
     }
 
-    private function eventContext(DetectionEvent $event): string
+    /**
+     * What the AI looks at: the clip's frames when the edge sent at least two, otherwise the snapshot.
+     *
+     * @return array{images: array<int, array{data: string, media_type: string}>, sequence: bool}
+     */
+    private function material(DetectionEvent $event): array
+    {
+        if ($event->hasSequence()) {
+            $frames = array_values(array_filter(array_map(fn (string $path) => $this->loadImage($path), $event->frame_paths)));
+            if (count($frames) >= 2) {
+                return ['images' => $frames, 'sequence' => true];
+            }
+        }
+
+        return ['images' => array_values(array_filter([$this->loadImage($event->snapshot_path)])), 'sequence' => false];
+    }
+
+    private function eventContext(DetectionEvent $event, int $frames = 0): string
     {
         $zones = $event->camera->zones()->whereIn('frigate_zone', $event->zones ?? [])->get()
             ->map(fn ($zone): string => "{$zone->name} ({$zone->kind->label()})")
             ->implode(', ');
 
-        return sprintf(
+        $sequence = '';
+        if ($frames >= 2) {
+            $seconds = $event->ended_at ? max(1, (int) round($event->started_at->diffInSeconds($event->ended_at))) : null;
+            $sequence = $seconds ? "Secuencia de {$frames} cuadros a lo largo de {$seconds} s. " : "Secuencia de {$frames} cuadros. ";
+        }
+
+        return $sequence.sprintf(
             'Detector: %s (score %s). Zonas: %s.',
             LabelTranslator::translate($event->label),
             $event->score !== null ? number_format($event->score, 2) : 'n/d',
@@ -189,29 +237,31 @@ class ClaudeDetectionVerifier implements DetectionVerifier
 
     public function verifySnapshot(string $path, Camera $camera, string $context): VerificationResult
     {
-        return $this->review($path, $camera, $context, "Captura de {$camera->name}.");
+        return $this->review(array_values(array_filter([$this->loadImage($path)])), $camera, $context, "Captura de {$camera->name}.", false);
     }
 
-    private function review(?string $path, Camera $camera, string $context, string $fallbackSubject): VerificationResult
+    /**
+     * @param  array<int, array{data: string, media_type: string}>  $images
+     */
+    private function review(array $images, Camera $camera, string $context, string $fallbackSubject, bool $sequence): VerificationResult
     {
-        $image = $this->loadImage($path);
-
-        if ($image === null) {
+        if ($images === []) {
             return $this->fallback($fallbackSubject, 'Sin imagen para verificar.');
         }
 
         $context = $this->cameraContext($camera, $context);
+        $system = $sequence ? self::sequencePrompt() : null;
 
         if ($camera->site_id && ! app(AiBudget::class)->consume($camera->site_id)) {
             return $this->fallback($fallbackSubject, 'Tope diario de verificaciones IA alcanzado: alerta sin verificar.');
         }
 
         try {
-            $result = $this->ask(config('seguria.ai.model'), $context, $image, $fallbackSubject);
+            $result = $this->ask(config('seguria.ai.model'), $context, $images, $fallbackSubject, $system);
 
             [$low, $high] = config('seguria.ai.review_band');
             if ($result->confidence !== null && $result->confidence >= $low && $result->confidence <= $high) {
-                $result = $this->ask(config('seguria.ai.review_model'), $context, $image, $fallbackSubject);
+                $result = $this->ask(config('seguria.ai.review_model'), $context, $images, $fallbackSubject, $system);
             }
 
             return $result;
@@ -226,16 +276,17 @@ class ClaudeDetectionVerifier implements DetectionVerifier
     }
 
     /**
-     * @param  array{data: string, media_type: string}  $image
+     * @param  array<int, array{data: string, media_type: string}>  $images
      */
-    private function ask(string $model, string $context, array $image, string $fallbackSubject): VerificationResult
+    private function ask(string $model, string $context, array $images, string $fallbackSubject, ?string $systemPrompt = null): VerificationResult
     {
-        $cacheKey = $this->cache?->key($model, self::promptFingerprint(), $context, $image['data']);
+        // A single image keeps the original key, so cached evaluation verdicts stay valid.
+        $cacheKey = $this->cache?->key($model, self::promptFingerprint($systemPrompt), $context, implode('|', array_column($images, 'data')));
         if ($cacheKey && ($cached = $this->cache->get($cacheKey))) {
             return VerificationResult::fromArray($cached['verdict']);
         }
 
-        $params = $this->requestParams($model, $context, $image);
+        $params = $this->requestParams($model, $context, $images, $systemPrompt);
         $message = $this->client->messages->create(...$params);
 
         $usage = ['input' => $message->usage->inputTokens + (int) $message->usage->cacheReadInputTokens, 'output' => $message->usage->outputTokens];

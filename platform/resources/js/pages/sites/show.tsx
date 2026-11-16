@@ -827,7 +827,7 @@ function EdgesSection({ site, newEdge, serverUrl }: Pick<Props, 'site' | 'newEdg
                         </p>
                     </div>
                     <pre className="bg-background overflow-x-auto rounded-lg p-3 font-mono text-xs select-all">
-                        {`SEGURIA_URL=${serverUrl}\nSEGURIA_TOKEN=${newEdge.token}`}
+                        {`SEGURIA_API_URL=${serverUrl}\nSEGURIA_TOKEN=${newEdge.token}`}
                     </pre>
                 </div>
             )}

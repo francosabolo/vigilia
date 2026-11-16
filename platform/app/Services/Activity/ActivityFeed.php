@@ -63,6 +63,9 @@ class ActivityFeed
             'incident_id' => $event->incident_id,
             'at' => ($event->updated_at ?? $event->started_at)->toIso8601String(),
             'snapshot_url' => $event->snapshot_path ? URL::temporarySignedRoute('detections.media', now()->addHours(12), ['detectionEvent' => $event->id]) : null,
+            'frame_urls' => collect($event->frame_paths ?? [])->keys()
+                ->map(fn (int $index) => URL::temporarySignedRoute('detections.media', now()->addHours(12), ['detectionEvent' => $event->id, 'frame' => $index]))
+                ->all(),
             'trace' => $event->trace ?? [],
         ];
     }

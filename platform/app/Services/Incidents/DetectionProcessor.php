@@ -75,7 +75,8 @@ class DetectionProcessor
         $verdict = $this->verifier->verify($event);
         $event->ai_verdict = $verdict->toArray();
         $agent = app(ActivityFeed::class)->agentName($verdict->model);
-        $confidence = $verdict->confidence !== null ? ' Confianza '.round($verdict->confidence * 100).'%.' : '';
+        $confidence = ($verdict->confidence !== null ? ' Confianza '.round($verdict->confidence * 100).'%.' : '')
+            .($event->hasSequence() ? ' Miró '.count($event->frame_paths).' cuadros del clip.' : '');
 
         if ($verdict->model && $verdict->model === config('seguria.ai.review_model')) {
             $this->step('ai', app(ActivityFeed::class)->agentName(config('seguria.ai.model')), 'doubt', 'No estaba segura: le pidió una segunda opinión a la revisora.');

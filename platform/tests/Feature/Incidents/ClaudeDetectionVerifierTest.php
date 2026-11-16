@@ -35,3 +35,16 @@ it('alerts without calling the API once the site used its daily budget', functio
         ->and($result->confidence)->toBeNull()
         ->and($result->description)->toContain('Tope diario');
 });
+
+it('sends every frame in order and a separate prompt for sequences', function () {
+    $images = [['data' => 'AAA', 'media_type' => 'image/jpeg'], ['data' => 'BBB', 'media_type' => 'image/jpeg'], ['data' => 'CCC', 'media_type' => 'image/jpeg']];
+    $verifier = new ClaudeDetectionVerifier(new Client(apiKey: 'test-key'));
+
+    $sequence = $verifier->requestParams('m', 'contexto', $images, ClaudeDetectionVerifier::sequencePrompt());
+    $single = $verifier->requestParams('m', 'contexto', $images[0]);
+
+    expect(collect($sequence['messages'][0]['content'])->where('type', 'image')->pluck('source.data')->all())->toBe(['AAA', 'BBB', 'CCC'])
+        ->and($sequence['system'])->toContain('varios cuadros del mismo clip')
+        ->and($single['system'])->toBe(ClaudeDetectionVerifier::SYSTEM_PROMPT)
+        ->and(ClaudeDetectionVerifier::promptFingerprint(ClaudeDetectionVerifier::sequencePrompt()))->not->toBe(ClaudeDetectionVerifier::promptFingerprint());
+});

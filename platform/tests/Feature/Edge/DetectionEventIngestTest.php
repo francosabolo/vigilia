@@ -7,6 +7,7 @@ use App\Models\EdgeDevice;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 beforeEach(function () {
     Storage::fake('local');
@@ -92,4 +93,23 @@ it('records the heartbeat and camera status', function () {
         ->and($this->device->last_seen_at)->not->toBeNull()
         ->and(Camera::where('frigate_name', 'perimetro_norte')->value('is_online'))->toBeTrue()
         ->and(Camera::where('frigate_name', 'perimetro_sur')->value('is_online'))->toBeFalse();
+});
+
+it('stores the clip frames sent by bridge 0.4 in time order', function () {
+    Storage::fake('local');
+    config(['seguria.media_disk' => 'local']);
+    Event::fake([DetectionEventReceived::class]);
+
+    $this->withToken($this->token)->post('/api/edge/events', frigatePayload([
+        'frames' => [UploadedFile::fake()->image('frame_0.jpg'), UploadedFile::fake()->image('frame_1.jpg'), UploadedFile::fake()->image('frame_2.jpg')],
+    ]), ['Accept' => 'application/json'])->assertCreated();
+
+    $event = DetectionEvent::sole();
+    expect($event->frame_paths)->toHaveCount(3)
+        ->and($event->frame_paths[0])->toEndWith('frame_0.jpg')
+        ->and($event->hasSequence())->toBeTrue();
+    Storage::disk('local')->assertExists($event->frame_paths);
+
+    $url = URL::temporarySignedRoute('detections.media', now()->addHour(), ['detectionEvent' => $event->id, 'frame' => 2]);
+    $this->get($url)->assertOk();
 });

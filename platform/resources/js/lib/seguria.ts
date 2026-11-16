@@ -87,6 +87,8 @@ export interface ActivityItem {
     incident_id: number | null;
     at: string;
     snapshot_url: string | null;
+    /** Frames of the clip the AI analyzed, in time order (bridge 0.4+). */
+    frame_urls?: string[];
     trace: TraceStep[];
 }
 

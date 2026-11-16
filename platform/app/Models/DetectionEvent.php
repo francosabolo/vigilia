@@ -22,7 +22,7 @@ class DetectionEvent extends Model
     protected $fillable = [
         'edge_device_id', 'camera_id', 'external_id', 'label', 'score', 'zones',
         'started_at', 'ended_at', 'snapshot_path', 'clip_path', 'status', 'ai_verdict', 'trace', 'incident_id',
-        'ground_truth', 'ground_truth_source', 'reviewed_by',
+        'ground_truth', 'ground_truth_source', 'reviewed_by', 'frame_paths',
     ];
 
     protected function casts(): array
@@ -31,6 +31,7 @@ class DetectionEvent extends Model
             'zones' => 'array',
             'ai_verdict' => 'array',
             'ground_truth' => 'boolean',
+            'frame_paths' => 'array',
             'trace' => 'array',
             'score' => 'float',
             'started_at' => 'datetime',
@@ -60,5 +61,13 @@ class DetectionEvent extends Model
     public function shadowVerdicts(): HasMany
     {
         return $this->hasMany(ShadowVerdict::class);
+    }
+
+    /**
+     * Whether the AI gets a sequence of frames (2 or more) instead of a single photo.
+     */
+    public function hasSequence(): bool
+    {
+        return count($this->frame_paths ?? []) >= 2;
     }
 }

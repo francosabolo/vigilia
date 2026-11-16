@@ -27,6 +27,9 @@ class StoreDetectionEventRequest extends FormRequest
             'end_time' => ['nullable', 'numeric'],
             'snapshot' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'clip' => ['nullable', 'file', 'mimetypes:video/mp4', 'max:51200'],
+            // Bridge 0.4+: evenly spaced frames of the clip, in time order.
+            'frames' => ['nullable', 'array', 'max:6'],
+            'frames.*' => ['file', 'mimes:jpg,jpeg', 'max:2048'],
         ];
     }
 }

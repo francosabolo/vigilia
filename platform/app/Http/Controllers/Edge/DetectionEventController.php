@@ -45,6 +45,12 @@ class DetectionEventController extends Controller
         $event->fill(array_filter([
             'snapshot_path' => $this->storeMedia($request->file('snapshot'), $directory, 'snapshot'),
             'clip_path' => $this->storeMedia($request->file('clip'), $directory, 'clip'),
+            'frame_paths' => collect($request->file('frames', []))
+                ->values()
+                ->map(fn (UploadedFile $file, int $index) => $this->storeMedia($file, $directory, "frame_{$index}"))
+                ->filter()
+                ->values()
+                ->all() ?: null,
         ]))->save();
 
         if ($isNew) {

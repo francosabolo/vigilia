@@ -15,7 +15,29 @@ const RESULT_DOT: Record<TraceStep['result'], string> = {
 export function DecisionTrail({ item }: { item: ActivityItem }) {
     return (
         <div className="flex flex-col gap-4">
-            {item.snapshot_url && <img src={item.snapshot_url} alt={`Captura de ${item.camera}`} className="w-full rounded-lg border bg-black" />}
+            {item.frame_urls && item.frame_urls.length >= 2 ? (
+                <figure className="flex flex-col gap-1.5">
+                    <ol className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                        {item.frame_urls.map((url, index) => (
+                            <li key={url} className="relative">
+                                <img
+                                    src={url}
+                                    alt={`Cuadro ${index + 1} de ${item.camera}`}
+                                    className="aspect-video w-full rounded-md border bg-black object-cover"
+                                />
+                                <span className="font-display absolute top-1 left-1 rounded bg-black/70 px-1.5 text-xs text-white tabular-nums">
+                                    {index + 1}
+                                </span>
+                            </li>
+                        ))}
+                    </ol>
+                    <figcaption className="text-muted-foreground text-xs">
+                        Los {item.frame_urls.length} cuadros del clip que analizó la IA, en orden.
+                    </figcaption>
+                </figure>
+            ) : (
+                item.snapshot_url && <img src={item.snapshot_url} alt={`Captura de ${item.camera}`} className="w-full rounded-lg border bg-black" />
+            )}
             <ol className="flex flex-col gap-3">
                 {item.trace.map((step, index) => (
                     <li key={index} className="flex gap-3">
