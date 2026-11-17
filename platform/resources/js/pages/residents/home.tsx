@@ -5,7 +5,6 @@ import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { NotificationBell } from '@/components/notification-bell';
 import { PushToggle } from '@/components/push-toggle';
 import { ResidentVehicles, type Vehicle } from '@/components/resident-vehicles';
-import { type Vehicle } from '@/components/resident-vehicles';
 import { ResidentVisits, type GateEntry, type ResidentVisit } from '@/components/resident-visits';
 import { SafeArrivalCard, type Arrival } from '@/components/safe-arrival';
 import { Button } from '@/components/ui/button';
