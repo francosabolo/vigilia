@@ -417,7 +417,7 @@ function RegisterVisit({
     return (
         <section className="bg-card flex flex-col gap-4 rounded-2xl border p-4">
             <SectionTitle icon={UserRoundSearch}>Registrar una visita</SectionTitle>
-            <div className="grid gap-3 sm:grid-cols-[8rem_1fr]">
+            <div className="grid gap-3 sm:grid-cols-[11rem_1fr]">
                 <div className="grid gap-1.5">
                     <Label htmlFor="visit-unit">{unitNoun === 'lote' ? 'Lote' : 'Unidad'}</Label>
                     <Input
@@ -426,7 +426,7 @@ function RegisterVisit({
                         placeholder={unitNoun === 'lote' ? '42' : '4C'}
                         value={form.data.unit}
                         onChange={(e) => form.setData((data) => ({ ...data, unit: e.target.value.toUpperCase(), resident_id: '' }))}
-                        className="font-display text-lg"
+                        className="font-display pr-2 text-lg [&::-webkit-calendar-picker-indicator]:hidden"
                     />
                     <datalist id="visit-units">
                         {[...new Set(residents.map((resident) => resident.lot).filter(Boolean))].map((lot) => (
