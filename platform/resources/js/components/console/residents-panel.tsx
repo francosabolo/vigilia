@@ -287,20 +287,10 @@ export function ResidentsPanel({
                                             .join(' · ')}
                                     </p>
                                 )}
-                                {resident.contacts.length > 0 && (
-                                    <p className="text-muted-foreground text-sm">
-                                        Si no responde:{' '}
-                                        {resident.contacts.map((contact, index) => (
-                                            <span key={contact.id}>
-                                                {index > 0 && ', '}
-                                                <a href={`tel:${contact.phone}`} className="underline">
-                                                    {contact.name}
-                                                    {contact.relation && ` (${contact.relation})`}
-                                                </a>
-                                            </span>
-                                        ))}
-                                    </p>
-                                )}
+                                <div className="mt-1.5 rounded-lg border px-2.5 py-1.5">
+                                    <p className="text-muted-foreground text-xs font-medium">Contactos de emergencia</p>
+                                    <EmergencyContacts contacts={resident.contacts} compact />
+                                </div>
                             </div>
                             <div className="min-w-40 text-sm">{renderUsage(resident)}</div>
                             <div className="flex items-center gap-1">
