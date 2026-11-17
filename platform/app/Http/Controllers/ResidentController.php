@@ -61,7 +61,7 @@ class ResidentController extends Controller
             'contacts' => $resident->contacts()->get()->map->toPayload(),
             'visits' => AccessAuthorization::where('resident_id', $resident->id)->whereNull('revoked_at')->where('valid_until', '>=', now()->toDateString())
                 ->with('site:id,timezone')->orderBy('valid_from')->get()->map->toPayload(),
-            'atGate' => AccessEntry::where('resident_id', $resident->id)->where('created_at', '>', now()->subDay())->latest()->limit(10)->get()->map->toPayload(),
+            'atGate' => AccessEntry::where('resident_id', $resident->id)->where('created_at', '>', now()->subDays(30))->latest()->limit(30)->get()->map->toPayload(),
         ]);
     }
 

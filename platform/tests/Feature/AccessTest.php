@@ -65,3 +65,21 @@ it('keeps the gate screen for the staff of the property', function () {
     $this->actingAs($this->guard)->get('/access')->assertOk()->assertInertia(fn ($page) => $page->where('site.id', $this->site->id));
     $this->actingAs($outsider)->post("/access/{$this->site->id}/check-in", ['code' => '123456'])->assertForbidden();
 });
+
+it('registers a visit to a unit and whom, marks the exit and filters the log by unit', function () {
+    $this->actingAs($this->guard)->post("/access/{$this->site->id}/visits", [
+        'unit' => '12', 'resident_id' => $this->resident->id, 'name' => 'Juan Gómez', 'document' => '30111222', 'plate' => 'ac456ef', 'purpose' => 'visita',
+    ])->assertSessionHas('notice', fn ($text) => str_contains($text, 'Juan Gómez a 12'));
+
+    $entry = AccessEntry::sole();
+    expect($entry)->status->toBe('allowed')->unit->toBe('12')->visiting->toBe($this->resident->name)->plate->toBe('AC456EF');
+    Notification::assertSentTo($this->resident, VisitorAtGate::class);
+
+    $this->actingAs($this->guard)->get('/access')->assertInertia(fn ($page) => $page->has('inside', 1));
+    $this->actingAs($this->guard)->post("/access/entries/{$entry->id}/exit")->assertRedirect();
+    expect($entry->fresh()->exited_at)->not->toBeNull();
+
+    $this->actingAs($this->guard)->post("/access/{$this->site->id}/visits", ['unit' => '7B', 'visiting' => 'Martina Blá', 'name' => 'Ana Ruiz']);
+    $this->actingAs($this->guard)->get('/access?unit=7B')->assertInertia(fn ($page) => $page->has('entries', 1)->where('entries.0.visiting', 'Martina Blá'));
+    $this->actingAs($this->guard)->get('/access?q=ac456')->assertInertia(fn ($page) => $page->has('entries', 1)->where('entries.0.name', 'Juan Gómez'));
+});

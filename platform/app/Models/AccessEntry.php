@@ -11,11 +11,11 @@ use Illuminate\Support\Facades\URL;
  */
 class AccessEntry extends Model
 {
-    protected $fillable = ['site_id', 'authorization_id', 'resident_id', 'guard_id', 'kind', 'name', 'plate', 'photo_path', 'status', 'reason', 'answered_at'];
+    protected $fillable = ['site_id', 'authorization_id', 'resident_id', 'unit', 'visiting', 'guard_id', 'kind', 'name', 'document', 'plate', 'purpose', 'photo_path', 'status', 'reason', 'answered_at', 'exited_at'];
 
     protected function casts(): array
     {
-        return ['answered_at' => 'datetime'];
+        return ['answered_at' => 'datetime', 'exited_at' => 'datetime'];
     }
 
     public function authorization(): BelongsTo
@@ -52,6 +52,11 @@ class AccessEntry extends Model
             'status' => $this->status,
             'reason' => $this->reason,
             'resident' => $this->resident ? ['name' => $this->resident->name, 'lot' => $this->resident->lot] : null,
+            'unit' => $this->unit ?? $this->resident?->lot,
+            'visiting' => $this->visiting ?? $this->resident?->name,
+            'document' => $this->document,
+            'purpose' => $this->purpose,
+            'exited_at' => $this->exited_at?->toIso8601String(),
             'guard' => $this->guardUser?->name,
             'photo_url' => $this->photo_path ? URL::temporarySignedRoute('access.photo', now()->addHours(12), ['accessEntry' => $this->id]) : null,
             'at' => $this->created_at->toIso8601String(),

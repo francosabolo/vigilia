@@ -39,14 +39,19 @@ class AccessController extends Controller
         return Inertia::render('access/index', [
             'site' => ['id' => $site->id, 'name' => $site->name, 'kind' => $site->kind->value, 'has_access_camera' => $site->cameras()->where('is_access', true)->exists()],
             'waiting' => AccessEntry::where('site_id', $site->id)->where('status', 'waiting')->with('resident:id,name,lot')->latest()->get()->map->toPayload(),
+            'inside' => AccessEntry::where('site_id', $site->id)->where('status', 'allowed')->whereNull('exited_at')
+                ->where('created_at', '>', now()->subHours(16))->with('resident:id,name,lot')->latest()->get()->map->toPayload(),
             'entries' => AccessEntry::where('site_id', $site->id)
-                ->when($q, fn ($query) => $query->where(fn ($query) => $query->where('name', 'like', "%{$q}%")->orWhere('plate', 'like', '%'.strtoupper($q).'%')))
+                ->when($unit = trim((string) $request->query('unit')), fn ($query) => $query->where(fn ($query) => $query->where('unit', $unit)->orWhereHas('resident', fn ($q) => $q->where('lot', $unit))))
+                ->when($q, fn ($query) => $query->where(fn ($query) => $query->whereRaw('LOWER(name) LIKE ?', ['%'.mb_strtolower($q).'%'])->orWhereRaw('LOWER(COALESCE(visiting, \'\')) LIKE ?', ['%'.mb_strtolower($q).'%'])->orWhere('plate', 'like', '%'.strtoupper($q).'%')))
                 ->with(['resident:id,name,lot', 'guardUser:id,name'])->latest()->limit(50)->get()->map->toPayload(),
             'authorizations' => AccessAuthorization::where('site_id', $site->id)->whereNull('revoked_at')->where('valid_until', '>=', now()->toDateString())
                 ->with('resident:id,name,lot', 'site:id,timezone')->orderBy('kind')->orderBy('name')->get()->map->toPayload(),
             'watchlist' => WatchedPlate::where('site_id', $site->id)->orderBy('plate')->get(['id', 'plate', 'reason']),
             'residents' => $site->residents()->get(['id', 'name', 'lot'])->map(fn (User $resident) => ['id' => $resident->id, 'name' => $resident->name, 'lot' => $resident->lot]),
             'q' => $q,
+            'unit' => trim((string) $request->query('unit')),
+            'units' => $site->residents()->whereNotNull('lot')->distinct()->orderBy('lot')->pluck('lot'),
         ]);
     }
 
@@ -72,6 +77,41 @@ class AccessController extends Controller
         $desk->announce($site, $request->user(), User::findOrFail($data['resident_id']), $data['name'], ! empty($data['plate']) ? strtoupper($data['plate']) : null);
 
         return back()->with('notice', 'Le avisamos al vecino. Su respuesta aparece acá.');
+    }
+
+    /**
+     * D5 — register a visit: let in now, or ask the resident first.
+     */
+    public function registerVisit(Request $request, Site $site, AccessDesk $desk): RedirectResponse
+    {
+        Gate::authorize('view', $site);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'document' => ['nullable', 'string', 'max:30'],
+            'plate' => ['nullable', 'string', 'max:15'],
+            'unit' => ['required', 'string', 'max:20'],
+            'resident_id' => ['nullable', Rule::exists('users', 'id')->where('site_id', $site->id)->where('role', 'resident')],
+            'visiting' => ['nullable', 'string', 'max:100'],
+            'purpose' => ['nullable', 'string', 'max:150'],
+            'ask' => ['boolean'],
+        ], [
+            'name.required' => 'Escribí el nombre de quien llega.',
+            'unit.required' => 'Escribí a qué unidad va.',
+        ]);
+
+        $entry = $desk->registerVisit($site, $request->user(), $data, (bool) ($data['ask'] ?? false));
+
+        return back()->with('notice', $entry->status === 'waiting'
+            ? "Le avisamos a {$entry->visiting}. Su respuesta aparece acá."
+            : "Registrado: {$entry->name} a {$entry->unit}".($entry->visiting ? " ({$entry->visiting})" : '').'.');
+    }
+
+    public function markExit(AccessEntry $accessEntry, AccessDesk $desk): RedirectResponse
+    {
+        Gate::authorize('view', $accessEntry->site);
+        $desk->exit($accessEntry);
+
+        return back();
     }
 
     /**

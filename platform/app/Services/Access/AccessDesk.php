@@ -63,6 +63,8 @@ class AccessDesk
         $entry = $this->entry($site, $guard, [
             'authorization_id' => $authorization->id,
             'resident_id' => $authorization->resident_id,
+            'unit' => $authorization->resident?->lot,
+            'visiting' => $authorization->resident?->name,
             'kind' => $authorization->kind,
             'name' => $authorization->name,
             'plate' => $plate ?: $authorization->plate,
@@ -78,11 +80,45 @@ class AccessDesk
     }
 
     /**
+     * D5 — the guard registers a visit at the gate: who, to which unit, to see whom. Let in right away, or the
+     * registered resident is asked first from the phone.
+     *
+     * @param  array{name: string, document?: string|null, plate?: string|null, unit: string, resident_id?: int|null, visiting?: string|null, purpose?: string|null}  $data
+     */
+    public function registerVisit(Site $site, User $guard, array $data, bool $askResident): AccessEntry
+    {
+        $resident = ! empty($data['resident_id']) ? User::find($data['resident_id']) : null;
+        $entry = $this->entry($site, $guard, [
+            'kind' => 'unannounced',
+            'name' => $data['name'],
+            'document' => $data['document'] ?? null,
+            'plate' => ! empty($data['plate']) ? strtoupper($data['plate']) : null,
+            'unit' => $data['unit'],
+            'resident_id' => $resident?->id,
+            'visiting' => $resident?->name ?? ($data['visiting'] ?? null),
+            'purpose' => $data['purpose'] ?? null,
+            'status' => $askResident && $resident ? 'waiting' : 'allowed',
+            'reason' => $askResident && $resident ? null : 'Registrada por la guardia.',
+        ]);
+
+        if ($resident) {
+            $resident->notify(new VisitorAtGate($entry));
+        }
+
+        return $entry;
+    }
+
+    public function exit(AccessEntry $entry): void
+    {
+        $entry->update(['exited_at' => now()]);
+    }
+
+    /**
      * Someone without an invitation: the resident is asked from the phone.
      */
     public function announce(Site $site, User $guard, User $resident, string $name, ?string $plate): AccessEntry
     {
-        $entry = $this->entry($site, $guard, ['kind' => 'unannounced', 'name' => $name, 'plate' => $plate, 'resident_id' => $resident->id, 'status' => 'waiting']);
+        $entry = $this->entry($site, $guard, ['kind' => 'unannounced', 'name' => $name, 'plate' => $plate, 'resident_id' => $resident->id, 'unit' => $resident->lot, 'visiting' => $resident->name, 'status' => 'waiting']);
         $resident->notify(new VisitorAtGate($entry));
 
         return $entry;

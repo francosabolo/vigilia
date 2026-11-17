@@ -125,6 +125,8 @@ Route::middleware('auth')->group(function () {
         Route::post('arrivals/{arrival}/arrived', [SafeArrivalController::class, 'arrived'])->name('arrivals.arrived');
         Route::get('access', [AccessController::class, 'index'])->name('access.index');
         Route::post('access/{site}/check-in', [AccessController::class, 'checkIn'])->middleware('throttle:60,1')->name('access.check-in');
+        Route::post('access/{site}/visits', [AccessController::class, 'registerVisit'])->name('access.visits.store');
+        Route::post('access/entries/{accessEntry}/exit', [AccessController::class, 'markExit'])->name('access.entries.exit');
         Route::post('access/{site}/announce', [AccessController::class, 'announce'])->name('access.announce');
         Route::post('access/{site}/authorizations', [AccessController::class, 'storeAuthorization'])->name('access.authorizations.store');
         Route::delete('access/authorizations/{authorization}', [AccessController::class, 'revoke'])->name('access.authorizations.destroy');

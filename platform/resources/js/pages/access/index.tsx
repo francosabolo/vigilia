@@ -18,6 +18,11 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Accesos', href: '/access' }];
 
 interface Entry {
     id: number;
+    unit: string | null;
+    visiting: string | null;
+    document: string | null;
+    purpose: string | null;
+    exited_at: string | null;
     kind: string;
     kind_label: string;
     name: string;
@@ -54,7 +59,10 @@ interface Props {
     authorizations?: Authorization[];
     residents?: { id: number; name: string; lot: string | null }[];
     watchlist?: { id: number; plate: string; reason: string | null }[];
+    inside?: Entry[];
     q?: string;
+    unit?: string;
+    units?: string[];
 }
 
 const DAY_NAMES = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
@@ -78,10 +86,13 @@ export default function AccessIndex({
     authorizations = [],
     residents = [],
     watchlist = [],
+    inside = [],
     q = '',
+    unit = '',
+    units = [],
 }: Props) {
     const { flash } = usePage<{ flash: { notice: string | null } }>().props;
-    usePoll(waiting.length > 0 ? 3000 : 15000, { only: ['waiting', 'entries'] });
+    usePoll(waiting.length > 0 ? 3000 : 15000, { only: ['waiting', 'entries', 'inside'] });
 
     if (!site) {
         return (
@@ -133,10 +144,39 @@ export default function AccessIndex({
                     </p>
                 )}
 
-                <div className="grid gap-6 lg:grid-cols-2">
+                <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
+                    <RegisterVisit siteId={site.id} residents={residents} unitNoun={site.kind === 'country' ? 'lote' : 'unidad'} />
                     <CheckIn siteId={site.id} />
-                    <Announce siteId={site.id} residents={residents} />
                 </div>
+
+                {inside.length > 0 && (
+                    <section className="flex flex-col gap-3">
+                        <SectionTitle icon={DoorOpen}>Adentro ahora ({inside.length})</SectionTitle>
+                        <ul className="bg-card divide-y rounded-xl border text-sm">
+                            {inside.map((entry) => (
+                                <li key={entry.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5">
+                                    <span className="min-w-48 flex-1">
+                                        <span className="font-medium">{entry.name}</span>
+                                        <span className="text-muted-foreground">
+                                            {' '}
+                                            → {entry.unit ?? '—'}
+                                            {entry.visiting && ` (${entry.visiting})`}
+                                            {entry.plate && `, patente ${entry.plate}`}
+                                        </span>
+                                    </span>
+                                    <span className="text-muted-foreground">entró {timeAgo(entry.at)}</span>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => router.post(`/access/entries/${entry.id}/exit`, {}, { preserveScroll: true })}
+                                    >
+                                        Marcar salida
+                                    </Button>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
 
                 {waiting.length > 0 && (
                     <section className="flex flex-col gap-3">
@@ -225,7 +265,7 @@ export default function AccessIndex({
 
                 <Watchlist siteId={site.id} plates={watchlist} />
 
-                <EntryLog entries={entries} q={q} />
+                <EntryLog entries={entries} q={q} unit={unit} units={units} />
             </div>
         </AppLayout>
     );
@@ -344,51 +384,138 @@ function QrScanner({ onCode, onClose }: { onCode: (code: string) => void; onClos
     );
 }
 
-function Announce({ siteId, residents }: { siteId: number; residents: { id: number; name: string; lot: string | null }[] }) {
-    const form = useForm({ name: '', plate: '', resident_id: '' });
+/**
+ * D5 — the one form at the gate: who arrives, to which unit, to see whom. Let in and log, or ask the resident first.
+ */
+function RegisterVisit({
+    siteId,
+    residents,
+    unitNoun,
+}: {
+    siteId: number;
+    residents: { id: number; name: string; lot: string | null }[];
+    unitNoun: string;
+}) {
+    const form = useForm({
+        unit: '',
+        resident_id: '' as number | '',
+        visiting: '',
+        name: '',
+        document: '',
+        plate: '',
+        purpose: '',
+        ask: false as boolean,
+    });
+    const atUnit = residents.filter(
+        (resident) => resident.lot && form.data.unit.trim() && resident.lot.toLowerCase() === form.data.unit.trim().toLowerCase(),
+    );
+    const submit = (ask: boolean) => {
+        form.transform((data) => ({ ...data, ask, resident_id: data.resident_id === '' ? null : data.resident_id }));
+        form.post(`/access/${siteId}/visits`, { preserveScroll: true, onSuccess: () => form.reset() });
+    };
 
     return (
-        <section className="bg-card flex flex-col gap-3 rounded-2xl border p-4">
-            <SectionTitle icon={UserRoundSearch}>Llegó alguien sin aviso</SectionTitle>
-            <form
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    form.post(`/access/${siteId}/announce`, { preserveScroll: true, onSuccess: () => form.reset() });
-                }}
-                className="flex flex-col gap-3"
-            >
+        <section className="bg-card flex flex-col gap-4 rounded-2xl border p-4">
+            <SectionTitle icon={UserRoundSearch}>Registrar una visita</SectionTitle>
+            <div className="grid gap-3 sm:grid-cols-[8rem_1fr]">
                 <div className="grid gap-1.5">
-                    <Label htmlFor="announce-resident">A quién visita</Label>
-                    <select
-                        id="announce-resident"
-                        value={form.data.resident_id}
-                        onChange={(e) => form.setData('resident_id', e.target.value)}
-                        className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-                    >
-                        <option value="">Elegí el vecino</option>
-                        {residents.map((resident) => (
-                            <option key={resident.id} value={resident.id}>
-                                {resident.lot ? `${resident.lot}, ` : ''}
-                                {resident.name}
-                            </option>
-                        ))}
-                    </select>
-                    <InputError message={form.errors.resident_id} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                    <Input placeholder="Nombre de quien llega" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} />
+                    <Label htmlFor="visit-unit">{unitNoun === 'lote' ? 'Lote' : 'Unidad'}</Label>
                     <Input
-                        placeholder="Patente (opcional)"
-                        value={form.data.plate}
-                        onChange={(e) => form.setData('plate', e.target.value.toUpperCase())}
+                        id="visit-unit"
+                        list="visit-units"
+                        placeholder={unitNoun === 'lote' ? '42' : '4C'}
+                        value={form.data.unit}
+                        onChange={(e) => form.setData((data) => ({ ...data, unit: e.target.value.toUpperCase(), resident_id: '' }))}
+                        className="font-display text-lg"
+                    />
+                    <datalist id="visit-units">
+                        {[...new Set(residents.map((resident) => resident.lot).filter(Boolean))].map((lot) => (
+                            <option key={lot} value={lot!} />
+                        ))}
+                    </datalist>
+                    <InputError message={form.errors.unit} />
+                </div>
+                <div className="grid gap-1.5">
+                    <Label>A quién visita</Label>
+                    {atUnit.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                            {atUnit.map((resident) => (
+                                <button
+                                    key={resident.id}
+                                    type="button"
+                                    aria-pressed={form.data.resident_id === resident.id}
+                                    onClick={() => form.setData((data) => ({ ...data, resident_id: resident.id, visiting: '' }))}
+                                    className={cn(
+                                        'rounded-full border px-3 py-1.5 text-sm',
+                                        form.data.resident_id === resident.id
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'hover:bg-accent',
+                                    )}
+                                >
+                                    {resident.name}
+                                </button>
+                            ))}
+                            <Input
+                                aria-label="Otra persona"
+                                placeholder="Otra persona"
+                                value={form.data.visiting}
+                                onChange={(e) => form.setData((data) => ({ ...data, visiting: e.target.value, resident_id: '' }))}
+                                className="h-9 w-40"
+                            />
+                        </div>
+                    ) : (
+                        <Input
+                            placeholder={form.data.unit ? `Nadie registrado en ${form.data.unit}: escribí el nombre` : 'Primero escribí la unidad'}
+                            value={form.data.visiting}
+                            onChange={(e) => form.setData('visiting', e.target.value)}
+                        />
+                    )}
+                </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-1.5 sm:col-span-2">
+                    <Label htmlFor="visit-name">Quién llega</Label>
+                    <Input
+                        id="visit-name"
+                        placeholder="Nombre y apellido"
+                        value={form.data.name}
+                        onChange={(e) => form.setData('name', e.target.value)}
+                    />
+                    <InputError message={form.errors.name} />
+                </div>
+                <div className="grid gap-1.5">
+                    <Label htmlFor="visit-document">DNI (opcional)</Label>
+                    <Input
+                        id="visit-document"
+                        inputMode="numeric"
+                        value={form.data.document}
+                        onChange={(e) => form.setData('document', e.target.value)}
                     />
                 </div>
-                <InputError message={form.errors.name} />
-                <Button type="submit" variant="outline" disabled={form.processing || !form.data.name.trim() || !form.data.resident_id}>
-                    Avisar al vecino
+                <div className="grid gap-1.5">
+                    <Label htmlFor="visit-plate">Patente (opcional)</Label>
+                    <Input id="visit-plate" value={form.data.plate} onChange={(e) => form.setData('plate', e.target.value.toUpperCase())} />
+                </div>
+                <div className="grid gap-1.5 sm:col-span-2">
+                    <Label htmlFor="visit-purpose">Motivo (opcional)</Label>
+                    <Input
+                        id="visit-purpose"
+                        placeholder="Ej: visita, delivery, plomero"
+                        value={form.data.purpose}
+                        onChange={(e) => form.setData('purpose', e.target.value)}
+                    />
+                </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+                <Button onClick={() => submit(false)} disabled={form.processing || !form.data.name.trim() || !form.data.unit.trim()}>
+                    <DoorOpen className="mr-1 size-4" /> Dejar pasar y registrar
                 </Button>
-                <p className="text-muted-foreground text-xs">Le llega al celular para que lo deje pasar o no. Su respuesta aparece acá.</p>
-            </form>
+                {form.data.resident_id !== '' && (
+                    <Button variant="outline" onClick={() => submit(true)} disabled={form.processing || !form.data.name.trim()}>
+                        Avisar al vecino primero
+                    </Button>
+                )}
+            </div>
         </section>
     );
 }
@@ -451,29 +578,48 @@ function Watchlist({ siteId, plates }: { siteId: number; plates: { id: number; p
     );
 }
 
-function EntryLog({ entries, q }: { entries: Entry[]; q: string }) {
+function EntryLog({ entries, q, unit, units }: { entries: Entry[]; q: string; unit: string; units: string[] }) {
     const [query, setQuery] = useState(q);
+    const reload = (next: { q?: string; unit?: string }) =>
+        router.get(
+            '/access',
+            { q: (next.q ?? query) || undefined, unit: (next.unit ?? unit) || undefined },
+            { preserveState: true, replace: true, only: ['entries', 'q', 'unit'] },
+        );
 
     useEffect(() => {
         if (query === q) return;
-        const timer = setTimeout(
-            () => router.get('/access', { q: query || undefined }, { preserveState: true, replace: true, only: ['entries', 'q'] }),
-            300,
-        );
+        const timer = setTimeout(() => reload({ q: query }), 300);
         return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [query, q]);
 
     return (
         <section className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <SectionTitle icon={ScrollText}>Registro de ingresos</SectionTitle>
-                <Input
-                    aria-label="Buscar en el registro"
-                    placeholder="Buscar por nombre o patente"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className="max-w-xs"
-                />
+                <div className="flex flex-wrap gap-2">
+                    <select
+                        aria-label="Unidad"
+                        value={unit}
+                        onChange={(e) => reload({ unit: e.target.value })}
+                        className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                    >
+                        <option value="">Todas las unidades</option>
+                        {units.map((item) => (
+                            <option key={item} value={item}>
+                                {item}
+                            </option>
+                        ))}
+                    </select>
+                    <Input
+                        aria-label="Buscar en el registro"
+                        placeholder="Nombre, a quién visitó o patente"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        className="w-64"
+                    />
+                </div>
             </div>
             {entries.length === 0 ? (
                 <p className="text-muted-foreground text-sm">{q ? `Nadie coincide con «${q}».` : 'Todavía no hay ingresos registrados.'}</p>
@@ -488,13 +634,23 @@ function EntryLog({ entries, q }: { entries: Entry[]; q: string }) {
                             )}
                             <div className="min-w-44 flex-1">
                                 <p className="font-medium">
-                                    {entry.name} <span className="text-muted-foreground font-normal">({entry.kind_label.toLowerCase()})</span>
+                                    {entry.name}
+                                    {entry.unit && (
+                                        <span className="font-normal">
+                                            {' '}
+                                            → {entry.unit}
+                                            {entry.visiting && ` (${entry.visiting})`}
+                                        </span>
+                                    )}
+                                    <span className="text-muted-foreground font-normal"> ({entry.kind_label.toLowerCase()})</span>
                                 </p>
                                 <p className="text-muted-foreground">
                                     {[
+                                        entry.purpose,
                                         entry.plate && `Patente ${entry.plate}`,
-                                        entry.resident && `para ${entry.resident.name}`,
+                                        entry.document && `DNI ${entry.document}`,
                                         entry.guard && `atendió ${entry.guard}`,
+                                        entry.exited_at && `salió ${timeAgo(entry.exited_at)}`,
                                     ]
                                         .filter(Boolean)
                                         .join(', ')}
