@@ -1,3 +1,4 @@
+import { EmergencyContacts, whatsappNumber, type EmergencyContact } from '@/components/emergency-contacts';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useForm, usePage } from '@inertiajs/react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Megaphone, Phone, Search } from 'lucide-react';
+import { Megaphone, MessageCircle, Phone, Search } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { MapContainer, Marker, Polygon, Popup, TileLayer } from 'react-leaflet';
 
@@ -24,6 +25,7 @@ export interface PanelResident {
     last_login_at: string | null;
     push_devices: number;
     home: LatLng | null;
+    contacts: EmergencyContact[];
 }
 
 export interface SentMessage {
@@ -146,19 +148,23 @@ export function ResidentsPanel({
                                 icon={houseIcon(resident.lot ?? '·', selected.has(resident.id), !!resident.away_until)}
                             >
                                 <Popup>
-                                    <div className="flex min-w-48 flex-col gap-1 text-sm">
-                                        <strong>
+                                    <div className="flex min-w-56 flex-col gap-1 text-sm">
+                                        <strong className="text-base">
                                             {noun} {resident.lot}: {resident.name}
                                         </strong>
+                                        <span>{resident.phone ?? 'Sin celular cargado'}</span>
+                                        <span>{resident.email}</span>
                                         {resident.away_until && (
                                             <span>De viaje hasta el {new Date(resident.away_until + 'T12:00').toLocaleDateString('es-AR')}</span>
                                         )}
-                                        <span className="flex flex-wrap gap-3 pt-1">
-                                            {resident.phone && (
-                                                <a href={`tel:${resident.phone}`} className="font-medium underline">
-                                                    Llamar
-                                                </a>
-                                            )}
+                                        {resident.contacts.length > 0 && (
+                                            <span className="mt-1 border-t pt-1">
+                                                <span className="block font-medium">Si no responde:</span>
+                                                <EmergencyContacts contacts={resident.contacts} compact />
+                                            </span>
+                                        )}
+                                        <span className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
+                                            <ContactLinks resident={resident} />
                                             <button type="button" className="font-medium underline" onClick={() => notifyOnly(resident.id)}>
                                                 Avisar
                                             </button>
@@ -273,17 +279,24 @@ export function ResidentsPanel({
                                         .filter(Boolean)
                                         .join(', ') || resident.email}
                                 </p>
+                                {resident.contacts.length > 0 && (
+                                    <p className="text-muted-foreground text-sm">
+                                        Si no responde:{' '}
+                                        {resident.contacts.map((contact, index) => (
+                                            <span key={contact.id}>
+                                                {index > 0 && ', '}
+                                                <a href={`tel:${contact.phone}`} className="underline">
+                                                    {contact.name}
+                                                    {contact.relation && ` (${contact.relation})`}
+                                                </a>
+                                            </span>
+                                        ))}
+                                    </p>
+                                )}
                             </div>
                             <div className="min-w-40 text-sm">{renderUsage(resident)}</div>
                             <div className="flex items-center gap-1">
-                                {resident.phone && (
-                                    <a
-                                        href={`tel:${resident.phone}`}
-                                        className="text-muted-foreground hover:bg-accent hover:text-foreground inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium"
-                                    >
-                                        <Phone className="size-4" /> Llamar
-                                    </a>
-                                )}
+                                <ContactLinks resident={resident} pill />
                                 <button
                                     type="button"
                                     onClick={() => notifyOnly(resident.id)}
@@ -323,6 +336,24 @@ export function ResidentsPanel({
                 onSent={() => setSelected(new Set())}
             />
         </div>
+    );
+}
+
+function ContactLinks({ resident, pill = false }: { resident: PanelResident; pill?: boolean }) {
+    if (!resident.phone) return null;
+    const style = pill
+        ? 'text-muted-foreground hover:bg-accent hover:text-foreground inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium'
+        : 'font-medium underline';
+
+    return (
+        <>
+            <a href={`tel:${resident.phone}`} className={style}>
+                {pill && <Phone className="size-4" />} Llamar
+            </a>
+            <a href={`https://wa.me/${whatsappNumber(resident.phone)}`} target="_blank" rel="noreferrer" className={style}>
+                {pill && <MessageCircle className="size-4" />} WhatsApp
+            </a>
+        </>
     );
 }
 

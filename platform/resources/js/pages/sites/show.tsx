@@ -1,6 +1,7 @@
 import { LocationPicker } from '@/components/clients-map';
 import { PatrolCard, type PatrolRound } from '@/components/console/patrol-card';
 import { ResidentsPanel, type SentMessage } from '@/components/console/residents-panel';
+import { EmergencyContacts, type EmergencyContact } from '@/components/emergency-contacts';
 import { SectionTitle } from '@/components/icon-circle';
 import InputError from '@/components/input-error';
 import { ItemActionButton, ItemActionLink, ItemActions } from '@/components/item-action';
@@ -95,6 +96,7 @@ interface Resident {
     devices: string[];
     push_devices: number;
     home: LatLng | null;
+    contacts: EmergencyContact[];
 }
 
 interface Props {
@@ -905,6 +907,14 @@ function EditResident({
                             <InputError message={form.errors.home_lat} />
                         </div>
                     )}
+                    <div className="grid gap-1.5">
+                        <Label>Contactos de emergencia</Label>
+                        <EmergencyContacts
+                            contacts={resident.contacts}
+                            addAction={`/sites/${siteId}/residents/${resident.id}/contacts`}
+                            removeAction={(contact) => `/sites/${siteId}/contacts/${contact.id}`}
+                        />
+                    </div>
                     <DialogFooter>
                         <DialogClose asChild>
                             <Button type="button" variant="ghost">

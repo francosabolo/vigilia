@@ -56,6 +56,7 @@ class ResidentController extends Controller
             'notices' => $notices,
             'metrics' => $metrics->forSites([$resident->site_id], now()->subDays(30), now()),
             'vapidPublicKey' => config('webpush.vapid.public_key'),
+            'contacts' => $resident->contacts()->get()->map->toPayload(),
             'visits' => AccessAuthorization::where('resident_id', $resident->id)->whereNull('revoked_at')->where('valid_until', '>=', now()->toDateString())
                 ->with('site:id,timezone')->orderBy('valid_from')->get()->map->toPayload(),
             'atGate' => AccessEntry::where('resident_id', $resident->id)->where('created_at', '>', now()->subDay())->latest()->limit(10)->get()->map->toPayload(),

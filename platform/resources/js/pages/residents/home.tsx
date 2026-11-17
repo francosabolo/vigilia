@@ -1,4 +1,5 @@
 import AppLogoIcon from '@/components/app-logo-icon';
+import { EmergencyContacts, type EmergencyContact } from '@/components/emergency-contacts';
 import { IconCircle } from '@/components/icon-circle';
 import { NotificationBell } from '@/components/notification-bell';
 import { PushToggle } from '@/components/push-toggle';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDuration, theSite, timeAgo, unitNoun, type IncidentStatus, type Metrics, type SiteKind } from '@/lib/seguria';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
-import { Bell, CheckCircle2, Eye, LogOut, Plane, ShieldCheck, Siren } from 'lucide-react';
+import { Bell, CheckCircle2, Eye, LogOut, Phone, Plane, ShieldCheck, Siren } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 
 interface Notice {
@@ -28,6 +29,7 @@ interface Props {
     vapidPublicKey: string | null;
     visits: ResidentVisit[];
     atGate: GateEntry[];
+    contacts: EmergencyContact[];
 }
 
 function noticeText(notice: Notice): string {
@@ -182,7 +184,7 @@ function AwayMode({ awayUntil, hasLot }: { awayUntil: string | null; hasLot: boo
     );
 }
 
-export default function ResidentHome({ resident, sectors, notices, metrics, vapidPublicKey, visits, atGate }: Props) {
+export default function ResidentHome({ resident, sectors, notices, metrics, vapidPublicKey, visits, atGate, contacts }: Props) {
     usePoll(atGate.some((entry) => entry.status === 'waiting') ? 4000 : 30000, { only: ['visits', 'atGate'] });
     usePoll(15000, { only: ['notices'] });
 
@@ -260,6 +262,22 @@ export default function ResidentHome({ resident, sectors, notices, metrics, vapi
                 </Card>
 
                 <ResidentVisits visits={visits} atGate={atGate} siteName={resident.site} />
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-3 text-lg">
+                            <IconCircle icon={Phone} /> Contactos de emergencia
+                        </CardTitle>
+                        <CardDescription>A quién llama la guardia si pasa algo y no te encuentra. Hasta 5 personas, en orden.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <EmergencyContacts
+                            contacts={contacts}
+                            addAction="/vecinos/contactos"
+                            removeAction={(contact) => `/vecinos/contactos/${contact.id}`}
+                        />
+                    </CardContent>
+                </Card>
 
                 <Card>
                     <CardHeader>

@@ -234,7 +234,7 @@ class SiteController extends Controller
      */
     private function residents(Site $site, ResidentDevices $devices): array
     {
-        $residents = $site->residents()->get();
+        $residents = $site->residents()->with('contacts')->get();
         $usage = $devices->forUsers($residents->pluck('id')->all());
 
         return $residents->map(fn (User $resident): array => [
@@ -244,6 +244,7 @@ class SiteController extends Controller
             'phone' => $resident->phone,
             'lot' => $resident->lot,
             'sector' => $resident->sector,
+            'contacts' => $resident->contacts->map->toPayload(),
             'home' => $resident->home_lat !== null ? [(float) $resident->home_lat, (float) $resident->home_lng] : null,
             'away_until' => $resident->isAway() ? $resident->away_until->toDateString() : null,
             'last_login_at' => $resident->last_login_at?->toIso8601String(),

@@ -14,6 +14,7 @@ use App\Http\Controllers\PatrolController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResidentAdminController;
+use App\Http\Controllers\ResidentContactController;
 use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\ResidentVisitController;
 use App\Http\Controllers\ShadowController;
@@ -51,6 +52,8 @@ Route::middleware('auth')->group(function () {
         Route::post('panic', [ResidentController::class, 'panic'])->middleware('throttle:5,1')->name('panic');
         Route::post('report', [ResidentController::class, 'report'])->middleware('throttle:10,1')->name('report');
         Route::put('away', [ResidentController::class, 'updateAway'])->name('away');
+        Route::post('contactos', [ResidentContactController::class, 'storeOwn'])->name('contacts.store');
+        Route::delete('contactos/{contact}', [ResidentContactController::class, 'destroyOwn'])->name('contacts.destroy');
         Route::post('visitas', [ResidentVisitController::class, 'store'])->name('visits.store');
         Route::delete('visitas/{authorization}', [ResidentVisitController::class, 'destroy'])->name('visits.destroy');
         Route::get('visitas/{authorization}/qr', [ResidentVisitController::class, 'qr'])->name('visits.qr');
@@ -109,6 +112,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('sites/{site}/details', [SiteController::class, 'updateDetails'])->name('sites.details');
         Route::delete('sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
         Route::post('sites/{site}/residents', [ResidentAdminController::class, 'store'])->name('residents.store');
+        Route::post('sites/{site}/residents/{resident}/contacts', [ResidentContactController::class, 'store'])->name('residents.contacts.store');
+        Route::delete('sites/{site}/contacts/{contact}', [ResidentContactController::class, 'destroy'])->name('residents.contacts.destroy');
         Route::post('sites/{site}/residents/notify', [ResidentAdminController::class, 'notify'])->name('residents.notify');
         Route::patch('sites/{site}/residents/{resident}', [ResidentAdminController::class, 'update'])->name('residents.update');
         Route::delete('sites/{site}/residents/{resident}', [ResidentAdminController::class, 'destroy'])->name('residents.destroy');

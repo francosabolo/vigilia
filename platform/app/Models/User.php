@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use NotificationChannels\WebPush\HasPushSubscriptions;
@@ -183,6 +184,14 @@ class User extends Authenticatable
     public function routeNotificationForWhatsapp(): ?string
     {
         return $this->phone;
+    }
+
+    /**
+     * F7 — emergency contacts, in the order to call them.
+     */
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(ResidentContact::class)->orderBy('position')->orderBy('id');
     }
 
     public function client(): BelongsTo
