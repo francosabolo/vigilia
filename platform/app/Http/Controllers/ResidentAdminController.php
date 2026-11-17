@@ -62,6 +62,50 @@ class ResidentAdminController extends Controller
     }
 
     /**
+     * F8 — invite many residents at once, pasting a list (one per line: name, e-mail, unit, phone), as the
+     * administration usually has it in a spreadsheet. Lines with errors are reported and skipped.
+     */
+    public function import(Request $request, Site $site): RedirectResponse
+    {
+        Gate::authorize('manage', $site);
+        $data = $request->validate(['lines' => ['required', 'string', 'max:50000']]);
+
+        $created = 0;
+        $errors = [];
+        foreach (preg_split('/\r\n|\r|\n/', trim($data['lines'])) as $number => $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            $cells = array_map('trim', str_getcsv(str_contains($line, ';') ? str_replace(';', ',', $line) : (str_contains($line, "\t") ? str_replace("\t", ',', $line) : $line)));
+            [$name, $email, $lot, $phone] = array_pad($cells, 4, null);
+            $phone = $phone ? preg_replace('/[^\d+]/', '', $phone) : null;
+
+            $problem = match (true) {
+                ! $name || ! $email => 'falta el nombre o el email',
+                ! filter_var($email, FILTER_VALIDATE_EMAIL) => 'el email no es válido',
+                User::where('email', $email)->exists() => 'ese email ya tiene cuenta',
+                $phone !== null && $phone !== '' && ! preg_match('/^\+?\d{8,15}$/', $phone) => 'el celular no es válido',
+                default => null,
+            };
+            if ($problem) {
+                $errors[] = 'Línea '.($number + 1).": {$problem}";
+
+                continue;
+            }
+
+            User::create([
+                'name' => $name, 'email' => $email, 'lot' => $lot ?: null, 'phone' => $phone ?: null,
+                'password' => Str::random(40), 'role' => UserRole::Resident,
+                'organization_id' => $site->organization_id, 'site_id' => $site->id,
+            ]);
+            Password::sendResetLink(['email' => $email]);
+            $created++;
+        }
+
+        return back()->with('notice', ($created === 1 ? '1 vecino invitado.' : "{$created} vecinos invitados.").($errors ? ' No se pudo: '.implode('; ', array_slice($errors, 0, 5)).(count($errors) > 5 ? ' y '.(count($errors) - 5).' más.' : '.') : ''));
+    }
+
+    /**
      * Message to one or several residents, chosen in the list or on the map. Any staff member who sees the site
      * can send it (a guard telling a neighbour their gate is open); every message is kept with its sender.
      */

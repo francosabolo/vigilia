@@ -45,7 +45,14 @@ export default function SitesIndex({ sites, canCreate, clients }: { sites: SiteR
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <h1 className="font-display text-3xl font-semibold">Propiedades</h1>
-                    {canCreate && <CreateSite clients={clients} />}
+                    {canCreate && (
+                        <div className="flex gap-2">
+                            <CreateSite clients={clients} />
+                            <Button asChild>
+                                <Link href="/onboarding">Alta guiada</Link>
+                            </Button>
+                        </div>
+                    )}
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {sites.map((site) => (
@@ -115,7 +122,7 @@ function CreateSite({ clients }: { clients: ClientOption[] }) {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button>Agregar propiedad</Button>
+                <Button variant="outline">Alta rápida</Button>
             </DialogTrigger>
             <DialogContent>
                 <form onSubmit={submit} className="flex flex-col gap-4">

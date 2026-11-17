@@ -10,6 +10,7 @@ use App\Http\Controllers\GuardController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IncidentMediaController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PatrolController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReportController;
@@ -114,6 +115,9 @@ Route::middleware('auth')->group(function () {
         Route::post('sites/{site}/residents', [ResidentAdminController::class, 'store'])->name('residents.store');
         Route::post('sites/{site}/residents/{resident}/contacts', [ResidentContactController::class, 'store'])->name('residents.contacts.store');
         Route::delete('sites/{site}/contacts/{contact}', [ResidentContactController::class, 'destroy'])->name('residents.contacts.destroy');
+        Route::post('sites/{site}/residents/import', [ResidentAdminController::class, 'import'])->name('residents.import');
+        Route::get('onboarding', [OnboardingController::class, 'start'])->name('onboarding.start');
+        Route::get('sites/{site}/onboarding/{step?}', [OnboardingController::class, 'show'])->name('onboarding.show');
         Route::post('sites/{site}/residents/notify', [ResidentAdminController::class, 'notify'])->name('residents.notify');
         Route::patch('sites/{site}/residents/{resident}', [ResidentAdminController::class, 'update'])->name('residents.update');
         Route::delete('sites/{site}/residents/{resident}', [ResidentAdminController::class, 'destroy'])->name('residents.destroy');

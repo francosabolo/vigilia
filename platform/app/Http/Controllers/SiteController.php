@@ -79,7 +79,8 @@ class SiteController extends Controller
 
         $site = Site::create($data + ['organization_id' => $request->user()->organization_id]);
 
-        return to_route('sites.show', ['site' => $site, 'tab' => 'cobertura']);
+        // K15 — a new property continues in the guided setup.
+        return to_route('onboarding.show', ['site' => $site, 'step' => 'ubicacion']);
     }
 
     /**

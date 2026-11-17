@@ -23,7 +23,8 @@ class EdgeDeviceController extends Controller
         $device = new EdgeDevice(['site_id' => $site->id, 'name' => $data['name']]);
         $token = $device->issueToken();
 
-        return to_route('sites.show', ['site' => $site, 'tab' => 'ajustes'])
+        // Back to where it was created: the site settings or the guided setup.
+        return back()
             ->with('new_edge', ['id' => $device->id, 'name' => $device->name, 'token' => $token]);
     }
 
