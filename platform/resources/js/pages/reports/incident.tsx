@@ -1,5 +1,5 @@
 import { ReportShell } from '@/components/report-shell';
-import { actionLabel, formatDateTime, severityLabel, statusLabel, type IncidentDetail } from '@/lib/seguria';
+import { actionLabel, formatDateTime, severityLabel, statusLabel, type IncidentDetail } from '@/lib/vigilia';
 
 interface Props {
     incident: IncidentDetail;

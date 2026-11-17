@@ -47,7 +47,7 @@ it('warns the guard and the central when the resident never confirms', function 
     $this->actingAs($this->resident)->post('/vecinos/llegada', ['minutes' => 5]);
     $this->travel(16)->minutes();
 
-    $this->artisan('seguria:check-arrivals')->assertSuccessful();
+    $this->artisan('vigilia:check-arrivals')->assertSuccessful();
 
     Notification::assertSentTo([$this->guard, $this->operator], SafeArrivalNotice::class, fn ($n) => $n->overdue);
     expect(SafeArrival::sole()->status)->toBe('unconfirmed');
@@ -57,7 +57,7 @@ it('samples dismissed detections weekly and measures what the AI missed', functi
     $camera = Camera::factory()->create(['site_id' => $this->site->id]);
     DetectionEvent::factory()->count(25)->create(['camera_id' => $camera->id, 'status' => DetectionStatus::Dismissed, 'snapshot_path' => 'x.jpg', 'started_at' => now()->subDays(2)]);
 
-    $this->artisan('seguria:sample-dismissed')->assertSuccessful();
+    $this->artisan('vigilia:sample-dismissed')->assertSuccessful();
     expect(DetectionEvent::whereNotNull('qa_requested_at')->count())->toBe(20);
     Notification::assertSentTo($this->operator, QualitySampleReady::class);
 

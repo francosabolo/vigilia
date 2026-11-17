@@ -64,7 +64,7 @@ it('sets up two-factor by confirming a code from the app', function () {
 });
 
 it('makes the central turn on two-factor before using the console when required', function () {
-    config(['seguria.require_two_factor' => true]);
+    config(['vigilia.require_two_factor' => true]);
     $operator = User::factory()->create(['role' => UserRole::Operator]);
     $guard = User::factory()->create(['role' => UserRole::Guard]);
 

@@ -9,7 +9,7 @@ use App\Notifications\VisitorAtGate;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
-    config(['seguria.ai.enabled' => false]);
+    config(['vigilia.ai.enabled' => false]);
     Notification::fake();
     $this->site = Site::factory()->create(['timezone' => 'America/Argentina/Buenos_Aires']);
     $this->guard = User::factory()->create(['role' => UserRole::Guard, 'organization_id' => $this->site->organization_id, 'site_id' => $this->site->id]);

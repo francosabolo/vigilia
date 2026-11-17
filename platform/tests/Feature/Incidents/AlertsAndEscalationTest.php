@@ -60,7 +60,7 @@ it('does not escalate an acknowledged incident', function () {
 });
 
 it('sends the WhatsApp template with action buttons', function () {
-    config(['seguria.whatsapp' => array_merge(config('seguria.whatsapp'), ['enabled' => true, 'phone_number_id' => '123', 'access_token' => 'tok'])]);
+    config(['vigilia.whatsapp' => array_merge(config('vigilia.whatsapp'), ['enabled' => true, 'phone_number_id' => '123', 'access_token' => 'tok'])]);
     Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.1']]])]);
 
     Notification::route('whatsapp', '+5491155550000')->notifyNow(new IncidentAlert($this->incident));

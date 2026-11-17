@@ -1,6 +1,6 @@
 import { ItemActionLink, ItemActions } from '@/components/item-action';
 import AppLayout from '@/layouts/app-layout';
-import { timeAgo, zoneKindLabel, type ZoneKind } from '@/lib/seguria';
+import { timeAgo, zoneKindLabel, type ZoneKind } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, usePoll } from '@inertiajs/react';

@@ -31,7 +31,7 @@ class CameraWall
 
     public function storePreview(Camera $camera, UploadedFile $image): void
     {
-        Storage::disk(config('seguria.media_disk'))->put($this->previewPath($camera), app(PrivacyMask::class)->apply($camera, $image->get()));
+        Storage::disk(config('vigilia.media_disk'))->put($this->previewPath($camera), app(PrivacyMask::class)->apply($camera, $image->get()));
         Cache::put("camera-wall:preview-at:{$camera->id}", now()->timestamp, now()->addDay());
     }
 

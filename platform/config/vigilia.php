@@ -4,17 +4,17 @@ return [
     /*
      * Disk where snapshots and clips are stored (use an S3-compatible bucket on Laravel Cloud).
      */
-    'media_disk' => env('SEGURIA_MEDIA_DISK', 'local'),
+    'media_disk' => env('VIGILIA_MEDIA_DISK', 'local'),
 
     /*
      * Seconds after which an edge device without heartbeat is considered offline.
      */
-    'edge_offline_after' => (int) env('SEGURIA_EDGE_OFFLINE_AFTER', 180),
+    'edge_offline_after' => (int) env('VIGILIA_EDGE_OFFLINE_AFTER', 180),
 
     /*
      * Detections of the same camera/zone within this window are grouped into one incident.
      */
-    'dedup_seconds' => (int) env('SEGURIA_DEDUP_SECONDS', 120),
+    'dedup_seconds' => (int) env('VIGILIA_DEDUP_SECONDS', 120),
 
     /*
      * Following someone across cameras: a person seen by a nearby camera shortly after joins the same incident.
@@ -23,8 +23,8 @@ return [
      * Autonomy levels per zone. Deterrence fires only on clear threats and must be earned with closed alerts.
      */
     'autonomy' => [
-        'deterrence_confidence' => (float) env('SEGURIA_DETERRENCE_CONFIDENCE', 0.85),
-        'deterrence_message' => env('SEGURIA_DETERRENCE_MESSAGE', 'Atención: esta zona está vigilada. Lo estamos viendo y la guardia ya fue avisada.'),
+        'deterrence_confidence' => (float) env('VIGILIA_DETERRENCE_CONFIDENCE', 0.85),
+        'deterrence_message' => env('VIGILIA_DETERRENCE_MESSAGE', 'Atención: esta zona está vigilada. Lo estamos viendo y la guardia ya fue avisada.'),
         'eligibility_days' => 30,
         'eligibility_min_alerts' => 10,
         'eligibility_max_false_alarm_rate' => 0.10,
@@ -35,66 +35,66 @@ return [
 
     // E6 — the bridge version edge boxes should run; older ones show "Actualizar" in Equipos.
     'edge' => [
-        'latest_version' => env('SEGURIA_EDGE_LATEST', '0.7.1'),
+        'latest_version' => env('VIGILIA_EDGE_LATEST', '0.7.1'),
     ],
 
     'tracking' => [
-        'window_seconds' => (int) env('SEGURIA_TRACKING_WINDOW', 180),
-        'max_distance_m' => (int) env('SEGURIA_TRACKING_DISTANCE', 150),
-        'stopped_vehicle_minutes' => (int) env('SEGURIA_STOPPED_VEHICLE_MINUTES', 5),
+        'window_seconds' => (int) env('VIGILIA_TRACKING_WINDOW', 180),
+        'max_distance_m' => (int) env('VIGILIA_TRACKING_DISTANCE', 150),
+        'stopped_vehicle_minutes' => (int) env('VIGILIA_STOPPED_VEHICLE_MINUTES', 5),
     ],
 
     /*
      * Realistic images that dress simulated detections and cameras (the generated evaluation set).
      */
-    'demo_images_path' => env('SEGURIA_DEMO_IMAGES_PATH'),
+    'demo_images_path' => env('VIGILIA_DEMO_IMAGES_PATH'),
 
     /*
      * Days to keep detection images and clips. Evidence of open or confirmed incidents is always kept.
      */
-    'retention_days' => (int) env('SEGURIA_RETENTION_DAYS', 30),
+    'retention_days' => (int) env('VIGILIA_RETENTION_DAYS', 30),
 
     /*
      * Allow the demo seeder in production (demo environments only).
      */
-    'seed_demo' => (bool) env('SEGURIA_SEED_DEMO', false),
+    'seed_demo' => (bool) env('VIGILIA_SEED_DEMO', false),
 
     /*
      * Require two-factor authentication for the central (admins and operators). On by default in production.
      */
-    'require_two_factor' => (bool) env('SEGURIA_REQUIRE_2FA', env('APP_ENV') === 'production'),
+    'require_two_factor' => (bool) env('VIGILIA_REQUIRE_2FA', env('APP_ENV') === 'production'),
 
     'ai' => [
         // Shadow mode: a challenger (another model and/or prompt) analyzes a sample of real detections in the
         // background, without deciding anything, to compare it with production before promoting it.
         'shadow' => [
-            'enabled' => (bool) env('SEGURIA_SHADOW', false),
-            'model' => env('SEGURIA_SHADOW_MODEL', 'claude-sonnet-5-5'),
+            'enabled' => (bool) env('VIGILIA_SHADOW', false),
+            'model' => env('VIGILIA_SHADOW_MODEL', 'claude-sonnet-5-5'),
             // Path (from the platform folder) to the challenger's system prompt; empty = production prompt.
-            'prompt_file' => env('SEGURIA_SHADOW_PROMPT'),
-            'sample_rate' => (float) env('SEGURIA_SHADOW_SAMPLE', 0.25),
-            'daily_cap' => (int) env('SEGURIA_SHADOW_DAILY_CAP', 500),
-            'include_simulated' => (bool) env('SEGURIA_SHADOW_SIMULATED', false),
+            'prompt_file' => env('VIGILIA_SHADOW_PROMPT'),
+            'sample_rate' => (float) env('VIGILIA_SHADOW_SAMPLE', 0.25),
+            'daily_cap' => (int) env('VIGILIA_SHADOW_DAILY_CAP', 500),
+            'include_simulated' => (bool) env('VIGILIA_SHADOW_SIMULATED', false),
         ],
         // Verifications per site per day before falling back to alerting without AI (0 = no cap).
-        'daily_cap_per_site' => (int) env('SEGURIA_AI_DAILY_CAP', 3000),
+        'daily_cap_per_site' => (int) env('VIGILIA_AI_DAILY_CAP', 3000),
         // On when there is a non-empty key (an empty ANTHROPIC_API_KEY= must not turn it on), unless forced.
-        'enabled' => (bool) env('SEGURIA_AI_ENABLED', filled(env('ANTHROPIC_API_KEY'))),
+        'enabled' => (bool) env('VIGILIA_AI_ENABLED', filled(env('ANTHROPIC_API_KEY'))),
         // Fast/cheap first pass, and a stronger model for ambiguous verdicts.
-        'model' => env('SEGURIA_AI_MODEL', 'claude-haiku-5-5'),
-        'review_model' => env('SEGURIA_AI_REVIEW_MODEL', 'claude-sonnet-5-5'),
+        'model' => env('VIGILIA_AI_MODEL', 'claude-haiku-5-5'),
+        'review_model' => env('VIGILIA_AI_REVIEW_MODEL', 'claude-sonnet-5-5'),
         // Verdicts with confidence inside this range are re-checked with the review model.
         'review_band' => [0.35, 0.75],
         // Minimum confidence to raise an incident.
-        'threat_threshold' => (float) env('SEGURIA_AI_THREAT_THRESHOLD', 0.5),
+        'threat_threshold' => (float) env('VIGILIA_AI_THREAT_THRESHOLD', 0.5),
         // Reliability: a verification that takes longer than this alerts anyway, without the AI filter (fail-open).
-        'timeout_seconds' => (float) env('SEGURIA_AI_TIMEOUT', 10),
-        'max_retries' => (int) env('SEGURIA_AI_RETRIES', 1),
+        'timeout_seconds' => (float) env('VIGILIA_AI_TIMEOUT', 10),
+        'max_retries' => (int) env('VIGILIA_AI_RETRIES', 1),
 
         // H5/H6 — estimated cost of one verification (image ~2.000 tokens in, ~150 out on Haiku, rounded up).
-        'estimated_cost_per_call_usd' => (float) env('SEGURIA_AI_COST_PER_CALL', 0.0005),
+        'estimated_cost_per_call_usd' => (float) env('VIGILIA_AI_COST_PER_CALL', 0.0005),
         // H6 — seconds an operator would spend looking at each movement the AI filtered out.
-        'manual_review_seconds' => (int) env('SEGURIA_MANUAL_REVIEW_SECONDS', 20),
+        'manual_review_seconds' => (int) env('VIGILIA_MANUAL_REVIEW_SECONDS', 20),
 
         // List prices in USD per million tokens [input, output], used to report real evaluation cost.
         'prices' => [

@@ -111,7 +111,7 @@ class ShadowReport
             return ['status' => 'reject', 'text' => 'No promover: detecta lo mismo pero manda más falsas alarmas a la guardia.'];
         }
         if ($recallDelta > 0 || $falseAlarmDelta < -0.02) {
-            return ['status' => 'promote', 'text' => 'Candidato a promover: detecta igual o más y molesta menos. Antes, grabalo en el control de calidad (seguria:eval-gate --record).'];
+            return ['status' => 'promote', 'text' => 'Candidato a promover: detecta igual o más y molesta menos. Antes, grabalo en el control de calidad (vigilia:eval-gate --record).'];
         }
 
         return ['status' => 'tie', 'text' => 'Empatan en resultados: decidí por costo y latencia.'];

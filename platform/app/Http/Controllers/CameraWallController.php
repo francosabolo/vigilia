@@ -92,7 +92,7 @@ class CameraWallController extends Controller
     {
         Gate::authorize('view', $camera->site);
 
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         abort_unless($disk->exists($wall->previewPath($camera)), 404);
 
         $log->record($request, $camera->site_id, 'live', "Cámara {$camera->name}", "camera:{$camera->id}");

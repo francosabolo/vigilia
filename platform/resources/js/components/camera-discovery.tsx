@@ -1,7 +1,7 @@
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { timeAgo } from '@/lib/seguria';
+import { timeAgo } from '@/lib/vigilia';
 import { router, useForm, usePoll } from '@inertiajs/react';
 import { useState } from 'react';
 

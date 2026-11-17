@@ -12,7 +12,7 @@ class StoreDetectionEventRequest extends FormRequest
     }
 
     /**
-     * Mirrors the Frigate event payload (frigate/events "end" message) sent by seguria-bridge.
+     * Mirrors the Frigate event payload (frigate/events "end" message) sent by vigilia-bridge.
      */
     public function rules(): array
     {

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
-    Storage::fake(config('seguria.media_disk'));
+    Storage::fake(config('vigilia.media_disk'));
     Event::fake([DetectionEventReceived::class]);
     $this->device = EdgeDevice::factory()->create();
     $this->token = $this->device->issueToken();
@@ -35,7 +35,7 @@ it('blacks out the privacy areas before storing the image', function () {
         'id' => 'e-1', 'camera' => 'frente', 'label' => 'person', 'start_time' => now()->timestamp, 'snapshot' => whiteJpeg(),
     ])->assertCreated();
 
-    $stored = imagecreatefromstring(Storage::disk(config('seguria.media_disk'))->get(DetectionEvent::sole()->snapshot_path));
+    $stored = imagecreatefromstring(Storage::disk(config('vigilia.media_disk'))->get(DetectionEvent::sole()->snapshot_path));
     $left = imagecolorsforindex($stored, imagecolorat($stored, 10, 25));
     $right = imagecolorsforindex($stored, imagecolorat($stored, 90, 25));
 

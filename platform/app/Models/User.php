@@ -82,7 +82,7 @@ class User extends Authenticatable
      */
     public function mustUseTwoFactor(): bool
     {
-        return config('seguria.require_two_factor') && $this->isCentral();
+        return config('vigilia.require_two_factor') && $this->isCentral();
     }
 
     /**

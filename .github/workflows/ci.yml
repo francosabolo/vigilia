@@ -49,7 +49,7 @@ jobs:
           php artisan test
 
       - name: AI evaluation gate (offline, no API calls)
-        run: php artisan seguria:eval-gate
+        run: php artisan vigilia:eval-gate
 
   edge:
     name: Edge bridge

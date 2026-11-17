@@ -18,7 +18,7 @@ class SimulateDetection extends Command
 {
     use RefusesInProduction;
 
-    protected $signature = 'seguria:simulate
+    protected $signature = 'vigilia:simulate
         {camera? : Camera ID (defaults to the first camera)}
         {--label=person : person|car|motorcycle|dog}
         {--zone=alambrado : Frigate zone the object entered}
@@ -62,7 +62,7 @@ class SimulateDetection extends Command
             }
 
             $path = "sites/{$camera->site_id}/events/{$event->id}/snapshot.".strtolower(pathinfo($image, PATHINFO_EXTENSION));
-            Storage::disk(config('seguria.media_disk'))->put($path, file_get_contents($image));
+            Storage::disk(config('vigilia.media_disk'))->put($path, file_get_contents($image));
             $event->update(['snapshot_path' => $path]);
         }
 

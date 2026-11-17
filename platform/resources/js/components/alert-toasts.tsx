@@ -1,7 +1,7 @@
 import { IconCircle } from '@/components/icon-circle';
 import { Button } from '@/components/ui/button';
 import { LIVE_ALERT_EVENT, type LiveAlert } from '@/lib/alarm';
-import { timeAgo } from '@/lib/seguria';
+import { timeAgo } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
 import { BellRing, Info, TriangleAlert, X } from 'lucide-react';

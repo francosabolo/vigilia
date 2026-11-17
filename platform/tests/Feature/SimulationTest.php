@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
 it('simulates operation through the real pipeline and reports what it caught', function () {
-    Organization::factory()->create(['slug' => 'seguria']);
+    Organization::factory()->create(['slug' => 'vigilia']);
 
-    $this->artisan('seguria:simulate-operation', ['--sites' => 1, '--cameras' => '6-6', '--days' => 2, '--recall' => 1, '--false-pass' => 0])
+    $this->artisan('vigilia:simulate-operation', ['--sites' => 1, '--cameras' => '6-6', '--days' => 2, '--recall' => 1, '--false-pass' => 0])
         ->expectsOutputToContain('Resultado de la simulación')
         ->assertSuccessful();
 
@@ -20,7 +20,7 @@ it('simulates operation through the real pipeline and reports what it caught', f
         ->and(User::where('site_id', $site->id)->where('role', 'resident')->count())->toBeGreaterThan(0)
         ->and(DetectionEvent::count())->toBeGreaterThan(0);
 
-    $this->artisan('seguria:simulate-operation', ['--reset' => true, '--sites' => 0, '--days' => 0])->assertSuccessful();
+    $this->artisan('vigilia:simulate-operation', ['--reset' => true, '--sites' => 0, '--days' => 0])->assertSuccessful();
     expect(Site::where('is_simulated', true)->count())->toBe(0);
 });
 
@@ -33,10 +33,10 @@ it('dresses simulated detections with real-looking images when the demo library 
             imagejpeg(imagecreatetruecolor(16, 9), base_path("{$library}/{$class}/{$name}.jpg"));
         }
     }
-    config(['seguria.demo_images_path' => base_path($library)]);
-    Organization::factory()->create(['slug' => 'seguria']);
+    config(['vigilia.demo_images_path' => base_path($library)]);
+    Organization::factory()->create(['slug' => 'vigilia']);
 
-    $this->artisan('seguria:simulate-operation', ['--sites' => 1, '--cameras' => '5-5', '--days' => 1])->assertSuccessful();
+    $this->artisan('vigilia:simulate-operation', ['--sites' => 1, '--cameras' => '5-5', '--days' => 1])->assertSuccessful();
 
     $events = DetectionEvent::all();
     expect($events)->not->toBeEmpty()

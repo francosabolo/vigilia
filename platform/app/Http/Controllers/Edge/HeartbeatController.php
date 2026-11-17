@@ -28,7 +28,7 @@ class HeartbeatController extends Controller
             $device->queued_events = $data['queued'];
         }
         $device->save();
-        if (($data['version'] ?? null) === config('seguria.edge.latest_version') && $device->update_requested_at) {
+        if (($data['version'] ?? null) === config('vigilia.edge.latest_version') && $device->update_requested_at) {
             $device->update(['update_requested_at' => null]);
         }
 

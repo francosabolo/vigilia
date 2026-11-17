@@ -2,7 +2,7 @@ import { CameraDiscovery, type CameraSetupRow, type DiscoveredCamera } from '@/c
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { timeAgo } from '@/lib/seguria';
+import { timeAgo } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/react';

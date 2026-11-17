@@ -20,7 +20,7 @@ it('escalates without calling the API when there is no snapshot', function () {
 it('alerts without calling the API once the site used its daily budget', function () {
     Notification::fake();
     Storage::fake('local');
-    config(['seguria.media_disk' => 'local', 'seguria.ai.daily_cap_per_site' => 1]);
+    config(['vigilia.media_disk' => 'local', 'vigilia.ai.daily_cap_per_site' => 1]);
     $image = imagecreatetruecolor(64, 36);
     ob_start();
     imagejpeg($image);

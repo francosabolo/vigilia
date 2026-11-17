@@ -1,5 +1,5 @@
 import { incidentAlertKey, raiseAlert } from '@/lib/alarm';
-import { timeAgo } from '@/lib/seguria';
+import { timeAgo } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';

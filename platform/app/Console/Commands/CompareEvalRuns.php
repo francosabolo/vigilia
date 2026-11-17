@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class CompareEvalRuns extends Command
 {
-    protected $signature = 'seguria:eval-compare {--set= : Only runs on this set path}';
+    protected $signature = 'vigilia:eval-compare {--set= : Only runs on this set path}';
 
     protected $description = 'Compare saved AI evaluation runs (API, batch and console)';
 
@@ -28,7 +28,7 @@ class CompareEvalRuns extends Command
             ]);
 
         if ($rows->isEmpty()) {
-            $this->line('No saved runs yet. Run seguria:eval or seguria:eval-blind + seguria:eval-import.');
+            $this->line('No saved runs yet. Run vigilia:eval or vigilia:eval-blind + vigilia:eval-import.');
 
             return self::SUCCESS;
         }

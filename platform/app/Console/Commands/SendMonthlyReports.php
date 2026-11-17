@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Notification;
  */
 class SendMonthlyReports extends Command
 {
-    protected $signature = 'seguria:monthly-reports {--month= : YYYY-MM, last month by default}';
+    protected $signature = 'vigilia:monthly-reports {--month= : YYYY-MM, last month by default}';
 
     protected $description = "Write and e-mail last month's service report of every site";
 

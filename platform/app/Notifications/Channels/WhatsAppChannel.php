@@ -16,11 +16,11 @@ class WhatsAppChannel
     {
         $to = $notifiable->routeNotificationFor('whatsapp', $notification);
 
-        if (! $to || ! config('seguria.whatsapp.enabled') || ! method_exists($notification, 'toWhatsApp')) {
+        if (! $to || ! config('vigilia.whatsapp.enabled') || ! method_exists($notification, 'toWhatsApp')) {
             return;
         }
 
-        $config = config('seguria.whatsapp');
+        $config = config('vigilia.whatsapp');
 
         $response = Http::withToken($config['access_token'])
             ->timeout(15)

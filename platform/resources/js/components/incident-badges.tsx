@@ -1,4 +1,4 @@
-import { severityLabel, statusDot, statusLabel, type IncidentStatus, type Severity } from '@/lib/seguria';
+import { severityLabel, statusDot, statusLabel, type IncidentStatus, type Severity } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 
 export function StatusSignal({ status, className }: { status: IncidentStatus; className?: string }) {

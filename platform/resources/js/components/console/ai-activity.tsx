@@ -2,7 +2,7 @@ import { DecisionTrail } from '@/components/console/decision-trail';
 import { SectionTitle } from '@/components/icon-circle';
 import { ItemActionHint } from '@/components/item-action';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { timeAgo, type ActivityItem } from '@/lib/seguria';
+import { timeAgo, type ActivityItem } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { useEcho } from '@laravel/echo-react';
 import { Ban, Eye, ShieldCheck, Siren, Sparkles } from 'lucide-react';

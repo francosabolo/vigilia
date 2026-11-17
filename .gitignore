@@ -2,3 +2,5 @@
 edge/media/
 edge/frigate-config/*.db
 edge/.env
+__pycache__/
+*.pyc

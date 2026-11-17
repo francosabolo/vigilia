@@ -39,13 +39,13 @@ function frameFor(Camera $camera, bool $fresh = true): void
     imagefilledrectangle($image, 0, 0, 63, 35, imagecolorallocate($image, 120, 120, 120));
     ob_start();
     imagejpeg($image);
-    Storage::disk(config('seguria.media_disk'))->put(app(CameraViewMonitor::class)->latestPath($camera), ob_get_clean());
+    Storage::disk(config('vigilia.media_disk'))->put(app(CameraViewMonitor::class)->latestPath($camera), ob_get_clean());
     $camera->forceFill(['is_online' => true, 'view_checked_at' => $fresh ? now()->subMinutes(2) : now()->subHour()])->save();
 }
 
 beforeEach(function () {
-    Storage::fake(config('seguria.media_disk'));
-    config(['seguria.ai.enabled' => false]);
+    Storage::fake(config('vigilia.media_disk'));
+    config(['vigilia.ai.enabled' => false]);
     $this->organization = Organization::factory()->create();
     $this->site = Site::factory()->create(['organization_id' => $this->organization->id]);
     $this->gate = Camera::factory()->create(['site_id' => $this->site->id, 'name' => 'Portón']);
@@ -74,7 +74,7 @@ it('reports only what is out of place and sends medium findings to the guard as 
         ->and($incident->title)->toBe('Ronda: portón o puerta abierta (Portón)')
         ->and($patrol->incident_id)->toBe($incident->id);
     Event::assertDispatched(IncidentOpened::class);
-    Storage::disk(config('seguria.media_disk'))->assertExists($patrol->findings[0]['frame_path']);
+    Storage::disk(config('vigilia.media_disk'))->assertExists($patrol->findings[0]['frame_path']);
 
     // Next round finds the same: it adds to the open incident instead of opening another one.
     $again = $patrols->run(Patrol::create(['site_id' => $this->site->id, 'trigger' => 'scheduled', 'started_at' => now(), 'cameras_total' => 3]));

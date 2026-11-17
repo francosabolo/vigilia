@@ -56,8 +56,8 @@ class IncidentAlert extends InboxNotification implements ShouldQueue
             : [];
 
         return [
-            'name' => config('seguria.whatsapp.template'),
-            'language' => ['code' => config('seguria.whatsapp.template_language')],
+            'name' => config('vigilia.whatsapp.template'),
+            'language' => ['code' => config('vigilia.whatsapp.template_language')],
             'components' => [
                 ...$header,
                 ['type' => 'body', 'parameters' => [

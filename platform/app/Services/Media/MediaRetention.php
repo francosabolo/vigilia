@@ -28,8 +28,8 @@ class MediaRetention
     public function prune(?Carbon $now = null): array
     {
         $now ??= now();
-        $cutoff = $now->copy()->subDays(config('seguria.retention_days'));
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $cutoff = $now->copy()->subDays(config('vigilia.retention_days'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         $stats = ['files' => 0, 'detections' => 0, 'incidents' => 0, 'live_frames' => 0];
 
         $kept = Incident::query()
@@ -79,7 +79,7 @@ class MediaRetention
             }
         }
 
-        Log::info('Media retention', $stats + ['retention_days' => config('seguria.retention_days'), 'cutoff' => $cutoff->toIso8601String()]);
+        Log::info('Media retention', $stats + ['retention_days' => config('vigilia.retention_days'), 'cutoff' => $cutoff->toIso8601String()]);
 
         return $stats;
     }

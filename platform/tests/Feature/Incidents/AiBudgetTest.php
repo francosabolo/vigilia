@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Notification;
 
 it('allows verifications up to the daily cap per site and notifies the admins once', function () {
     Notification::fake();
-    config(['seguria.ai.daily_cap_per_site' => 2]);
+    config(['vigilia.ai.daily_cap_per_site' => 2]);
     $site = Site::factory()->create();
     $other = Site::factory()->create();
     $admin = User::factory()->create(['role' => UserRole::Admin, 'organization_id' => $site->organization_id]);
@@ -29,7 +29,7 @@ it('allows verifications up to the daily cap per site and notifies the admins on
 });
 
 it('has no cap when set to zero', function () {
-    config(['seguria.ai.daily_cap_per_site' => 0]);
+    config(['vigilia.ai.daily_cap_per_site' => 0]);
 
     expect(collect(range(1, 5))->every(fn () => app(AiBudget::class)->consume(1)))->toBeTrue();
 });

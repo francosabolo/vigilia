@@ -31,7 +31,7 @@ class SiteArchive
             $site->forceFill(['patrol_interval_minutes' => null, 'test_mode_until' => null])->save();
             $site->delete();
 
-            Storage::disk(config('seguria.media_disk'))->deleteDirectory("sites/{$site->id}");
+            Storage::disk(config('vigilia.media_disk'))->deleteDirectory("sites/{$site->id}");
 
             return ['residents' => $residents, 'edges' => $edges];
         });

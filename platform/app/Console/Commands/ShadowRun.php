@@ -12,7 +12,7 @@ use Illuminate\Console\Command;
  */
 class ShadowRun extends Command
 {
-    protected $signature = 'seguria:shadow-run
+    protected $signature = 'vigilia:shadow-run
         {--limit=40 : How many detections}
         {--simulated : Also use detections from simulated sites (they have a known ground truth)}
         {--force : Do not ask for confirmation}';
@@ -53,7 +53,7 @@ class ShadowRun extends Command
             return self::SUCCESS;
         }
 
-        [$in, $out] = config("seguria.ai.prices.{$challenger['model']}", [0, 0]);
+        [$in, $out] = config("vigilia.ai.prices.{$challenger['model']}", [0, 0]);
         $estimate = $events->count() * (self::ESTIMATED_TOKENS[0] * $in + self::ESTIMATED_TOKENS[1] * $out) / 1_000_000;
         $this->line("Retador: {$challenger['label']}. {$events->count()} detecciones, costo estimado US$ ".number_format($estimate, 3).'.');
 

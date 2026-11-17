@@ -26,7 +26,7 @@ class BusinessReport
     public function build(Organization $organization, CarbonInterface $from, CarbonInterface $to): array
     {
         $sites = Site::where('organization_id', $organization->id)->where('is_simulated', false)->withCount('cameras')->with('client')->orderBy('name')->get();
-        $costPerCall = (float) config('seguria.ai.estimated_cost_per_call_usd');
+        $costPerCall = (float) config('vigilia.ai.estimated_cost_per_call_usd');
         $rate = (float) ($organization->usd_rate ?? 0);
 
         $rows = $sites->map(function (Site $site) use ($organization, $from, $to, $costPerCall, $rate): array {
@@ -35,7 +35,7 @@ class BusinessReport
                 ->whereBetween('started_at', [$from, $to])->whereNotNull('ai_verdict->model')->count()
                 + (int) Patrol::where('site_id', $site->id)->whereBetween('started_at', [$from, $to])->sum('cameras_checked');
             $m = $this->metrics->forSites([$site->id], $from, $to);
-            $savedHours = round(($m['filtered_by_ai'] + $m['outside_schedule']) * (int) config('seguria.ai.manual_review_seconds') / 3600, 1);
+            $savedHours = round(($m['filtered_by_ai'] + $m['outside_schedule']) * (int) config('vigilia.ai.manual_review_seconds') / 3600, 1);
             $fee = round($site->cameras_count * $price, 2);
             $aiCost = round($calls * $costPerCall * $rate, 2);
 

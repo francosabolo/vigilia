@@ -142,7 +142,7 @@ class AccessDesk
         $entry = AccessEntry::create($data + ['site_id' => $site->id, 'guard_id' => $guard->id]);
 
         $camera = $site->cameras()->where('is_access', true)->first();
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         if ($camera && $disk->exists($this->monitor->latestPath($camera))) {
             $path = "sites/{$site->id}/access/{$entry->id}.jpg";
             // The latest frame already went through the privacy mask when it arrived.
@@ -208,13 +208,13 @@ class AccessDesk
      */
     public function readPlate(Site $site, string $image): ?string
     {
-        if (! config('seguria.ai.enabled') || ! config('services.anthropic.key') || ! $this->budget->consume($site->id)) {
+        if (! config('vigilia.ai.enabled') || ! config('services.anthropic.key') || ! $this->budget->consume($site->id)) {
             return null;
         }
 
         try {
             $message = app(Client::class)->messages->create(
-                model: config('seguria.ai.model'),
+                model: config('vigilia.ai.model'),
                 maxTokens: 256,
                 system: 'Leés patentes de vehículos en el acceso de un edificio o barrio en Argentina. Si no estás seguro de todos los caracteres, devolvé la patente vacía.',
                 messages: [['role' => 'user', 'content' => [

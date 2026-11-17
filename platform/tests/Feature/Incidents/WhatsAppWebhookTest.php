@@ -6,7 +6,7 @@ use App\Models\Incident;
 use App\Models\User;
 
 beforeEach(function () {
-    config(['seguria.whatsapp.app_secret' => 'secret', 'seguria.whatsapp.verify_token' => 'verify-me']);
+    config(['vigilia.whatsapp.app_secret' => 'secret', 'vigilia.whatsapp.verify_token' => 'verify-me']);
 });
 
 function whatsappReply(string $payload, string $from = '5491155550000'): array

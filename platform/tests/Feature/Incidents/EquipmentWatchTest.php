@@ -21,7 +21,7 @@ it('opens an incident when an edge stops reporting and closes it when it comes b
     Event::fake([IncidentOpened::class]);
 
     $this->edge->update(['last_seen_at' => now()->subMinutes(10)]);
-    $this->artisan('seguria:watch-equipment')->assertSuccessful();
+    $this->artisan('vigilia:watch-equipment')->assertSuccessful();
 
     $incident = Incident::sole();
     expect($incident->source)->toBe(IncidentSource::Equipment)
@@ -30,11 +30,11 @@ it('opens an incident when an edge stops reporting and closes it when it comes b
     Event::assertDispatched(IncidentOpened::class);
 
     // Still down: no duplicate incident.
-    $this->artisan('seguria:watch-equipment')->assertSuccessful();
+    $this->artisan('vigilia:watch-equipment')->assertSuccessful();
     expect(Incident::count())->toBe(1);
 
     $this->edge->update(['last_seen_at' => now()]);
-    $this->artisan('seguria:watch-equipment')->assertSuccessful();
+    $this->artisan('vigilia:watch-equipment')->assertSuccessful();
 
     expect($incident->fresh()->status)->toBe(IncidentStatus::Resolved)
         ->and($incident->fresh()->resolution)->toBe(IncidentResolution::Recovered)
@@ -45,11 +45,11 @@ it('opens an incident for a camera without image after the grace period', functi
     Event::fake([IncidentOpened::class]);
     $camera = Camera::factory()->create(['site_id' => $this->site->id, 'edge_device_id' => $this->edge->id, 'is_online' => false, 'last_seen_at' => now()->subMinute()]);
 
-    $this->artisan('seguria:watch-equipment');
+    $this->artisan('vigilia:watch-equipment');
     expect(Incident::count())->toBe(0);
 
     $camera->update(['last_seen_at' => now()->subMinutes(5)]);
-    $this->artisan('seguria:watch-equipment');
+    $this->artisan('vigilia:watch-equipment');
 
     expect(Incident::sole()->camera_id)->toBe($camera->id);
 });
@@ -58,7 +58,7 @@ it('ignores simulated sites', function () {
     $this->site->update(['is_simulated' => true]);
     $this->edge->update(['last_seen_at' => now()->subHour()]);
 
-    $this->artisan('seguria:watch-equipment');
+    $this->artisan('vigilia:watch-equipment');
 
     expect(Incident::count())->toBe(0);
 });
@@ -66,7 +66,7 @@ it('ignores simulated sites', function () {
 it('lets staff close an equipment incident only as recovered', function () {
     $this->edge->update(['last_seen_at' => now()->subHour()]);
     Event::fake([IncidentOpened::class]);
-    $this->artisan('seguria:watch-equipment');
+    $this->artisan('vigilia:watch-equipment');
     $incident = Incident::sole();
     $operator = User::factory()->create(['role' => UserRole::Operator, 'organization_id' => $this->site->organization_id]);
 

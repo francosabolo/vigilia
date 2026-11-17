@@ -281,7 +281,7 @@ class SiteController extends Controller
             'name' => $edge->name,
             'version' => $edge->version,
             'last_seen_at' => $edge->last_seen_at?->toIso8601String(),
-            'online' => $edge->last_seen_at !== null && $edge->last_seen_at->gt(now()->subSeconds(config('seguria.edge_offline_after'))),
+            'online' => $edge->last_seen_at !== null && $edge->last_seen_at->gt(now()->subSeconds(config('vigilia.edge_offline_after'))),
         ];
     }
 }

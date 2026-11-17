@@ -20,7 +20,7 @@ class DashboardController extends Controller
     public function __invoke(Request $request, SiteMetrics $metrics, SiteScope $scope, ActivityFeed $activity): Response
     {
         $siteIds = $scope->siteIds($request);
-        $offlineAfter = now()->subSeconds(config('seguria.edge_offline_after'));
+        $offlineAfter = now()->subSeconds(config('vigilia.edge_offline_after'));
 
         $open = Incident::query()
             ->with(['site:id,name', 'camera:id,name'])

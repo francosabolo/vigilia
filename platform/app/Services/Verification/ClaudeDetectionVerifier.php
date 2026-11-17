@@ -266,11 +266,11 @@ class ClaudeDetectionVerifier implements DetectionVerifier
         }
 
         try {
-            $result = $this->ask(config('seguria.ai.model'), $context, $images, $fallbackSubject, $system);
+            $result = $this->ask(config('vigilia.ai.model'), $context, $images, $fallbackSubject, $system);
 
-            [$low, $high] = config('seguria.ai.review_band');
+            [$low, $high] = config('vigilia.ai.review_band');
             if ($result->confidence !== null && $result->confidence >= $low && $result->confidence <= $high) {
-                $result = $this->ask(config('seguria.ai.review_model'), $context, $images, $fallbackSubject, $system);
+                $result = $this->ask(config('vigilia.ai.review_model'), $context, $images, $fallbackSubject, $system);
             }
 
             Cache::forget('ai-unavailable-since');
@@ -323,7 +323,7 @@ class ClaudeDetectionVerifier implements DetectionVerifier
      */
     private function loadImage(?string $path): ?array
     {
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
 
         if (! $path || ! $disk->exists($path)) {
             return null;

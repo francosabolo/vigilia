@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
-    Storage::fake(config('seguria.media_disk'));
+    Storage::fake(config('vigilia.media_disk'));
     $this->site = Site::factory()->create();
     $this->edge = EdgeDevice::factory()->create(['site_id' => $this->site->id, 'last_seen_at' => now()]);
     $this->token = $this->edge->issueToken();
@@ -25,12 +25,12 @@ it('raises a power cut when the edge runs on battery and closes it when power is
     Event::fake([IncidentOpened::class]);
 
     $this->withToken($this->token)->postJson('/api/edge/heartbeat', ['power' => 'battery'])->assertOk();
-    $this->artisan('seguria:watch-equipment')->assertSuccessful();
+    $this->artisan('vigilia:watch-equipment')->assertSuccessful();
     $incident = Incident::sole();
     expect($incident->title)->toStartWith('Corte de luz');
 
     $this->withToken($this->token)->postJson('/api/edge/heartbeat', ['power' => 'mains'])->assertOk();
-    $this->artisan('seguria:watch-equipment')->assertSuccessful();
+    $this->artisan('vigilia:watch-equipment')->assertSuccessful();
     expect($incident->fresh()->status->value)->toBe('resolved');
 });
 
@@ -39,7 +39,7 @@ it('does not call a power cut sabotage when every camera drops with the edge on 
     $this->edge->update(['on_battery_since' => now()]);
     Camera::factory()->count(3)->create(['site_id' => $this->site->id, 'edge_device_id' => $this->edge->id, 'is_online' => false, 'last_seen_at' => now()->subMinutes(5)]);
 
-    $this->artisan('seguria:watch-equipment')->assertSuccessful();
+    $this->artisan('vigilia:watch-equipment')->assertSuccessful();
 
     expect(Incident::where('title', 'like', 'Posible sabotaje%')->count())->toBe(0)
         ->and(Incident::where('title', 'like', 'Corte de luz%')->count())->toBe(1);
@@ -48,10 +48,10 @@ it('does not call a power cut sabotage when every camera drops with the edge on 
 it('records the internet gap and what the edge kept meanwhile', function () {
     Event::fake([IncidentOpened::class]);
     $this->edge->update(['last_seen_at' => now()->subMinutes(30)]);
-    $this->artisan('seguria:watch-equipment')->assertSuccessful();
+    $this->artisan('vigilia:watch-equipment')->assertSuccessful();
 
     $this->withToken($this->token)->postJson('/api/edge/heartbeat', ['queued' => 4])->assertOk();
-    $this->artisan('seguria:watch-equipment')->assertSuccessful();
+    $this->artisan('vigilia:watch-equipment')->assertSuccessful();
 
     expect($this->edge->fresh()->connectivity_gaps)->toHaveCount(1)
         ->and(Incident::sole()->actions()->latest('id')->value('notes'))->toContain('4 eventos guardados');

@@ -10,7 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
-    Storage::fake(config('seguria.media_disk'));
+    Storage::fake(config('vigilia.media_disk'));
     $this->site = Site::factory()->create(['name' => 'Edificio Viejo']);
     $this->admin = User::factory()->create(['role' => UserRole::Admin, 'organization_id' => $this->site->organization_id]);
 });
@@ -33,7 +33,7 @@ it('archives a site: images and resident accounts go, the incident history stays
     $incident = Incident::factory()->create(['site_id' => $this->site->id]);
     $resident = User::factory()->create(['role' => UserRole::Resident, 'organization_id' => $this->site->organization_id, 'site_id' => $this->site->id]);
     $guard = User::factory()->create(['role' => UserRole::Guard, 'organization_id' => $this->site->organization_id, 'site_id' => $this->site->id]);
-    Storage::disk(config('seguria.media_disk'))->put("sites/{$this->site->id}/events/1/snapshot.jpg", 'x');
+    Storage::disk(config('vigilia.media_disk'))->put("sites/{$this->site->id}/events/1/snapshot.jpg", 'x');
 
     $this->actingAs($this->admin)->delete("/sites/{$this->site->id}", ['confirm' => 'otro nombre'])->assertSessionHasErrors('confirm');
     $this->actingAs($this->admin)->delete("/sites/{$this->site->id}", ['confirm' => 'Edificio Viejo'])->assertRedirect('/sites');
@@ -43,7 +43,7 @@ it('archives a site: images and resident accounts go, the incident history stays
         ->and(User::find($resident->id))->toBeNull()
         ->and($guard->fresh()->site_id)->toBeNull()
         ->and(Incident::find($incident->id))->not->toBeNull();
-    Storage::disk(config('seguria.media_disk'))->assertMissing("sites/{$this->site->id}/events/1/snapshot.jpg");
+    Storage::disk(config('vigilia.media_disk'))->assertMissing("sites/{$this->site->id}/events/1/snapshot.jpg");
     $this->withToken($token)->postJson('/api/edge/heartbeat', [])->assertUnauthorized();
     $this->actingAs($this->admin)->get("/incidents/{$incident->id}")->assertForbidden();
 });

@@ -53,8 +53,8 @@ function CenterOnAddress({ address, enabled }: { address?: string | null; enable
 
 /** Draggable perimeter vertex: a round handle with a × to remove it (same rule as the zone editor). */
 const vertexIcon = L.divIcon({
-    className: 'seguria-vertex',
-    html: '<span class="seguria-vertex-dot"></span><span class="seguria-vertex-remove" data-remove="1" aria-label="Borrar punto">×</span>',
+    className: 'vigilia-vertex',
+    html: '<span class="vigilia-vertex-dot"></span><span class="vigilia-vertex-remove" data-remove="1" aria-label="Borrar punto">×</span>',
     iconSize: [18, 18],
     iconAnchor: [9, 9],
 });

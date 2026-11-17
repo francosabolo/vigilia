@@ -10,7 +10,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { formatDateTime, type IncidentDetail } from '@/lib/seguria';
+import { formatDateTime, type IncidentDetail } from '@/lib/vigilia';
 import { router } from '@inertiajs/react';
 import { Copy, Megaphone, PhoneCall } from 'lucide-react';
 import { useState } from 'react';

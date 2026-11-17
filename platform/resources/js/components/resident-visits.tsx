@@ -2,7 +2,7 @@ import { AccessAuthorizationForm } from '@/components/access-authorization-form'
 import { IconCircle } from '@/components/icon-circle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { timeAgo } from '@/lib/seguria';
+import { timeAgo } from '@/lib/vigilia';
 import { router } from '@inertiajs/react';
 import { DoorOpen } from 'lucide-react';
 import { useState } from 'react';

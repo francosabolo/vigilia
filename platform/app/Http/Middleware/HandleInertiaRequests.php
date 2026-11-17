@@ -44,7 +44,7 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             ...parent::share($request),
             'name' => config('app.name'),
-            'retentionDays' => config('seguria.retention_days'),
+            'retentionDays' => config('vigilia.retention_days'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),

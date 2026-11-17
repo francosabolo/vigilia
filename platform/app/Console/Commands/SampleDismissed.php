@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Notification;
 
 class SampleDismissed extends Command
 {
-    protected $signature = 'seguria:sample-dismissed';
+    protected $signature = 'vigilia:sample-dismissed';
 
     protected $description = 'Pick a random weekly sample of dismissed detections for a person to review (I7)';
 

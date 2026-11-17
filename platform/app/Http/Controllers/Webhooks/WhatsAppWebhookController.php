@@ -20,7 +20,7 @@ class WhatsAppWebhookController extends Controller
     {
         abort_unless(
             $request->query('hub_mode') === 'subscribe'
-            && hash_equals((string) config('seguria.whatsapp.verify_token'), (string) $request->query('hub_verify_token')),
+            && hash_equals((string) config('vigilia.whatsapp.verify_token'), (string) $request->query('hub_verify_token')),
             403,
         );
 
@@ -29,7 +29,7 @@ class WhatsAppWebhookController extends Controller
 
     public function handle(Request $request, IncidentWorkflow $workflow): JsonResponse
     {
-        $expected = 'sha256='.hash_hmac('sha256', $request->getContent(), (string) config('seguria.whatsapp.app_secret'));
+        $expected = 'sha256='.hash_hmac('sha256', $request->getContent(), (string) config('vigilia.whatsapp.app_secret'));
         abort_unless(hash_equals($expected, (string) $request->header('X-Hub-Signature-256')), 403);
 
         foreach ($request->input('entry', []) as $entry) {

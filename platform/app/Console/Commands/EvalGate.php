@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\File;
  */
 class EvalGate extends Command
 {
-    protected $signature = 'seguria:eval-gate
+    protected $signature = 'vigilia:eval-gate
         {--record : Re-run the evaluation with the API and update the committed verdicts}
         {--accept-regression : Save the recording even if a metric got worse}
         {--dir=evals : Folder with gate.json, manifest.json and verdicts/}';
@@ -37,7 +37,7 @@ class EvalGate extends Command
     private function check(string $dir, array $gate, ClaudeDetectionVerifier $verifier): int
     {
         if (! File::exists("{$dir}/manifest.json")) {
-            $this->error('There is no recording yet. Run: php artisan seguria:eval-gate --record');
+            $this->error('There is no recording yet. Run: php artisan vigilia:eval-gate --record');
 
             return self::FAILURE;
         }
@@ -80,10 +80,10 @@ class EvalGate extends Command
         }
 
         $this->table(['Set', 'Recall', 'Falsas alarmas', 'Resultado'], $rows);
-        $this->line("Prompt {$fingerprint}, modelo ".config('seguria.ai.model').' + revisión '.config('seguria.ai.review_model').'.');
+        $this->line("Prompt {$fingerprint}, modelo ".config('vigilia.ai.model').' + revisión '.config('vigilia.ai.review_model').'.');
 
         if ($failed) {
-            $this->error('Evaluation gate failed. If you changed the prompt or the models, run locally: php artisan seguria:eval-gate --record');
+            $this->error('Evaluation gate failed. If you changed the prompt or the models, run locally: php artisan vigilia:eval-gate --record');
 
             return self::FAILURE;
         }
@@ -104,7 +104,7 @@ class EvalGate extends Command
         $metrics = [];
 
         foreach (array_keys($gate['sets']) as $set) {
-            if ($this->call('seguria:eval', ['path' => $set, '--batch' => true, '--label' => "gate {$fingerprint} ".basename($set)]) !== self::SUCCESS) {
+            if ($this->call('vigilia:eval', ['path' => $set, '--batch' => true, '--label' => "gate {$fingerprint} ".basename($set)]) !== self::SUCCESS) {
                 return self::FAILURE;
             }
 
@@ -158,8 +158,8 @@ class EvalGate extends Command
         File::put("{$dir}/manifest.json", json_encode([
             'recorded_at' => now()->toIso8601String(),
             'prompt' => $fingerprint,
-            'model' => config('seguria.ai.model'),
-            'review_model' => config('seguria.ai.review_model'),
+            'model' => config('vigilia.ai.model'),
+            'review_model' => config('vigilia.ai.review_model'),
             'metrics' => $metrics,
             'images' => $images,
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n");
@@ -176,11 +176,11 @@ class EvalGate extends Command
      */
     private function decide(callable $lookup): ?VerificationResult
     {
-        $verdict = $lookup(config('seguria.ai.model'));
-        [$low, $high] = config('seguria.ai.review_band');
+        $verdict = $lookup(config('vigilia.ai.model'));
+        [$low, $high] = config('vigilia.ai.review_band');
 
         if ($verdict && $verdict->confidence !== null && $verdict->confidence >= $low && $verdict->confidence <= $high) {
-            return $lookup(config('seguria.ai.review_model'));
+            return $lookup(config('vigilia.ai.review_model'));
         }
 
         return $verdict;
@@ -195,7 +195,7 @@ class EvalGate extends Command
 
     private function alerted(VerificationResult $verdict): bool
     {
-        return $verdict->isThreat && ($verdict->confidence === null || $verdict->confidence >= config('seguria.ai.threat_threshold'));
+        return $verdict->isThreat && ($verdict->confidence === null || $verdict->confidence >= config('vigilia.ai.threat_threshold'));
     }
 
     /**

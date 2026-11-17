@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\File;
  */
 class DegradeEvalSet extends Command
 {
-    protected $signature = 'seguria:eval-degrade
+    protected $signature = 'vigilia:eval-degrade
         {source=storage/app/eval : Folder with positivos/ and negativos/}
         {target=storage/app/eval-hard : Output folder, one subfolder per level}';
 
@@ -57,7 +57,7 @@ class DegradeEvalSet extends Command
         }
 
         $this->info(count($files) * count(self::LEVELS)." images written to {$target}.");
-        $this->line('Evaluate each level with: php artisan seguria:eval '.$this->argument('target').'/<level>');
+        $this->line('Evaluate each level with: php artisan vigilia:eval '.$this->argument('target').'/<level>');
 
         return self::SUCCESS;
     }

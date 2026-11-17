@@ -45,7 +45,7 @@ class DemoImages
 
         $file = $seed === null ? $files[array_rand($files)] : $files[$seed % count($files)];
         $path = 'demo-library/'.basename(dirname($file)).'-'.basename($file);
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         if (! $disk->exists($path)) {
             $disk->put($path, File::get($file));
         }
@@ -81,6 +81,6 @@ class DemoImages
 
     private function source(): string
     {
-        return config('seguria.demo_images_path') ?: storage_path('app/eval');
+        return config('vigilia.demo_images_path') ?: storage_path('app/eval');
     }
 }

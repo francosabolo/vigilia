@@ -10,11 +10,11 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
 beforeEach(function () {
-    Storage::fake(config('seguria.media_disk'));
+    Storage::fake(config('vigilia.media_disk'));
     $this->site = Site::factory()->create();
     $this->camera = Camera::factory()->create(['site_id' => $this->site->id]);
     $this->incident = Incident::factory()->create(['site_id' => $this->site->id, 'camera_id' => $this->camera->id, 'snapshot_path' => 'x/snap.jpg']);
-    Storage::disk(config('seguria.media_disk'))->put('x/snap.jpg', 'jpg');
+    Storage::disk(config('vigilia.media_disk'))->put('x/snap.jpg', 'jpg');
     $this->operator = User::factory()->create(['role' => UserRole::Operator, 'organization_id' => $this->site->organization_id]);
 });
 

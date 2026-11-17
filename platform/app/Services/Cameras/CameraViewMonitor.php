@@ -36,7 +36,7 @@ class CameraViewMonitor
 
     public function check(Camera $camera, string $frameBytes): ?Incident
     {
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         $probe = $this->analyzer->compare($frameBytes, null, $camera->fov);
         $referencePath = $this->referencePath($camera, $probe['bucket']);
 
@@ -89,7 +89,7 @@ class CameraViewMonitor
      */
     public function rebaseline(Camera $camera): void
     {
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
 
         if ($disk->exists($this->latestPath($camera))) {
             $bytes = $disk->get($this->latestPath($camera));
@@ -105,7 +105,7 @@ class CameraViewMonitor
      */
     private function refreshReference(string $referencePath, string $frameBytes): void
     {
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         if ($disk->lastModified($referencePath) < now()->subDays(self::REFERENCE_MAX_AGE_DAYS)->timestamp) {
             $disk->put($referencePath, $frameBytes);
         }
@@ -157,7 +157,7 @@ class CameraViewMonitor
             'detected_at' => now(),
         ]);
         $path = "sites/{$camera->site_id}/incidents/{$incident->id}/blur-now.jpg";
-        Storage::disk(config('seguria.media_disk'))->put($path, $frameBytes);
+        Storage::disk(config('vigilia.media_disk'))->put($path, $frameBytes);
         $incident->forceFill(['snapshot_path' => $path])->save();
         $incident->actions()->create(['type' => 'equipment_down', 'channel' => 'system', 'notes' => $incident->description]);
 
@@ -199,7 +199,7 @@ class CameraViewMonitor
         ]);
 
         // Frozen copies: the camera's latest frame and reference keep changing after this.
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         $directory = "sites/{$camera->site_id}/incidents/{$incident->id}";
         $disk->put("{$directory}/tamper-now.jpg", $frameBytes);
         if ($disk->exists($referencePath)) {

@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
  */
 class BlindEvalSet extends Command
 {
-    protected $signature = 'seguria:eval-blind
+    protected $signature = 'vigilia:eval-blind
         {path=storage/app/eval : Folder with positivos/ and negativos/}
         {--label= : Name of this blind run (default: folder name)}
         {--judge=consola-opus : Who judges (to reuse previous verdicts of the same judge)}
@@ -57,7 +57,7 @@ class BlindEvalSet extends Command
 
         $this->info(sprintf('%d images ready in %s (%d skipped: already judged with this prompt, reused at import).', $files->count(), "{$directory}/imagenes", $all->count() - $files->count()));
         $this->line("Give a console session (or subagent) the instructions in {$directory}/INSTRUCCIONES.md — never the key.");
-        $this->line("Then: php artisan seguria:eval-import {$label}");
+        $this->line("Then: php artisan vigilia:eval-import {$label}");
 
         return self::SUCCESS;
     }

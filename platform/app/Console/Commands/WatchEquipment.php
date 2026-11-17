@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class WatchEquipment extends Command
 {
-    protected $signature = 'seguria:watch-equipment';
+    protected $signature = 'vigilia:watch-equipment';
 
     protected $description = 'Raise incidents for edge boxes without signal and cameras without image (and close them on recovery)';
 

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { siteNoun, timeAgo, type SiteKind } from '@/lib/seguria';
+import { siteNoun, timeAgo, type SiteKind } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePoll } from '@inertiajs/react';

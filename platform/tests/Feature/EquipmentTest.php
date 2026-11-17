@@ -9,7 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
-    Storage::fake(config('seguria.media_disk'));
+    Storage::fake(config('vigilia.media_disk'));
     $this->site = Site::factory()->create();
     $this->edge = EdgeDevice::factory()->create(['site_id' => $this->site->id, 'version' => '0.5.0']);
     $this->token = $this->edge->issueToken();
@@ -29,7 +29,7 @@ it('asks an old edge box to update itself and stops asking once it reports the n
     $this->actingAs($this->admin)->post("/edges/{$this->edge->id}/update")->assertRedirect();
     $this->withToken($this->token)->getJson('/api/edge/commands')->assertJsonPath('update', true);
 
-    $this->withToken($this->token)->postJson('/api/edge/heartbeat', ['version' => config('seguria.edge.latest_version')])->assertOk();
+    $this->withToken($this->token)->postJson('/api/edge/heartbeat', ['version' => config('vigilia.edge.latest_version')])->assertOk();
 
     expect($this->edge->fresh()->update_requested_at)->toBeNull();
     $this->withToken($this->token)->getJson('/api/edge/commands')->assertJsonPath('update', false);

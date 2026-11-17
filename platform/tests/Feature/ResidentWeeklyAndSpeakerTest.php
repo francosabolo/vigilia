@@ -16,7 +16,7 @@ it('sends residents one sentence about their week', function () {
     $site = Site::factory()->create();
     $resident = User::factory()->create(['role' => UserRole::Resident, 'organization_id' => $site->organization_id, 'site_id' => $site->id]);
 
-    $this->artisan('seguria:resident-weekly')->assertSuccessful();
+    $this->artisan('vigilia:resident-weekly')->assertSuccessful();
 
     Notification::assertSentTo($resident, ResidentWeeklySummary::class, fn ($n) => str_contains($n->summary, 'semana tranquila'));
     expect(SendResidentWeeklySummary::sentence(['detections' => 40, 'filtered_by_ai' => 30, 'outside_schedule' => 5, 'incidents' => 3, 'confirmed' => 1]))

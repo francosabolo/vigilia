@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class WatchGuards extends Command
 {
-    protected $signature = 'seguria:watch-guards';
+    protected $signature = 'vigilia:watch-guards';
 
     protected $description = 'Check guard posts and round checkpoints where guard supervision is on';
 

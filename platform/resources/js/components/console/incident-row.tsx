@@ -1,6 +1,6 @@
 import { StatusSignal } from '@/components/incident-badges';
 import { ItemActionHint } from '@/components/item-action';
-import { severityStripe, timeAgo, type IncidentStatus, type Severity } from '@/lib/seguria';
+import { severityStripe, timeAgo, type IncidentStatus, type Severity } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { type ReactNode } from 'react';

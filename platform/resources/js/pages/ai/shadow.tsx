@@ -1,7 +1,7 @@
 import { SectionTitle } from '@/components/icon-circle';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { plural, timeAgo } from '@/lib/seguria';
+import { plural, timeAgo } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
@@ -156,8 +156,8 @@ function Empty({ enabled, current }: { enabled: boolean; current: string }) {
                 </p>
             ) : (
                 <p className="text-muted-foreground text-sm">
-                    El modo sombra está apagado. Prendelo con <code>SEGURIA_SHADOW=true</code>, o corré el retador sobre detecciones pasadas con{' '}
-                    <code>php artisan seguria:shadow-run</code>.
+                    El modo sombra está apagado. Prendelo con <code>VIGILIA_SHADOW=true</code>, o corré el retador sobre detecciones pasadas con{' '}
+                    <code>php artisan vigilia:shadow-run</code>.
                 </p>
             )}
         </div>

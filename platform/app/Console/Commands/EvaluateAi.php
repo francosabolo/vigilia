@@ -26,13 +26,13 @@ use Illuminate\Support\Str;
  */
 class EvaluateAi extends Command
 {
-    protected $signature = 'seguria:eval
+    protected $signature = 'vigilia:eval
         {path=storage/app/eval : Folder with positivos/ and negativos/}
-        {--model= : First-pass model (default: config seguria.ai.model)}
+        {--model= : First-pass model (default: config vigilia.ai.model)}
         {--no-review : Do not re-check ambiguous verdicts with the review model}
         {--batch : Send uncached calls through the Message Batches API (50% cheaper, minutes instead of seconds)}
         {--fresh : Ignore cached verdicts and pay for every call again}
-        {--label= : Name for this run in seguria:eval-compare}
+        {--label= : Name for this run in vigilia:eval-compare}
         {--limit=0 : Max images per class (0 = all)}';
 
     protected $description = 'Evaluate AI verification on a labeled image set: recall, false alarms, latency and real cost';
@@ -54,29 +54,29 @@ class EvaluateAi extends Command
             return self::FAILURE;
         }
 
-        $model = $this->option('model') ?: config('seguria.ai.model');
-        config(['seguria.ai.model' => $model]);
+        $model = $this->option('model') ?: config('vigilia.ai.model');
+        config(['vigilia.ai.model' => $model]);
         if ($this->option('no-review')) {
-            config(['seguria.ai.review_band' => [2, 2]]);
+            config(['vigilia.ai.review_band' => [2, 2]]);
         }
 
         $verifier = app(ClaudeDetectionVerifier::class);
         $verifier->cache = $this->option('fresh') ? null : app(VerdictCache::class);
         app()->instance(DetectionVerifier::class, $verifier);
         $camera = new Camera(['name' => 'Cámara de evaluación', 'fov' => 90]);
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
 
         $batchUsage = [];
         if ($this->option('batch') && $verifier->cache) {
             $batchUsage = $this->prefillWithBatch($verifier, $images, $camera, $model);
-            [$low, $high] = config('seguria.ai.review_band');
+            [$low, $high] = config('vigilia.ai.review_band');
             if ($low <= 1) {
-                $batchUsage = array_merge_recursive($batchUsage, $this->prefillWithBatch($verifier, $images, $camera, config('seguria.ai.review_model'), $low, $high, $model));
+                $batchUsage = array_merge_recursive($batchUsage, $this->prefillWithBatch($verifier, $images, $camera, config('vigilia.ai.review_model'), $low, $high, $model));
             }
         }
 
         $cache = app(VerdictCache::class);
-        $this->info("Evaluating {$images->count()} images with {$model}".($this->option('no-review') ? '' : ' (+ '.config('seguria.ai.review_model').' for ambiguous cases)').'…');
+        $this->info("Evaluating {$images->count()} images with {$model}".($this->option('no-review') ? '' : ' (+ '.config('vigilia.ai.review_model').' for ambiguous cases)').'…');
         $bar = $this->output->createProgressBar($images->count());
         $results = collect();
 
@@ -95,7 +95,7 @@ class EvaluateAi extends Command
                 'file' => Str::after($image['file'], base_path().'/'),
                 'sha1' => sha1_file($image['file']),
                 'expected' => $image['expected'],
-                'alerted' => $verdict->isThreat && ($verdict->confidence === null || $verdict->confidence >= config('seguria.ai.threat_threshold')),
+                'alerted' => $verdict->isThreat && ($verdict->confidence === null || $verdict->confidence >= config('vigilia.ai.threat_threshold')),
                 'confidence' => $verdict->confidence,
                 'description' => $verdict->description,
                 'cached' => $cachedBefore && ! $this->option('fresh'),
@@ -116,7 +116,7 @@ class EvaluateAi extends Command
             'source' => 'api',
             'set' => $this->argument('path'),
             'model' => $model,
-            'review_model' => $this->option('no-review') ? null : config('seguria.ai.review_model'),
+            'review_model' => $this->option('no-review') ? null : config('vigilia.ai.review_model'),
             'prompt' => ClaudeDetectionVerifier::promptFingerprint(),
             'cost_usd' => round($liveCost + $batchCost, 4),
         ]);
@@ -135,7 +135,7 @@ class EvaluateAi extends Command
             $this->warn('Errores para revisar:');
             $this->table(['Imagen', 'Esperado', 'Respuesta de la IA'], $errors->map(fn ($result) => [basename($result['file']), $result['expected'] ? 'alerta' : 'no alerta', Str::limit($result['description'], 90)])->all());
         }
-        $this->line("Corrida guardada como \"{$label}\". Compará corridas con: php artisan seguria:eval-compare");
+        $this->line("Corrida guardada como \"{$label}\". Compará corridas con: php artisan vigilia:eval-compare");
 
         return self::SUCCESS;
     }
@@ -161,7 +161,7 @@ class EvaluateAi extends Command
     private function prefillWithBatch(ClaudeDetectionVerifier $verifier, Collection $images, Camera $camera, string $model, float $low = 0, float $high = 0, ?string $firstPassModel = null): array
     {
         $cache = $verifier->cache;
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         $pending = [];
 
         foreach ($images as $index => $image) {
@@ -228,7 +228,7 @@ class EvaluateAi extends Command
     private function cost(array $usage, float $factor): float
     {
         return collect($usage)->map(function (array $tokens, string $model) use ($factor) {
-            [$in, $out] = config("seguria.ai.prices.{$model}", [0, 0]);
+            [$in, $out] = config("vigilia.ai.prices.{$model}", [0, 0]);
 
             return (array_sum((array) $tokens['input']) * $in + array_sum((array) $tokens['output']) * $out) / 1_000_000 * $factor;
         })->sum();

@@ -87,7 +87,7 @@ class VirtualPatrol
     {
         $site = $patrol->site;
         $cameras = $site->cameras()->with('zones.armingSchedules', 'zones.camera')->orderBy('sector')->orderBy('name')->get();
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         $findings = [];
         $skipped = [];
         $checked = 0;
@@ -105,7 +105,7 @@ class VirtualPatrol
                 continue;
             }
 
-            if (config('seguria.ai.enabled') && ! $this->budget->consume($site->id)) {
+            if (config('vigilia.ai.enabled') && ! $this->budget->consume($site->id)) {
                 $skipped[] = ['camera_id' => $camera->id, 'camera' => $camera->name, 'reason' => 'Tope diario de IA alcanzado'];
 
                 continue;

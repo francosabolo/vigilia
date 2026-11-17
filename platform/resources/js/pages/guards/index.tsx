@@ -1,6 +1,6 @@
 import { type Handover } from '@/components/console/shift-handover';
 import AppLayout from '@/layouts/app-layout';
-import { formatDuration, timeAgo } from '@/lib/seguria';
+import { formatDuration, timeAgo } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';

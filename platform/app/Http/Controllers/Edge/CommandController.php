@@ -73,7 +73,7 @@ class CommandController extends Controller
                 : null,
             'zones' => $zones->payloadFor($device),
             // E6 — run the site's update command once; the new version shows in the next heartbeat.
-            'update' => $device->update_requested_at !== null && $device->version !== config('seguria.edge.latest_version'),
+            'update' => $device->update_requested_at !== null && $device->version !== config('vigilia.edge.latest_version'),
             'health_check' => [
                 'interval' => CameraViewMonitor::CHECK_INTERVAL,
                 'cameras' => $device->cameras()->pluck('frigate_name'),
@@ -116,7 +116,7 @@ class CommandController extends Controller
         $request->validate(['image' => ['required', 'file', 'mimes:jpg,jpeg,png', 'max:5120']]);
 
         $path = "sites/{$device->site_id}/incidents/{$snapshotRequest->incident_id}/live-{$snapshotRequest->camera_id}.jpg";
-        Storage::disk(config('seguria.media_disk'))->put($path, app(PrivacyMask::class)->apply($snapshotRequest->camera, $request->file('image')->get()));
+        Storage::disk(config('vigilia.media_disk'))->put($path, app(PrivacyMask::class)->apply($snapshotRequest->camera, $request->file('image')->get()));
 
         $snapshotRequest->update(['status' => 'fulfilled', 'snapshot_path' => $path, 'fulfilled_at' => now()]);
 

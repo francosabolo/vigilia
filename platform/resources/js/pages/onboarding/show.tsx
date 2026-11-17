@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { type LatLng } from '@/lib/geo';
-import { hasUnits, siteKinds, siteNoun, timeAgo, unitNoun, type SiteKind } from '@/lib/seguria';
+import { hasUnits, siteKinds, siteNoun, timeAgo, unitNoun, type SiteKind } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm, usePage, usePoll } from '@inertiajs/react';
@@ -320,7 +320,7 @@ function EdgeStep({ site, newEdge, edgeServerUrl, canManageEdges }: Props & { si
             {newEdge && (
                 <div className="flex flex-col gap-2">
                     <p className="font-semibold">1. En el equipo, guardá esto en el archivo edge/.env (la clave se muestra una sola vez):</p>
-                    <CopyBlock text={`SEGURIA_API_URL=${edgeServerUrl}\nSEGURIA_TOKEN=${newEdge.token}`} />
+                    <CopyBlock text={`VIGILIA_API_URL=${edgeServerUrl}\nVIGILIA_TOKEN=${newEdge.token}`} />
                     <p className="font-semibold">2. Encendé el equipo:</p>
                     <CopyBlock text="cd edge && docker compose up -d" />
                 </div>

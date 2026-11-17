@@ -33,7 +33,7 @@ class EquipmentWatch
     public function run(): array
     {
         $opened = $recovered = 0;
-        $offlineAfter = now()->subSeconds(config('seguria.edge_offline_after'));
+        $offlineAfter = now()->subSeconds(config('vigilia.edge_offline_after'));
 
         $edges = EdgeDevice::query()->with('site')->whereHas('site', fn ($query) => $query->where('is_simulated', false))->get();
         foreach ($edges as $edge) {

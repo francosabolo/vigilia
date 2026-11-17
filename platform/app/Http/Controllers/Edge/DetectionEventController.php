@@ -71,7 +71,7 @@ class DetectionEventController extends Controller
         if ($isNew) {
             DetectionEventReceived::dispatch($event);
         } elseif ($event->status === DetectionStatus::Dismissed && $event->ended_at && in_array($event->label, ['car', 'truck', 'motorcycle'], true)
-            && $event->started_at->diffInMinutes($event->ended_at, absolute: true) >= (int) config('seguria.tracking.stopped_vehicle_minutes', 5)) {
+            && $event->started_at->diffInMinutes($event->ended_at, absolute: true) >= (int) config('vigilia.tracking.stopped_vehicle_minutes', 5)) {
             // A6 — the early send was dismissed; the end of the event shows the vehicle stayed: look again.
             $event->forceFill(['status' => DetectionStatus::Pending])->save();
             DetectionEventReceived::dispatch($event);
@@ -89,7 +89,7 @@ class DetectionEventController extends Controller
         // J2 — privacy areas are blacked out before the image is stored or seen by the AI. Clips are masked on the edge.
         if ($camera && in_array(strtolower($file->extension()), ['jpg', 'jpeg', 'png'], true)) {
             $path = "{$directory}/{$name}.jpg";
-            Storage::disk(config('seguria.media_disk'))->put($path, app(PrivacyMask::class)->apply($camera, $file->get()));
+            Storage::disk(config('vigilia.media_disk'))->put($path, app(PrivacyMask::class)->apply($camera, $file->get()));
 
             return $path;
         }
@@ -97,7 +97,7 @@ class DetectionEventController extends Controller
         return $file->storeAs(
             $directory,
             $name.'.'.$file->extension(),
-            ['disk' => config('seguria.media_disk')],
+            ['disk' => config('vigilia.media_disk')],
         ) ?: null;
     }
 }

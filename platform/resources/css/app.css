@@ -242,10 +242,10 @@
 }
 
 /* Perimeter editor vertex (Leaflet divIcon): round handle + remove button, like the zone editor. */
-.seguria-vertex {
+.vigilia-vertex {
     position: relative;
 }
-.seguria-vertex-dot {
+.vigilia-vertex-dot {
     position: absolute;
     inset: 1px;
     border-radius: 9999px;
@@ -253,7 +253,7 @@
     border: 2px solid #1b1d22;
     cursor: grab;
 }
-.seguria-vertex-remove {
+.vigilia-vertex-remove {
     position: absolute;
     top: -12px;
     right: -12px;
@@ -268,11 +268,11 @@
     cursor: pointer;
     opacity: 0;
 }
-.seguria-vertex:hover .seguria-vertex-remove {
+.vigilia-vertex:hover .vigilia-vertex-remove {
     opacity: 1;
 }
 @media (hover: none) {
-    .seguria-vertex-remove {
+    .vigilia-vertex-remove {
         opacity: 1;
     }
 }

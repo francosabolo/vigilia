@@ -25,13 +25,13 @@ PROMPT;
      */
     public function write(string $task, array $facts, string $fallback): string
     {
-        if (! config('seguria.ai.enabled') || ! config('services.anthropic.key')) {
+        if (! config('vigilia.ai.enabled') || ! config('services.anthropic.key')) {
             return $fallback;
         }
 
         try {
             $message = $this->client->messages->create(
-                model: config('seguria.ai.review_model', config('seguria.ai.model')),
+                model: config('vigilia.ai.review_model', config('vigilia.ai.model')),
                 maxTokens: 1500,
                 system: self::SYSTEM_PROMPT,
                 messages: [['role' => 'user', 'content' => $task."\n\nDatos:\n".json_encode($facts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)]],

@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { timeAgo, type ActivityItem } from '@/lib/seguria';
+import { timeAgo, type ActivityItem } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';

@@ -31,7 +31,7 @@ class SimulateOperation extends Command
 {
     use RefusesInProduction;
 
-    protected $signature = 'seguria:simulate-operation
+    protected $signature = 'vigilia:simulate-operation
         {--sites=8 : Simulated gated communities to create}
         {--cameras=20-40 : Cameras per site (range)}
         {--days=7 : Days of history to backfill}
@@ -58,7 +58,7 @@ class SimulateOperation extends Command
             $this->info('Simulated sites deleted: '.$world->destroy());
         }
 
-        $organization = Organization::where('slug', 'seguria')->first() ?? Organization::first();
+        $organization = Organization::where('slug', 'vigilia')->first() ?? Organization::first();
         if (! $organization) {
             $this->error('Run the seeder first (php artisan migrate --seed).');
 

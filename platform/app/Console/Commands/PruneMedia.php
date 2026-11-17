@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class PruneMedia extends Command
 {
-    protected $signature = 'seguria:prune-media';
+    protected $signature = 'vigilia:prune-media';
 
     protected $description = 'Delete images and clips older than the retention window (keeps evidence of open and confirmed incidents)';
 
@@ -15,7 +15,7 @@ class PruneMedia extends Command
     {
         $stats = $retention->prune();
         $this->line(sprintf('Deleted %d files: %d detections, %d incidents, %d live frames (retention %d days).',
-            $stats['files'], $stats['detections'], $stats['incidents'], $stats['live_frames'], config('seguria.retention_days')));
+            $stats['files'], $stats['detections'], $stats['incidents'], $stats['live_frames'], config('vigilia.retention_days')));
 
         return self::SUCCESS;
     }

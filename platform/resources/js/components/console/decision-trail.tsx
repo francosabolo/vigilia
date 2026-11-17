@@ -1,4 +1,4 @@
-import { type ActivityItem, type TraceStep } from '@/lib/seguria';
+import { type ActivityItem, type TraceStep } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 

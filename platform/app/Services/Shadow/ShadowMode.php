@@ -19,7 +19,7 @@ class ShadowMode
 {
     public function enabled(): bool
     {
-        return (bool) config('seguria.ai.shadow.enabled');
+        return (bool) config('vigilia.ai.shadow.enabled');
     }
 
     /**
@@ -27,10 +27,10 @@ class ShadowMode
      */
     public function challenger(): array
     {
-        $file = config('seguria.ai.shadow.prompt_file');
+        $file = config('vigilia.ai.shadow.prompt_file');
         $prompt = $file ? trim(File::get(base_path($file))) : ClaudeDetectionVerifier::SYSTEM_PROMPT;
         $fingerprint = ClaudeDetectionVerifier::promptFingerprint($prompt);
-        $model = config('seguria.ai.shadow.model') ?: config('seguria.ai.model');
+        $model = config('vigilia.ai.shadow.model') ?: config('vigilia.ai.model');
 
         return ['label' => "{$model}, prompt {$fingerprint}", 'model' => $model, 'prompt' => $prompt, 'fingerprint' => $fingerprint];
     }
@@ -43,16 +43,16 @@ class ShadowMode
         if (! $this->enabled() || ! $event->snapshot_path || $event->ai_verdict === null) {
             return;
         }
-        if ($event->camera->site->is_simulated && ! config('seguria.ai.shadow.include_simulated')) {
+        if ($event->camera->site->is_simulated && ! config('vigilia.ai.shadow.include_simulated')) {
             return;
         }
-        if (mt_rand() / mt_getrandmax() > config('seguria.ai.shadow.sample_rate')) {
+        if (mt_rand() / mt_getrandmax() > config('vigilia.ai.shadow.sample_rate')) {
             return;
         }
 
         $key = 'shadow:count:'.now()->toDateString();
         Cache::add($key, 0, now()->endOfDay()->addHour());
-        if (Cache::increment($key) > config('seguria.ai.shadow.daily_cap')) {
+        if (Cache::increment($key) > config('vigilia.ai.shadow.daily_cap')) {
             return;
         }
 
@@ -84,7 +84,7 @@ class ShadowMode
         }
 
         $result = $answer['result'];
-        [$in, $out] = config("seguria.ai.prices.{$challenger['model']}", [0, 0]);
+        [$in, $out] = config("vigilia.ai.prices.{$challenger['model']}", [0, 0]);
 
         return ShadowVerdict::create([
             'detection_event_id' => $event->id,
@@ -92,7 +92,7 @@ class ShadowMode
             'model' => $challenger['model'],
             'prompt' => $challenger['fingerprint'],
             'champion_alerted' => $event->incident_id !== null,
-            'alerted' => $result->isThreat && ($result->confidence === null || $result->confidence >= config('seguria.ai.threat_threshold')),
+            'alerted' => $result->isThreat && ($result->confidence === null || $result->confidence >= config('vigilia.ai.threat_threshold')),
             'is_threat' => $result->isThreat,
             'confidence' => $result->confidence,
             'description' => $result->description,

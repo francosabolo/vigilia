@@ -24,17 +24,17 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(Client::class, fn (): Client => new Client(
             apiKey: config('services.anthropic.key'),
             requestOptions: [
-                'timeout' => (float) config('seguria.ai.timeout_seconds'),
-                'maxRetries' => (int) config('seguria.ai.max_retries'),
-                'transporter' => new \GuzzleHttp\Client(['timeout' => (float) config('seguria.ai.timeout_seconds'), 'connect_timeout' => 3]),
+                'timeout' => (float) config('vigilia.ai.timeout_seconds'),
+                'maxRetries' => (int) config('vigilia.ai.max_retries'),
+                'transporter' => new \GuzzleHttp\Client(['timeout' => (float) config('vigilia.ai.timeout_seconds'), 'connect_timeout' => 3]),
             ],
         ));
 
-        $this->app->bind(DetectionVerifier::class, fn ($app): DetectionVerifier => config('seguria.ai.enabled')
+        $this->app->bind(DetectionVerifier::class, fn ($app): DetectionVerifier => config('vigilia.ai.enabled')
             ? $app->make(ClaudeDetectionVerifier::class)
             : new PassthroughDetectionVerifier);
 
-        $this->app->bind(PatrolInspector::class, fn ($app): PatrolInspector => config('seguria.ai.enabled')
+        $this->app->bind(PatrolInspector::class, fn ($app): PatrolInspector => config('vigilia.ai.enabled')
             ? $app->make(ClaudePatrolInspector::class)
             : new PassthroughPatrolInspector);
     }

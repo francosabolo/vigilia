@@ -37,7 +37,7 @@ class OnboardingController extends Controller
         Gate::authorize('manage', $site);
         $step = in_array($step, self::STEPS, true) ? $step : 'ubicacion';
         $site->load(['edgeDevices', 'cameras.zones']);
-        $offlineAfter = now()->subSeconds((int) config('seguria.edge_offline_after'));
+        $offlineAfter = now()->subSeconds((int) config('vigilia.edge_offline_after'));
 
         return Inertia::render('onboarding/show', [
             'step' => $step,

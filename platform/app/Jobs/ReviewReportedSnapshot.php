@@ -38,7 +38,7 @@ class ReviewReportedSnapshot implements ShouldQueue
 
         $incident->snapshot_path ??= $request->snapshot_path;
 
-        if ($verdict->isThreat && ($verdict->confidence === null || $verdict->confidence >= config('seguria.ai.threat_threshold'))) {
+        if ($verdict->isThreat && ($verdict->confidence === null || $verdict->confidence >= config('vigilia.ai.threat_threshold'))) {
             $incident->severity = $verdict->objectCount >= 2 ? Severity::Critical : Severity::High;
             $incident->camera_id ??= $request->camera_id;
             $incident->snapshot_path = $request->snapshot_path;

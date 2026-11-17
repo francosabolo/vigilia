@@ -11,7 +11,7 @@ import { ResidentVisits, type GateEntry, type ResidentVisit } from '@/components
 import { SafeArrivalCard, type Arrival } from '@/components/safe-arrival';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatDuration, theSite, timeAgo, unitNoun, type IncidentStatus, type Metrics, type SiteKind } from '@/lib/seguria';
+import { formatDuration, theSite, timeAgo, unitNoun, type IncidentStatus, type Metrics, type SiteKind } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
 import { Bell, Car, CheckCircle2, DoorOpen, Eye, Home, LogOut, Phone, Plane, ShieldCheck, Siren } from 'lucide-react';

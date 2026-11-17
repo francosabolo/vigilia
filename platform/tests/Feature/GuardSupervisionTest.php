@@ -13,7 +13,7 @@ use App\Services\Guards\GuardWatch;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
-    config(['seguria.ai.enabled' => false]);
+    config(['vigilia.ai.enabled' => false]);
     $this->site = Site::factory()->create(['timezone' => 'America/Argentina/Buenos_Aires']);
     $this->ana = User::factory()->create(['role' => UserRole::Guard, 'organization_id' => $this->site->organization_id, 'site_id' => $this->site->id, 'name' => 'Ana']);
     $this->admin = User::factory()->create(['role' => UserRole::Admin, 'organization_id' => $this->site->organization_id]);

@@ -12,7 +12,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { timeAgo } from '@/lib/seguria';
+import { timeAgo } from '@/lib/vigilia';
 import { useForm } from '@inertiajs/react';
 import { ClipboardList } from 'lucide-react';
 import { useState } from 'react';

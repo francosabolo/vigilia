@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\File;
  */
 class ImportBlindEval extends Command
 {
-    protected $signature = 'seguria:eval-import {label : Blind run name (folder in storage/app/eval-blind)} {--verdicts= : Path to the verdicts JSON (default: the run folder)}';
+    protected $signature = 'vigilia:eval-import {label : Blind run name (folder in storage/app/eval-blind)} {--verdicts= : Path to the verdicts JSON (default: the run folder)}';
 
     protected $description = 'Score a blind console evaluation and save it as a comparable run';
 
@@ -32,7 +32,7 @@ class ImportBlindEval extends Command
 
         $results = collect($key['images'])->map(function (array $truth, string $img) use ($verdicts) {
             $verdict = $verdicts->get($img);
-            $alerted = $verdict && $verdict['is_threat'] && ! ($verdict['suspected_guard'] ?? false) && (float) ($verdict['confidence'] ?? 0) >= config('seguria.ai.threat_threshold');
+            $alerted = $verdict && $verdict['is_threat'] && ! ($verdict['suspected_guard'] ?? false) && (float) ($verdict['confidence'] ?? 0) >= config('vigilia.ai.threat_threshold');
 
             return [
                 'file' => $truth['file'],

@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
-import { siteKinds, siteNoun, timeAgo, type EdgeStatus, type SiteKind } from '@/lib/seguria';
+import { siteKinds, siteNoun, timeAgo, type EdgeStatus, type SiteKind } from '@/lib/vigilia';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Cctv, Cpu } from 'lucide-react';

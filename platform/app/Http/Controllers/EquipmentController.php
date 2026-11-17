@@ -33,7 +33,7 @@ class EquipmentController extends Controller
         $sites = Site::whereIn('id', $scope->siteIds($request))->with(['client:id,name', 'edgeDevices', 'cameras'])->orderBy('name')->get();
 
         return Inertia::render('equipment/index', [
-            'latestEdgeVersion' => config('seguria.edge.latest_version'),
+            'latestEdgeVersion' => config('vigilia.edge.latest_version'),
             'sites' => $sites->map(fn (Site $site): array => [
                 'id' => $site->id,
                 'name' => $site->name,
@@ -74,7 +74,7 @@ class EquipmentController extends Controller
     }
 
     /**
-     * E6 — the edge picks the request up through its command channel and runs SEGURIA_UPDATE_COMMAND on site.
+     * E6 — the edge picks the request up through its command channel and runs VIGILIA_UPDATE_COMMAND on site.
      */
     public function requestUpdate(Request $request, EdgeDevice $edge): RedirectResponse
     {
@@ -91,13 +91,13 @@ class EquipmentController extends Controller
     public function reviewFraming(Camera $camera, CameraViewMonitor $monitor, AiBudget $budget): RedirectResponse
     {
         Gate::authorize('manage', $camera->site);
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         abort_unless($disk->exists($monitor->latestPath($camera)), 422, 'Todavía no hay una imagen de esta cámara.');
-        abort_unless(config('seguria.ai.enabled') && $budget->consume($camera->site_id), 422, 'La IA no está disponible.');
+        abort_unless(config('vigilia.ai.enabled') && $budget->consume($camera->site_id), 422, 'La IA no está disponible.');
 
         try {
             $message = app(Client::class)->messages->create(
-                model: config('seguria.ai.review_model'),
+                model: config('vigilia.ai.review_model'),
                 maxTokens: 800,
                 system: 'Sos un instalador experto en cámaras de seguridad. Evaluás si el encuadre de una cámara sirve para detectar personas que entran a una propiedad en Argentina.',
                 messages: [['role' => 'user', 'content' => [
@@ -140,7 +140,7 @@ class EquipmentController extends Controller
             'frigate_name' => $frigateName, 'edge_device_id' => $edgeId, 'is_online' => true, 'offline_since' => null,
             'installed_at' => now()->toDateString(), 'serial' => null, 'framing_review' => null,
         ])->save();
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         foreach ($disk->files('references') as $file) {
             if (str_starts_with(basename($file), "{$camera->id}-")) {
                 $disk->delete($file);

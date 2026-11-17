@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
  */
 class CreateAdmin extends Command
 {
-    protected $signature = 'seguria:create-admin {email} {name} {--company= : Name of the security company}';
+    protected $signature = 'vigilia:create-admin {email} {name} {--company= : Name of the security company}';
 
     protected $description = 'Create the security company and its first central administrator';
 

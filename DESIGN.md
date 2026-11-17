@@ -6,7 +6,7 @@
 ## Marca
 
 ### Logo
-La lente de cámara con un barrido de vigilancia (`platform/resources/js/components/app-logo-icon.tsx`): un anillo, el barrido y un punto central. El wordmark es `seguria` en minúscula, en Barlow Condensed Semibold.
+La lente de cámara con un barrido de vigilancia (`platform/resources/js/components/app-logo-icon.tsx`): un anillo, el barrido y un punto central. El wordmark es `vigilia` en minúscula, en Barlow Condensed Semibold.
 - El logo va en rojo Vigilia sobre grafito o blanco, o en blanco sobre rojo. Nunca en otro color — porque es lo único que identifica la marca en una pantalla llena de cámaras. (origen: aprobado por Franco, 16/11/2026)
 - Los íconos de la app (PWA) son la lente roja sobre fondo blanco (`platform/public/icons/`).
 
@@ -41,7 +41,7 @@ La lente de cámara con un barrido de vigilancia (`platform/resources/js/compone
 - **Edificio:** "el edificio"; el hogar de un vecino es una **unidad** (4B). Lo que se vigila son accesos y puntos sensibles: hall, cochera, puerta de servicio y terraza.
 - **Country:** "el country"; el hogar es un **lote** (42). Lo que se vigila es sobre todo el perímetro (alambrado, muro).
 - Cuando se habla de los dos a la vez: "Edificios y countries". Nunca "barrio" en la interfaz.
-- Para los textos se usan `siteNoun`, `theSite` y `unitNoun` de `lib/seguria.ts`.
+- Para los textos se usan `siteNoun`, `theSite` y `unitNoun` de `lib/vigilia.ts`.
 
 ## Usuarios y contexto de uso
 - **Operador de la central**: monitorea varios edificios y countries en turnos largos, mayormente de noche, en escritorio, con varias pantallas.
@@ -118,7 +118,7 @@ Todo elemento que se ve en pantalla (fila, tarjeta, cámara, zona, vecino, edifi
 ## Textos y tono
 - Castellano rioplatense, con voseo y verbos concretos en los botones ("Atender ahora", "Enviar aviso a la guardia", "Recibido, voy en camino"). *(principio base de Tónica)*
 - No prometer lo que el sistema no hace (por ejemplo, "la IA aprende de este descarte") — porque en seguridad la confianza es el producto. (origen: confirmado por Franco, 16/11/2026)
-- Los plurales se resuelven en el código ("1 incidente", "3 incidentes", con `plural()` de `lib/seguria.ts`). Nunca "incidente(s)" — porque se lee como texto de sistema. (origen: corrección de Franco, 16/11/2026)
+- Los plurales se resuelven en el código ("1 incidente", "3 incidentes", con `plural()` de `lib/vigilia.ts`). Nunca "incidente(s)" — porque se lee como texto de sistema. (origen: corrección de Franco, 16/11/2026)
 
 ## Reglas aprendidas
 - El diseño genérico del starter kit se rechazó: hay que partir del contexto del usuario (una sala de control, una guardia en movimiento) y no de un template. (origen: corrección de Franco, 16/11/2026)

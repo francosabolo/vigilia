@@ -11,7 +11,7 @@ use App\Notifications\MonthlyReportReady;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
-    config(['seguria.ai.enabled' => false]);
+    config(['vigilia.ai.enabled' => false]);
     $this->client = Client::factory()->create();
     $this->site = Site::factory()->create(['organization_id' => $this->client->organization_id, 'client_id' => $this->client->id, 'created_at' => now()->subMonths(3)]);
     $this->admin = User::factory()->create(['role' => UserRole::Admin, 'organization_id' => $this->site->organization_id]);
@@ -37,8 +37,8 @@ it("e-mails last month's report to the client's administration once", function (
     $manager = User::factory()->create(['role' => UserRole::ClientAdmin, 'organization_id' => $this->site->organization_id, 'client_id' => $this->client->id]);
     $other = User::factory()->create(['role' => UserRole::ClientAdmin, 'organization_id' => $this->site->organization_id, 'client_id' => Client::factory()->create()->id]);
 
-    $this->artisan('seguria:monthly-reports')->assertSuccessful();
-    $this->artisan('seguria:monthly-reports')->assertSuccessful();
+    $this->artisan('vigilia:monthly-reports')->assertSuccessful();
+    $this->artisan('vigilia:monthly-reports')->assertSuccessful();
 
     Notification::assertSentToTimes($manager, MonthlyReportReady::class, 1);
     Notification::assertNotSentTo($other, MonthlyReportReady::class);

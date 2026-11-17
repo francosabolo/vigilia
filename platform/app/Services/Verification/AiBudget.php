@@ -18,7 +18,7 @@ class AiBudget
 {
     public function cap(): int
     {
-        return (int) config('seguria.ai.daily_cap_per_site');
+        return (int) config('vigilia.ai.daily_cap_per_site');
     }
 
     /**

@@ -2,7 +2,7 @@ import { SectionTitle } from '@/components/icon-circle';
 import InputError from '@/components/input-error';
 import { ItemActionLink } from '@/components/item-action';
 import { Button } from '@/components/ui/button';
-import { timeAgo } from '@/lib/seguria';
+import { timeAgo } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { Link, router, usePage } from '@inertiajs/react';
 import { ScanEye } from 'lucide-react';

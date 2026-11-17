@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
-import { objectLabels, plural, zoneKindLabel, zoneKinds, type ZoneKind } from '@/lib/seguria';
+import { objectLabels, plural, zoneKindLabel, zoneKinds, type ZoneKind } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm, usePoll } from '@inertiajs/react';

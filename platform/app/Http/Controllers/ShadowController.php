@@ -29,7 +29,7 @@ class ShadowController extends Controller
         return Inertia::render('ai/shadow', [
             'enabled' => $shadow->enabled(),
             'current' => $current,
-            'production' => config('seguria.ai.model').' con revisión de '.config('seguria.ai.review_model'),
+            'production' => config('vigilia.ai.model').' con revisión de '.config('vigilia.ai.review_model'),
             'challengers' => $challengers,
             'report' => $report->for($selected, $siteIds),
             // In the demo, "production" on simulated sites is the simulator, which errs on purpose.

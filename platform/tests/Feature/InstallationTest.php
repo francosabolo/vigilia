@@ -11,7 +11,7 @@ use App\Models\User;
 use App\Services\Incidents\DetectionProcessor;
 
 beforeEach(function () {
-    config(['seguria.ai.enabled' => false]);
+    config(['vigilia.ai.enabled' => false]);
     $this->site = Site::factory()->create(['perimeter' => [[-34.1, -58.1], [-34.1, -58.2], [-34.2, -58.2]]]);
     $this->edge = EdgeDevice::factory()->create(['site_id' => $this->site->id, 'last_seen_at' => now()]);
     $this->camera = Camera::factory()->create(['site_id' => $this->site->id, 'edge_device_id' => $this->edge->id, 'lat' => -34.15, 'lng' => -58.15]);

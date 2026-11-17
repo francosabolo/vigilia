@@ -8,7 +8,7 @@ it('refuses to run the simulators in production', function (string $command) {
     app()->detectEnvironment(fn () => 'production');
 
     $this->artisan($command)->assertFailed();
-})->with(['seguria:simulate-operation', 'seguria:fake-edge', 'seguria:simulate']);
+})->with(['vigilia:simulate-operation', 'vigilia:fake-edge', 'vigilia:simulate']);
 
 it('does not seed demo data in production unless forced', function () {
     app()->detectEnvironment(fn () => 'production');
@@ -16,7 +16,7 @@ it('does not seed demo data in production unless forced', function () {
     (new DatabaseSeeder)->run();
     expect(User::count())->toBe(0)->and(Organization::count())->toBe(0);
 
-    config(['seguria.seed_demo' => true]);
+    config(['vigilia.seed_demo' => true]);
     (new DatabaseSeeder)->run();
     expect(User::count())->toBeGreaterThan(0);
 });

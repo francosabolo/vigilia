@@ -30,7 +30,7 @@ PROMPT;
 
     public function inspect(Camera $camera, string $current, ?string $reference, string $context): array
     {
-        $model = config('seguria.ai.model');
+        $model = config('vigilia.ai.model');
         $content = [];
 
         if ($reference !== null) {

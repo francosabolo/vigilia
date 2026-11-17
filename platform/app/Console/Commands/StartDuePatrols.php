@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class StartDuePatrols extends Command
 {
-    protected $signature = 'seguria:patrol';
+    protected $signature = 'vigilia:patrol';
 
     protected $description = 'Start the virtual patrol of every site whose interval has passed';
 

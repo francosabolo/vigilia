@@ -167,7 +167,7 @@ class AccessController extends Controller
 
     public function photo(Request $request, AccessEntry $accessEntry, MediaAccessLog $log): StreamedResponse
     {
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         abort_unless($accessEntry->photo_path && $disk->exists($accessEntry->photo_path), 404);
         $log->record($request, $accessEntry->site_id, 'access', "Ingreso de {$accessEntry->name}", "access:{$accessEntry->id}");
 

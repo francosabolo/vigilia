@@ -25,7 +25,7 @@ class FakeEdge extends Command
 {
     use RefusesInProduction;
 
-    protected $signature = 'seguria:fake-edge
+    protected $signature = 'vigilia:fake-edge
         {--once : Run a single cycle and exit}
         {--health-every=30 : Seconds between health frames (real edges: 300)}
         {--move= : Simulate a turned camera, e.g. 3:25 (camera 3 turned 25° right)}
@@ -78,7 +78,7 @@ class FakeEdge extends Command
                 }
             }
 
-            // Simulated sites (seguria:simulate-operation) are not health-checked: hundreds of cameras.
+            // Simulated sites (vigilia:simulate-operation) are not health-checked: hundreds of cameras.
             if ($healthDue && ! $device->site->is_simulated) {
                 foreach ($device->cameras as $camera) {
                     if ($incident = $monitor->check($camera, file_get_contents($this->frame($camera)->getPathname()))) {
@@ -98,7 +98,7 @@ class FakeEdge extends Command
             SnapshotRequest::where('edge_device_id', $device->id)->where('status', 'pending')->with('camera')->get()
                 ->each(function (SnapshotRequest $request): void {
                     $path = "sites/{$request->camera->site_id}/incidents/{$request->incident_id}/live-{$request->camera_id}.jpg";
-                    Storage::disk(config('seguria.media_disk'))->put($path, file_get_contents($this->frame($request->camera)->getPathname()));
+                    Storage::disk(config('vigilia.media_disk'))->put($path, file_get_contents($this->frame($request->camera)->getPathname()));
                     $request->update(['status' => 'fulfilled', 'snapshot_path' => $path, 'sent_at' => now(), 'fulfilled_at' => now()]);
                     ReviewReportedSnapshot::dispatch($request);
                     $this->line("Live frame sent for {$request->camera->name}");

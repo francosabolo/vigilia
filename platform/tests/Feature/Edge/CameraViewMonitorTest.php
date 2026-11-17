@@ -111,7 +111,7 @@ it('receives health frames from the edge', function () {
 });
 
 it('warns when the image gets blurry against its reference twice in a row', function () {
-    Illuminate\Support\Facades\Storage::fake(config('seguria.media_disk'));
+    Illuminate\Support\Facades\Storage::fake(config('vigilia.media_disk'));
     $camera = App\Models\Camera::factory()->create(['name' => 'Cochera']);
     $sharp = function (): string {
         $image = imagecreatetruecolor(320, 180);

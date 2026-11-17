@@ -28,13 +28,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Demo users share the password "password": never seed them into a real deployment by accident.
-        if (app()->isProduction() && ! config('seguria.seed_demo')) {
-            $this->command?->warn('Demo data is not seeded in production (set SEGURIA_SEED_DEMO=true to force it).');
+        if (app()->isProduction() && ! config('vigilia.seed_demo')) {
+            $this->command?->warn('Demo data is not seeded in production (set VIGILIA_SEED_DEMO=true to force it).');
 
             return;
         }
 
-        $organization = Organization::firstOrCreate(['slug' => 'seguria'], ['name' => 'Vigilia Central']);
+        $organization = Organization::firstOrCreate(['slug' => 'vigilia'], ['name' => 'Vigilia Central']);
 
         $site = Site::firstOrCreate(['name' => 'Country Los Álamos'], [
             'organization_id' => $organization->id,
@@ -49,11 +49,11 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $users = [
-            ['admin@seguria.test', 'Admin Vigilia', UserRole::Admin, null],
-            ['central@seguria.test', 'Operador Central', UserRole::Operator, null],
-            ['guardia@seguria.test', 'Ramón Gutiérrez', UserRole::Guard, $site->id],
-            ['admin.alamos@seguria.test', 'Administración Los Álamos', UserRole::SiteAdmin, $site->id],
-            ['vecino@seguria.test', 'Laura Gómez', UserRole::Resident, $site->id],
+            ['admin@vigilia.test', 'Admin Vigilia', UserRole::Admin, null],
+            ['central@vigilia.test', 'Operador Central', UserRole::Operator, null],
+            ['guardia@vigilia.test', 'Ramón Gutiérrez', UserRole::Guard, $site->id],
+            ['admin.alamos@vigilia.test', 'Administración Los Álamos', UserRole::SiteAdmin, $site->id],
+            ['vecino@vigilia.test', 'Laura Gómez', UserRole::Resident, $site->id],
         ];
 
         foreach ($users as [$email, $name, $role, $siteId]) {
@@ -162,11 +162,11 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        User::updateOrCreate(['email' => 'encargado@seguria.test'], [
+        User::updateOrCreate(['email' => 'encargado@vigilia.test'], [
             'name' => 'Hugo Benítez', 'password' => 'password', 'email_verified_at' => now(),
             'role' => UserRole::Guard, 'organization_id' => $organization->id, 'site_id' => $building->id,
         ]);
-        User::updateOrCreate(['email' => 'vecina.arenales@seguria.test'], [
+        User::updateOrCreate(['email' => 'vecina.arenales@vigilia.test'], [
             'name' => 'Marta Ruiz', 'password' => 'password', 'email_verified_at' => now(),
             'role' => UserRole::Resident, 'organization_id' => $organization->id, 'site_id' => $building->id,
             'lot' => '4B', 'sector' => 'Planta baja',
@@ -197,7 +197,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $arenales = Client::where('name', 'Administración Fernández & Asoc.')->first();
-        User::updateOrCreate(['email' => 'administracion@seguria.test'], [
+        User::updateOrCreate(['email' => 'administracion@vigilia.test'], [
             'name' => 'Silvia Fernández', 'password' => 'password', 'email_verified_at' => now(),
             'role' => UserRole::ClientAdmin, 'organization_id' => $organization->id, 'client_id' => $arenales->id,
         ]);
@@ -210,7 +210,7 @@ class DatabaseSeeder extends Seeder
     {
         $cameras = $site->cameras()->get();
         $edge = $site->edgeDevices()->first();
-        $guard = User::where('email', 'guardia@seguria.test')->first();
+        $guard = User::where('email', 'guardia@vigilia.test')->first();
 
         for ($i = 0; $i < 60; $i++) {
             $camera = $cameras->random();

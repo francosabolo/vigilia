@@ -33,13 +33,13 @@ class CheckForFire implements ShouldQueue
     {
         $camera = $this->camera;
         $open = Incident::where('camera_id', $camera->id)->where('status', '!=', IncidentStatus::Resolved)->where('title', 'like', 'Posible humo o fuego%')->exists();
-        if ($open || ! config('seguria.ai.enabled') || ! $budget->consume($camera->site_id)) {
+        if ($open || ! config('vigilia.ai.enabled') || ! $budget->consume($camera->site_id)) {
             return;
         }
 
         try {
             $verdict = app(Client::class)->messages->create(
-                model: config('seguria.ai.review_model'),
+                model: config('vigilia.ai.review_model'),
                 maxTokens: 300,
                 system: 'Revisás cuadros de cámaras de seguridad buscando humo o fuego. Es mejor avisar de más que de menos, pero el vapor, la niebla, el polvo, los reflejos y las luces rojas no son fuego.',
                 messages: [['role' => 'user', 'content' => [
@@ -59,7 +59,7 @@ class CheckForFire implements ShouldQueue
         }
 
         $path = "sites/{$camera->site_id}/fire/camera-{$camera->id}-".now()->format('YmdHis').'.jpg';
-        Storage::disk(config('seguria.media_disk'))->put($path, base64_decode($this->image));
+        Storage::disk(config('vigilia.media_disk'))->put($path, base64_decode($this->image));
         $incident = Incident::create([
             'site_id' => $camera->site_id,
             'camera_id' => $camera->id,

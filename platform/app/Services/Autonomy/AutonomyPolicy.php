@@ -27,7 +27,7 @@ class AutonomyPolicy
      */
     public function eligibility(Zone $zone): array
     {
-        $config = config('seguria.autonomy');
+        $config = config('vigilia.autonomy');
         $closed = Incident::query()
             ->where('zone_id', $zone->id)
             ->where('source', IncidentSource::Detection)
@@ -72,7 +72,7 @@ class AutonomyPolicy
         if ($zone?->autonomy !== ZoneAutonomy::Deterrence
             || $event->label !== 'person'
             || $verdict->confidence === null
-            || $verdict->confidence < config('seguria.autonomy.deterrence_confidence')
+            || $verdict->confidence < config('vigilia.autonomy.deterrence_confidence')
             || DeterrenceCommand::where('incident_id', $incident->id)->exists()) {
             return null;
         }
@@ -81,7 +81,7 @@ class AutonomyPolicy
             'incident_id' => $incident->id,
             'edge_device_id' => $event->edge_device_id,
             'camera_id' => $event->camera_id,
-            'message' => config('seguria.autonomy.deterrence_message'),
+            'message' => config('vigilia.autonomy.deterrence_message'),
         ]);
 
         $incident->actions()->create([
@@ -103,7 +103,7 @@ class AutonomyPolicy
             return;
         }
 
-        $config = config('seguria.autonomy');
+        $config = config('vigilia.autonomy');
         $mistakes = DeterrenceCommand::query()
             ->whereHas('incident', fn ($query) => $query
                 ->where('zone_id', $incident->zone_id)

@@ -1,7 +1,7 @@
 import { IncidentRow } from '@/components/console/incident-row';
 import { useLiveIncidents } from '@/hooks/use-live-incidents';
 import AppLayout from '@/layouts/app-layout';
-import { type IncidentSummary } from '@/lib/seguria';
+import { type IncidentSummary } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';

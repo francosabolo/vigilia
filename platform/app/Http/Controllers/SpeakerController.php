@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Gate;
 
 /**
  * The camera's speaker: B7 the operator talks to the person (a message read on the speaker) and K11 the technician
- * tests it. Both travel through the edge's command channel and run SEGURIA_DETER_COMMAND on site.
+ * tests it. Both travel through the edge's command channel and run VIGILIA_DETER_COMMAND on site.
  */
 class SpeakerController extends Controller
 {

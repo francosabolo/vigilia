@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Notification;
 
 class SendResidentWeeklySummary extends Command
 {
-    protected $signature = 'seguria:resident-weekly';
+    protected $signature = 'vigilia:resident-weekly';
 
     protected $description = 'Send every resident one sentence about how the week went in their property';
 

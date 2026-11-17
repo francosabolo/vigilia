@@ -38,7 +38,7 @@ import {
     type Metrics,
     type SiteKind,
     type ZoneKind,
-} from '@/lib/seguria';
+} from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm, usePage, usePoll } from '@inertiajs/react';
@@ -308,7 +308,7 @@ function NoCameras({ siteId }: { siteId: number }) {
             <p className="text-lg font-semibold">Todavía no hay cámaras conectadas</p>
             <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm">
                 Las cámaras aparecen solas cuando se conecta el equipo edge del lugar. Para registrar uno, corré{' '}
-                <code className="bg-surface-2 rounded px-1">php artisan seguria:edge-create {siteId} edge-1</code> y cargá el token en el equipo.
+                <code className="bg-surface-2 rounded px-1">php artisan vigilia:edge-create {siteId} edge-1</code> y cargá el token en el equipo.
             </p>
         </div>
     );
@@ -1545,7 +1545,7 @@ function EdgesSection({ site, newEdge, serverUrl }: Pick<Props, 'site' | 'newEdg
                         </p>
                     </div>
                     <pre className="bg-background overflow-x-auto rounded-lg p-3 font-mono text-xs select-all">
-                        {`SEGURIA_API_URL=${serverUrl}\nSEGURIA_TOKEN=${newEdge.token}`}
+                        {`VIGILIA_API_URL=${serverUrl}\nVIGILIA_TOKEN=${newEdge.token}`}
                     </pre>
                 </div>
             )}

@@ -1,5 +1,5 @@
 import { SectionTitle } from '@/components/icon-circle';
-import { type IncidentDetail } from '@/lib/seguria';
+import { type IncidentDetail } from '@/lib/vigilia';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Route } from 'lucide-react';

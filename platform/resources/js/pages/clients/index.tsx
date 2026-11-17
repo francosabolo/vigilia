@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { fullAddress } from '@/lib/address';
 import { type LatLng } from '@/lib/geo';
-import { plural, siteNoun, timeAgo, type SiteKind } from '@/lib/seguria';
+import { plural, siteNoun, timeAgo, type SiteKind } from '@/lib/vigilia';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Briefcase, Building2, Cctv, MapPin, UserRound } from 'lucide-react';

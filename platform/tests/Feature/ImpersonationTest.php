@@ -26,7 +26,7 @@ it('skips the second factor of the person being viewed, since the admin passed t
     $operator = User::factory()->create(['role' => UserRole::Operator, 'organization_id' => $this->organization->id]);
 
     $this->actingAs($this->admin)->post("/team/{$operator->id}/impersonate");
-    config(['seguria.require_two_factor' => true]);
+    config(['vigilia.require_two_factor' => true]);
     $this->get('/dashboard')->assertOk();
 });
 

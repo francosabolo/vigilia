@@ -8,7 +8,7 @@ import { ArrivalsPanel, type Arrival } from '@/components/safe-arrival';
 import { Button } from '@/components/ui/button';
 import { useLiveIncidents } from '@/hooks/use-live-incidents';
 import AppLayout from '@/layouts/app-layout';
-import { formatDuration, plural, type ActivityItem, type IncidentStatus, type Metrics, type Severity } from '@/lib/seguria';
+import { formatDuration, plural, type ActivityItem, type IncidentStatus, type Metrics, type Severity } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage, usePoll } from '@inertiajs/react';

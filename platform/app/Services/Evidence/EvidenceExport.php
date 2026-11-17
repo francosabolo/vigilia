@@ -17,7 +17,7 @@ class EvidenceExport
 {
     public function build(Incident $incident, User $by): string
     {
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         $files = collect([$incident->snapshot_path, $incident->clip_path])
             ->merge($incident->detectionEvents()->get()->flatMap(fn ($event) => array_filter([$event->snapshot_path, $event->clip_path, ...($event->frame_paths ?? [])])))
             ->merge($incident->snapshotRequests()->pluck('snapshot_path'))

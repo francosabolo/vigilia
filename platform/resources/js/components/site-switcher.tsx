@@ -6,7 +6,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { siteNoun } from '@/lib/seguria';
+import { siteNoun } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';

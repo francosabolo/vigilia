@@ -1,5 +1,5 @@
 {
-    "_comment": "Evaluation gate: CI fails if the AI misses intrusions or lets false alarms through beyond these limits. Re-record with: php artisan seguria:eval-gate --record",
+    "_comment": "Evaluation gate: CI fails if the AI misses intrusions or lets false alarms through beyond these limits. Re-record with: php artisan vigilia:eval-gate --record",
     "defaults": { "min_recall": 0.95, "max_false_alarm_rate": 0.10 },
     "sets": {
         "storage/app/eval": { "min_recall": 1.0, "max_false_alarm_rate": 0.05 },

@@ -98,7 +98,7 @@ it('records the heartbeat and camera status', function () {
 
 it('stores the clip frames sent by bridge 0.4 in time order', function () {
     Storage::fake('local');
-    config(['seguria.media_disk' => 'local']);
+    config(['vigilia.media_disk' => 'local']);
     Event::fake([DetectionEventReceived::class]);
 
     $this->withToken($this->token)->post('/api/edge/events', frigatePayload([

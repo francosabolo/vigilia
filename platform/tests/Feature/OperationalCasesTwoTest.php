@@ -23,7 +23,7 @@ it('alerts the owner of a house with no guard', function () {
 });
 
 it('does not treat the sun into the lens as a covered camera unless it lasts', function () {
-    Storage::fake(config('seguria.media_disk'));
+    Storage::fake(config('vigilia.media_disk'));
     $camera = Camera::factory()->create();
     $white = function (): string {
         $image = imagecreatetruecolor(64, 36);
@@ -48,8 +48,8 @@ it('does not treat the sun into the lens as a covered camera unless it lasts', f
 });
 
 it('exports the evidence with a SHA-256 manifest and logs who downloaded it', function () {
-    Storage::fake(config('seguria.media_disk'));
-    Storage::disk(config('seguria.media_disk'))->put('x/snap.jpg', 'imagen');
+    Storage::fake(config('vigilia.media_disk'));
+    Storage::disk(config('vigilia.media_disk'))->put('x/snap.jpg', 'imagen');
     $incident = Incident::factory()->create(['snapshot_path' => 'x/snap.jpg']);
     $admin = User::factory()->create(['role' => UserRole::Admin, 'organization_id' => $incident->site->organization_id]);
 
@@ -67,7 +67,7 @@ it('samples false-alarm closures for the central to check', function () {
     Incident::factory()->count(3)->create(['site_id' => $site->id, 'status' => 'resolved', 'resolution' => 'false_alarm', 'resolved_at' => now()->subDay()]);
     $operator = User::factory()->create(['role' => UserRole::Operator, 'organization_id' => $site->organization_id]);
 
-    $this->artisan('seguria:sample-dismissed')->assertSuccessful();
+    $this->artisan('vigilia:sample-dismissed')->assertSuccessful();
     $this->actingAs($operator)->get('/ai/quality')->assertInertia(fn ($page) => $page->has('closures', 3));
 
     $closure = Incident::whereNotNull('qa_requested_at')->first();

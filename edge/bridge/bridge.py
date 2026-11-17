@@ -1,4 +1,4 @@
-"""seguria-bridge: forwards Frigate events (MQTT) to the Vigilia cloud platform.
+"""vigilia-bridge: forwards Frigate events (MQTT) to the Vigilia cloud platform.
 
 - Listens to `frigate/events`: sends each event as soon as someone enters a zone (real time) and, when it
   ends, completes it with the clip and frames downloaded
@@ -26,8 +26,8 @@ import requests
 from ruamel.yaml import YAML
 
 VERSION = "0.7.1"
-API_URL = os.environ["SEGURIA_API_URL"].rstrip("/")
-TOKEN = os.environ["SEGURIA_TOKEN"]
+API_URL = os.environ["VIGILIA_API_URL"].rstrip("/")
+TOKEN = os.environ["VIGILIA_TOKEN"]
 MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
 MQTT_TOPIC = os.environ.get("MQTT_TOPIC", "frigate/events")
 FRIGATE_URL = os.environ.get("FRIGATE_URL", "http://localhost:5000").rstrip("/")
@@ -40,7 +40,7 @@ FRIGATE_CONFIG = Path(os.environ.get("FRIGATE_CONFIG", "./frigate-config/config.
 ZONES_VERSION_FILE = QUEUE_DIR.parent / "zones_version"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-log = logging.getLogger("seguria-bridge")
+log = logging.getLogger("vigilia-bridge")
 session = requests.Session()
 session.headers.update({"Authorization": f"Bearer {TOKEN}", "Accept": "application/json"})
 QUEUE_DIR.mkdir(parents=True, exist_ok=True)
@@ -79,7 +79,7 @@ def fetch_media(event_id: str, target: Path) -> None:
             time.sleep(CLIP_WAIT_SECONDS)
 
 
-FRAME_COUNT = int(os.environ.get("SEGURIA_FRAMES", "4"))
+FRAME_COUNT = int(os.environ.get("VIGILIA_FRAMES", "4"))
 FRAME_WIDTH = 768  # enough to see a person at the fence, and ~3x fewer tokens than 1280px
 
 
@@ -334,9 +334,9 @@ def latest_frame(camera: str) -> bytes | None:
         return None
 
 
-DETER_COMMAND = os.environ.get("SEGURIA_DETER_COMMAND", "").strip()
+DETER_COMMAND = os.environ.get("VIGILIA_DETER_COMMAND", "").strip()
 # E6 — how this box updates itself when the console asks, e.g. "cd /opt/vigilia/edge && docker compose pull && docker compose up -d".
-UPDATE_COMMAND = os.environ.get("SEGURIA_UPDATE_COMMAND", "").strip()
+UPDATE_COMMAND = os.environ.get("VIGILIA_UPDATE_COMMAND", "").strip()
 _last_update_attempt = 0.0
 
 
@@ -346,7 +346,7 @@ def update_self() -> None:
     if not UPDATE_COMMAND or time.time() - _last_update_attempt < 1800:
         return
     _last_update_attempt = time.time()
-    log.info("update requested by the console, running SEGURIA_UPDATE_COMMAND")
+    log.info("update requested by the console, running VIGILIA_UPDATE_COMMAND")
     try:
         subprocess.run(UPDATE_COMMAND, shell=True, timeout=900, check=False)
     except subprocess.SubprocessError as exc:
@@ -380,18 +380,18 @@ def sound_siren(siren: dict) -> tuple[bool, str]:
 def deter(command: dict) -> None:
     """Plays the deterrence on the site's speaker / siren through a site-specific hook, and reports the result.
 
-    SEGURIA_DETER_COMMAND is a shell command run with SEGURIA_CAMERA and SEGURIA_MESSAGE in its environment,
+    VIGILIA_DETER_COMMAND is a shell command run with VIGILIA_CAMERA and VIGILIA_MESSAGE in its environment,
     e.g. a curl to the camera's two-way audio or alarm-output API (Hikvision ISAPI, Reolink siren) or a TTS script.
     """
     if command.get("siren"):
         ok, result = sound_siren(command["siren"])
     elif not DETER_COMMAND:
-        ok, result = False, "El equipo no tiene altavoz ni sirena configurados (SEGURIA_DETER_COMMAND)."
+        ok, result = False, "El equipo no tiene altavoz ni sirena configurados (VIGILIA_DETER_COMMAND)."
     else:
         try:
             done = subprocess.run(
                 DETER_COMMAND, shell=True, capture_output=True, text=True, timeout=30,
-                env={**os.environ, "SEGURIA_CAMERA": command["camera"], "SEGURIA_MESSAGE": command["message"]},
+                env={**os.environ, "VIGILIA_CAMERA": command["camera"], "VIGILIA_MESSAGE": command["message"]},
             )
             ok = done.returncode == 0
             result = "Aviso reproducido." if ok else f"Falló (código {done.returncode}): {done.stderr.strip()[:200]}"
@@ -487,7 +487,7 @@ def command_loop() -> None:
 
 
 # M4 — name of the UPS in NUT (upsc); empty when the box has no UPS.
-UPS_NAME = os.environ.get("SEGURIA_UPS", "").strip()
+UPS_NAME = os.environ.get("VIGILIA_UPS", "").strip()
 # M7 — cameras the console asked to watch for motion without a person (updated by the command loop).
 MOTION_CAMERAS: set[str] = set()
 MOTION_SENT: dict[str, float] = {}
@@ -560,7 +560,7 @@ def main() -> None:
     threading.Thread(target=retry_loop, daemon=True).start()
     threading.Thread(target=command_loop, daemon=True).start()
 
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="seguria-bridge")
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="vigilia-bridge")
     client.on_connect = on_connect
     client.on_message = on_message
     while True:

@@ -5,7 +5,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { type LatLng } from '@/lib/geo';
-import { hasHousesOnMap, timeAgo, unitNoun, type SiteKind } from '@/lib/seguria';
+import { hasHousesOnMap, timeAgo, unitNoun, type SiteKind } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { useForm, usePage } from '@inertiajs/react';
 import L from 'leaflet';

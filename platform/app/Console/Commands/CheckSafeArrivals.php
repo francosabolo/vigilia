@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class CheckSafeArrivals extends Command
 {
-    protected $signature = 'seguria:check-arrivals';
+    protected $signature = 'vigilia:check-arrivals';
 
     protected $description = 'Warn the guard about residents who said they were arriving and never confirmed';
 

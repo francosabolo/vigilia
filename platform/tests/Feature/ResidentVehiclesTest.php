@@ -7,7 +7,7 @@ use App\Models\Site;
 use App\Models\User;
 
 beforeEach(function () {
-    config(['seguria.ai.enabled' => false]);
+    config(['vigilia.ai.enabled' => false]);
     $this->site = Site::factory()->create();
     $this->resident = User::factory()->create(['role' => UserRole::Resident, 'organization_id' => $this->site->organization_id, 'site_id' => $this->site->id, 'name' => 'Martina Blá', 'lot' => '4C']);
     $this->guard = User::factory()->create(['role' => UserRole::Guard, 'organization_id' => $this->site->organization_id, 'site_id' => $this->site->id]);

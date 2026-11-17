@@ -1,7 +1,7 @@
 import { ResidentsPanel, type PanelResident, type SentMessage } from '@/components/console/residents-panel';
 import AppLayout from '@/layouts/app-layout';
 import { type LatLng } from '@/lib/geo';
-import { hasUnits, type SiteKind } from '@/lib/seguria';
+import { hasUnits, type SiteKind } from '@/lib/vigilia';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 

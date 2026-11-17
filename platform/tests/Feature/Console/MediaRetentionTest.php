@@ -7,7 +7,7 @@ use App\Models\Incident;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
-    config(['seguria.media_disk' => 'local', 'seguria.retention_days' => 30]);
+    config(['vigilia.media_disk' => 'local', 'vigilia.retention_days' => 30]);
     Storage::fake('local');
 });
 
@@ -32,7 +32,7 @@ it('deletes old images but keeps recent ones, open and confirmed evidence and sh
     $demo = DetectionEvent::factory()->create(['snapshot_path' => 'demo-library/positivos-trepando_1.jpg', 'created_at' => $old]);
     Storage::disk('local')->put('demo-library/positivos-trepando_1.jpg', 'jpg');
 
-    $this->artisan('seguria:prune-media')->assertSuccessful();
+    $this->artisan('vigilia:prune-media')->assertSuccessful();
 
     Storage::disk('local')->assertMissing(['sites/1/expired.jpg', 'sites/1/false-alarm.jpg']);
     Storage::disk('local')->assertExists(['sites/1/evidence.jpg', 'sites/1/ongoing.jpg', 'sites/1/recent.jpg', 'demo-library/positivos-trepando_1.jpg']);

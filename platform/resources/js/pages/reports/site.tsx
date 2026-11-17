@@ -1,5 +1,5 @@
 import { ReportShell } from '@/components/report-shell';
-import { formatDateTime, formatDuration, plural, severityLabel, type Metrics, type Severity } from '@/lib/seguria';
+import { formatDateTime, formatDuration, plural, severityLabel, type Metrics, type Severity } from '@/lib/vigilia';
 import { router } from '@inertiajs/react';
 
 interface ReportIncident {

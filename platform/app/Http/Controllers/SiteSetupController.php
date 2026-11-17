@@ -58,7 +58,7 @@ class SiteSetupController extends Controller
     {
         $site->loadMissing(['edgeDevices', 'cameras.zones']);
         $cameras = $site->cameras;
-        $offlineAfter = now()->subSeconds((int) config('seguria.edge_offline_after'));
+        $offlineAfter = now()->subSeconds((int) config('vigilia.edge_offline_after'));
         $online = $site->edgeDevices->contains(fn ($edge) => $edge->last_seen_at?->gt($offlineAfter));
         $tested = DetectionEvent::query()
             ->whereIn('camera_id', $cameras->pluck('id'))

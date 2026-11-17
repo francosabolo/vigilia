@@ -67,15 +67,15 @@ class GuardWatch
             return;
         }
 
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         $path = $this->monitor->latestPath($camera);
-        if (! $disk->exists($path) || ! config('seguria.ai.enabled') || ! $this->budget->consume($site->id)) {
+        if (! $disk->exists($path) || ! config('vigilia.ai.enabled') || ! $this->budget->consume($site->id)) {
             return;
         }
 
         try {
             $message = app(Client::class)->messages->create(
-                model: config('seguria.ai.model'),
+                model: config('vigilia.ai.model'),
                 maxTokens: 512,
                 system: 'Mirás la cámara de la garita de seguridad de un edificio o barrio. Respondé si hay alguien en el puesto.',
                 messages: [['role' => 'user', 'content' => [

@@ -103,12 +103,12 @@ class SimulatedWorld
 
         $slug = Str::slug($name);
         User::create([
-            'name' => fake('es_AR')->firstName().' '.fake('es_AR')->lastName(), 'email' => "encargado.{$slug}@sim.seguria.test", 'password' => Str::random(32),
+            'name' => fake('es_AR')->firstName().' '.fake('es_AR')->lastName(), 'email' => "encargado.{$slug}@sim.vigilia.test", 'password' => Str::random(32),
             'role' => UserRole::Guard, 'organization_id' => $organization->id, 'site_id' => $site->id,
         ]);
         for ($r = 1, $residents = mt_rand(12, 40); $r <= $residents; $r++) {
             User::create([
-                'name' => fake('es_AR')->firstName().' '.fake('es_AR')->lastName(), 'email' => "vecino{$r}.{$slug}@sim.seguria.test", 'password' => Str::random(32),
+                'name' => fake('es_AR')->firstName().' '.fake('es_AR')->lastName(), 'email' => "vecino{$r}.{$slug}@sim.vigilia.test", 'password' => Str::random(32),
                 'role' => UserRole::Resident, 'organization_id' => $organization->id, 'site_id' => $site->id,
                 'lot' => mt_rand(1, 12).chr(64 + mt_rand(1, 6)), 'sector' => mt_rand(0, 1) ? 'Planta baja' : 'Pisos',
                 'last_login_at' => mt_rand(1, 100) <= 70 ? now()->subHours(mt_rand(1, 400)) : null,
@@ -183,12 +183,12 @@ class SimulatedWorld
 
         $slug = Str::slug($name);
         User::create([
-            'name' => fake('es_AR')->firstName().' '.fake('es_AR')->lastName(), 'email' => "guardia.{$slug}@sim.seguria.test", 'password' => Str::random(32),
+            'name' => fake('es_AR')->firstName().' '.fake('es_AR')->lastName(), 'email' => "guardia.{$slug}@sim.vigilia.test", 'password' => Str::random(32),
             'role' => UserRole::Guard, 'organization_id' => $organization->id, 'site_id' => $site->id,
         ]);
         for ($r = 1, $residents = mt_rand(20, 60); $r <= $residents; $r++) {
             User::create([
-                'name' => fake('es_AR')->firstName().' '.fake('es_AR')->lastName(), 'email' => "vecino{$r}.{$slug}@sim.seguria.test", 'password' => Str::random(32),
+                'name' => fake('es_AR')->firstName().' '.fake('es_AR')->lastName(), 'email' => "vecino{$r}.{$slug}@sim.vigilia.test", 'password' => Str::random(32),
                 'role' => UserRole::Resident, 'organization_id' => $organization->id, 'site_id' => $site->id,
                 'lot' => (string) mt_rand(1, 400), 'sector' => 'Perímetro '.$sides[array_rand($sides)],
                 'last_login_at' => mt_rand(1, 100) <= 70 ? now()->subHours(mt_rand(1, 400)) : null,

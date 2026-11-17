@@ -19,7 +19,7 @@ class IncidentMediaController extends Controller
      */
     public function detection(Request $request, DetectionEvent $detectionEvent): StreamedResponse
     {
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         $path = $request->has('frame')
             ? ($detectionEvent->frame_paths ?? [])[(int) $request->query('frame')] ?? null
             : $detectionEvent->snapshot_path;
@@ -36,7 +36,7 @@ class IncidentMediaController extends Controller
      */
     public function liveFrame(Request $request, SnapshotRequest $snapshotRequest): StreamedResponse
     {
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         abort_unless($snapshotRequest->snapshot_path && $disk->exists($snapshotRequest->snapshot_path), 404);
 
         $camera = $snapshotRequest->camera;
@@ -57,7 +57,7 @@ class IncidentMediaController extends Controller
             default => null,
         };
 
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         abort_unless($path && $disk->exists($path), 404);
 
         $this->log->record($request, $incident->site_id, 'incident', "Incidente {$incident->id}: {$incident->title}", "incident:{$incident->id}:{$kind}");

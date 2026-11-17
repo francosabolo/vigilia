@@ -113,8 +113,8 @@ class DetectionProcessor
         $confidence = ($verdict->confidence !== null ? ' Confianza '.round($verdict->confidence * 100).'%.' : '')
             .($event->hasSequence() ? ' Miró '.count($event->frame_paths).' cuadros del clip.' : '');
 
-        if ($verdict->model && $verdict->model === config('seguria.ai.review_model')) {
-            $this->step('ai', app(ActivityFeed::class)->agentName(config('seguria.ai.model')), 'doubt', 'No estaba segura: le pidió una segunda opinión a la revisora.');
+        if ($verdict->model && $verdict->model === config('vigilia.ai.review_model')) {
+            $this->step('ai', app(ActivityFeed::class)->agentName(config('vigilia.ai.model')), 'doubt', 'No estaba segura: le pidió una segunda opinión a la revisora.');
         }
 
         if ($testing) {
@@ -241,12 +241,12 @@ class DetectionProcessor
             return false;
         }
 
-        return $verdict->confidence === null || $verdict->confidence >= config('seguria.ai.threat_threshold');
+        return $verdict->confidence === null || $verdict->confidence >= config('vigilia.ai.threat_threshold');
     }
 
     private function findOpenIncident(DetectionEvent $event, ?Zone $zone): ?Incident
     {
-        $since = $event->started_at->copy()->subSeconds(config('seguria.dedup_seconds'));
+        $since = $event->started_at->copy()->subSeconds(config('vigilia.dedup_seconds'));
 
         return Incident::query()
             ->where('camera_id', $event->camera_id)
@@ -271,7 +271,7 @@ class DetectionProcessor
             return null;
         }
 
-        $since = $event->started_at->copy()->subSeconds(config('seguria.tracking.window_seconds'));
+        $since = $event->started_at->copy()->subSeconds(config('vigilia.tracking.window_seconds'));
         $candidates = Incident::query()
             ->where('site_id', $event->camera->site_id)
             ->where('source', IncidentSource::Detection)
@@ -289,7 +289,7 @@ class DetectionProcessor
 
             $meters = Geo::distanceMeters($last->camera, $event->camera);
             $near = $meters !== null
-                ? $meters <= config('seguria.tracking.max_distance_m')
+                ? $meters <= config('vigilia.tracking.max_distance_m')
                 : $last->camera->sector !== null && $last->camera->sector === $event->camera->sector;
 
             if ($near) {
@@ -409,7 +409,7 @@ class DetectionProcessor
         }
         $minutes = (int) floor($event->started_at->diffInSeconds($event->ended_at, absolute: true) / 60);
 
-        return $minutes >= (int) config('seguria.tracking.stopped_vehicle_minutes', 5) ? $minutes : null;
+        return $minutes >= (int) config('vigilia.tracking.stopped_vehicle_minutes', 5) ? $minutes : null;
     }
 
     private function rank(Severity $severity): int

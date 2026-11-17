@@ -17,8 +17,8 @@ it('reuses cached verdicts instead of calling the model again', function () {
     $camera = new Camera(['name' => 'Eval', 'fov' => 90]);
 
     $prepared = $verifier->prepareSnapshot('frame.jpg', $camera, 'ctx');
-    $key = $verifier->cache->key(config('seguria.ai.model'), ClaudeDetectionVerifier::promptFingerprint(), $prepared['context'], $prepared['image']['data']);
-    $verifier->cache->put($key, new VerificationResult(true, 0.92, 'Persona trepando.', model: config('seguria.ai.model')), ['input' => 1200, 'output' => 80], batch: true);
+    $key = $verifier->cache->key(config('vigilia.ai.model'), ClaudeDetectionVerifier::promptFingerprint(), $prepared['context'], $prepared['image']['data']);
+    $verifier->cache->put($key, new VerificationResult(true, 0.92, 'Persona trepando.', model: config('vigilia.ai.model')), ['input' => 1200, 'output' => 80], batch: true);
 
     $result = $verifier->verifySnapshot('frame.jpg', $camera, 'ctx');
 
@@ -42,22 +42,22 @@ it('runs a blind console evaluation and reuses already judged images', function 
         }
     }
 
-    $this->artisan('seguria:eval-blind', ['path' => $set, '--label' => 'test-blind'])->assertSuccessful();
+    $this->artisan('vigilia:eval-blind', ['path' => $set, '--label' => 'test-blind'])->assertSuccessful();
     $key = json_decode(File::get(storage_path('app/eval-keys/test-blind.json')), true);
     expect(File::exists(storage_path('app/eval-blind/test-blind/key.json')))->toBeFalse(); // key never next to images
 
     // A perfect judge.
     $verdicts = collect($key['images'])->map(fn ($truth, $img) => ['img' => $img, 'is_threat' => $truth['expected'], 'confidence' => 0.9, 'suspected_guard' => false, 'description' => 'x'])->values();
     File::put(storage_path('app/eval-blind/test-blind/verdicts.json'), $verdicts->toJson());
-    $this->artisan('seguria:eval-import', ['label' => 'test-blind'])->assertSuccessful();
+    $this->artisan('vigilia:eval-import', ['label' => 'test-blind'])->assertSuccessful();
 
     $run = app(EvalRuns::class)->all()->firstWhere('label', 'test-blind');
     expect($run['metrics']['recall'])->toEqual(1.0)->and($run['metrics']['false_alarm_rate'])->toEqual(0.0);
 
     // Second time: everything is reused, nothing to judge.
-    $this->artisan('seguria:eval-blind', ['path' => $set, '--label' => 'test-blind-2'])->expectsOutputToContain('0 images ready')->assertSuccessful();
+    $this->artisan('vigilia:eval-blind', ['path' => $set, '--label' => 'test-blind-2'])->expectsOutputToContain('0 images ready')->assertSuccessful();
 
-    $this->artisan('seguria:eval-compare')->expectsOutputToContain('test-blind')->assertSuccessful();
+    $this->artisan('vigilia:eval-compare')->expectsOutputToContain('test-blind')->assertSuccessful();
 
     File::deleteDirectory(base_path($set));
     File::deleteDirectory(storage_path('app/eval-blind/test-blind'));

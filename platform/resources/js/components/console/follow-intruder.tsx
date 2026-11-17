@@ -1,4 +1,4 @@
-import { timeAgo } from '@/lib/seguria';
+import { timeAgo } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { usePoll } from '@inertiajs/react';
 import { ArrowUpRight, Crosshair, VideoOff } from 'lucide-react';

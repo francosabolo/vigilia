@@ -4,7 +4,7 @@ Monitoreo perimetral con IA para barrios cerrados. La IA mira todas las cámaras
 
 ```
 platform/   Laravel 12 + Inertia (React) + Reverb. Ingest, reglas, IA, alertas, consola. Deploy: Laravel Cloud
-edge/       Box en el barrio: Frigate + Mosquitto + seguria-bridge (Python)
+edge/       Box en el barrio: Frigate + Mosquitto + vigilia-bridge (Python)
 ```
 
 ## Cómo fluye una alerta
@@ -22,23 +22,23 @@ composer install && npm install && npm run build
 cp .env.example .env && php artisan key:generate && php artisan webpush:vapid && php artisan reverb:install
 php artisan migrate --seed          # datos demo (contraseña "password")
 composer run dev                    # server + queue + reverb + vite
-php artisan seguria:simulate        # dispara una detección de punta a punta
-php artisan seguria:fake-edge       # demo sin Frigate: cuadros sintéticos, fotos en vivo y controles de vista
-php artisan seguria:fake-edge --move=1:25   # simula que alguien giró 25° la cámara 1
-php artisan seguria:fake-edge --cover=2     # simula que taparon la cámara 2
-php artisan seguria:simulate-operation --sites=8 --days=7   # 8 barrios simulados, 7 días de operación + reporte
-php artisan seguria:simulate-operation --live --speed=30    # operación simulada en vivo (mirá la consola)
-php artisan seguria:simulate-operation --reset --sites=0 --days=0   # borra los barrios simulados
-php artisan seguria:eval --batch            # mide la IA con el set de storage/app/eval (Batch API: 50% más barato)
-php artisan seguria:eval-degrade            # crea 4 niveles más difíciles en storage/app/eval-hard
-php artisan seguria:eval-compare            # compara todas las corridas guardadas
-php artisan seguria:simulate --image=foto_noche.jpg   # con ANTHROPIC_API_KEY prueba la IA real
+php artisan vigilia:simulate        # dispara una detección de punta a punta
+php artisan vigilia:fake-edge       # demo sin Frigate: cuadros sintéticos, fotos en vivo y controles de vista
+php artisan vigilia:fake-edge --move=1:25   # simula que alguien giró 25° la cámara 1
+php artisan vigilia:fake-edge --cover=2     # simula que taparon la cámara 2
+php artisan vigilia:simulate-operation --sites=8 --days=7   # 8 barrios simulados, 7 días de operación + reporte
+php artisan vigilia:simulate-operation --live --speed=30    # operación simulada en vivo (mirá la consola)
+php artisan vigilia:simulate-operation --reset --sites=0 --days=0   # borra los barrios simulados
+php artisan vigilia:eval --batch            # mide la IA con el set de storage/app/eval (Batch API: 50% más barato)
+php artisan vigilia:eval-degrade            # crea 4 niveles más difíciles en storage/app/eval-hard
+php artisan vigilia:eval-compare            # compara todas las corridas guardadas
+php artisan vigilia:simulate --image=foto_noche.jpg   # con ANTHROPIC_API_KEY prueba la IA real
 php artisan test
 ```
 
-Usuarios demo: `central@seguria.test` (operador), `admin@seguria.test`, `guardia@seguria.test`, `admin.alamos@seguria.test` (administración del barrio) y `vecino@seguria.test` (vecina del lote 42, que entra a la app de vecinos).
+Usuarios demo: `central@vigilia.test` (operador), `admin@vigilia.test`, `guardia@vigilia.test`, `admin.alamos@vigilia.test` (administración del barrio) y `vecino@vigilia.test` (vecina del lote 42, que entra a la app de vecinos).
 
-Edge nuevo: `php artisan seguria:edge-create {site_id} edge-norte` imprime el `SEGURIA_TOKEN` una sola vez.
+Edge nuevo: `php artisan vigilia:edge-create {site_id} edge-norte` imprime el `VIGILIA_TOKEN` una sola vez.
 
 ### Roles
 | Rol | Ve | Puede |
@@ -49,27 +49,27 @@ Edge nuevo: `php artisan seguria:edge-create {site_id} edge-norte` imprime el `S
 | `resident` | solo la app de vecinos (`/vecinos`), sin cámaras ni imágenes | botón de pánico, "Vi algo raro", modo vacaciones y avisos de su sector |
 
 ### Evaluar la IA sin pagar dos veces
-- **Set:** `platform/storage/app/eval/{positivos,negativos}`. No se versiona en git porque son imágenes. Las de hoy salieron de Magnific (proyecto "Vigilia - Set de evaluación IA"); `seguria:eval-degrade` genera los niveles difíciles.
+- **Set:** `platform/storage/app/eval/{positivos,negativos}`. No se versiona en git porque son imágenes. Las de hoy salieron de Magnific (proyecto "Vigilia - Set de evaluación IA"); `vigilia:eval-degrade` genera los niveles difíciles.
 - **Caché de veredictos** (`storage/app/eval-cache`): se indexa por imagen, modelo y versión del prompt. Repetir una evaluación no se paga; cambiar el prompt invalida solo lo afectado; las imágenes nuevas son lo único que se cobra.
 - **`--batch`:** manda lo que no está en caché a la Batch API, que cuesta la mitad y tarda minutos en lugar de segundos.
 - **Con la consola de Claude, sin API:**
-  1. `seguria:eval-blind <set>` arma una copia anónima y mezclada, con instrucciones en `storage/app/eval-blind/<set>/INSTRUCCIONES.md`; la clave queda aparte, en `storage/app/eval-keys`.
+  1. `vigilia:eval-blind <set>` arma una copia anónima y mezclada, con instrucciones en `storage/app/eval-blind/<set>/INSTRUCCIONES.md`; la clave queda aparte, en `storage/app/eval-keys`.
   2. Le pasás esas instrucciones a la consola, o a un subagente.
-  3. `seguria:eval-import <set>` puntúa y guarda la corrida. Las imágenes que ya juzgó el mismo juez con el mismo prompt se reutilizan.
-- **Corridas** (`storage/app/eval-runs`): todas en el mismo formato, comparables con `seguria:eval-compare`.
+  3. `vigilia:eval-import <set>` puntúa y guarda la corrida. Las imágenes que ya juzgó el mismo juez con el mismo prompt se reutilizan.
+- **Corridas** (`storage/app/eval-runs`): todas en el mismo formato, comparables con `vigilia:eval-compare`.
 
 ### Control de calidad de la IA (en el CI)
-`platform/evals/` guarda qué respondió la IA a cada imagen de evaluación con el prompt y los modelos actuales. El CI corre `php artisan seguria:eval-gate` sin llamar a la API y falla si:
+`platform/evals/` guarda qué respondió la IA a cada imagen de evaluación con el prompt y los modelos actuales. El CI corre `php artisan vigilia:eval-gate` sin llamar a la API y falla si:
 - cambiaste el prompt, el modelo o el contexto y no volviste a evaluar;
 - algún set queda por debajo de sus umbrales (`evals/gate.json`).
 
-Para cambiar el prompt o el modelo, corré en local `php artisan seguria:eval-gate --record`. Necesita las imágenes en `storage/app/eval*` y la API key, y cuesta centavos con caché y batch. Si el cambio empeora alguna métrica, no guarda nada (salvo con `--accept-regression`). Commiteá la carpeta `evals/` junto con el cambio.
+Para cambiar el prompt o el modelo, corré en local `php artisan vigilia:eval-gate --record`. Necesita las imágenes en `storage/app/eval*` y la API key, y cuesta centavos con caché y batch. Si el cambio empeora alguna métrica, no guarda nada (salvo con `--accept-regression`). Commiteá la carpeta `evals/` junto con el cambio.
 
 ### Modo sombra (Pruebas de IA)
 Un retador (otro modelo y/o un prompt en un archivo) analiza en segundo plano una muestra de las detecciones reales, sin decidir nada. En la consola, **Pruebas de IA** lo compara con producción: intrusiones detectadas, falsas alarmas, costo y latencia. También muestra los desacuerdos con la foto, para que una persona diga qué era.
 
-- Variables: `SEGURIA_SHADOW=true`, `SEGURIA_SHADOW_MODEL`, `SEGURIA_SHADOW_PROMPT` (ruta a un `.md` con el prompt), `SEGURIA_SHADOW_SAMPLE` (0,25) y `SEGURIA_SHADOW_DAILY_CAP` (500).
-- Sobre detecciones pasadas: `php artisan seguria:shadow-run --limit=40`. Con `--simulated`, usa la verdad que conoce el simulador.
+- Variables: `VIGILIA_SHADOW=true`, `VIGILIA_SHADOW_MODEL`, `VIGILIA_SHADOW_PROMPT` (ruta a un `.md` con el prompt), `VIGILIA_SHADOW_SAMPLE` (0,25) y `VIGILIA_SHADOW_DAILY_CAP` (500).
+- Sobre detecciones pasadas: `php artisan vigilia:shadow-run --limit=40`. Con `--simulated`, usa la verdad que conoce el simulador.
 - La verdad sale de los incidentes cerrados, del simulador o de la revisión en la pantalla. Recomienda promover solo con al menos 10 amenazas y 20 casos sin amenaza con resultado conocido.
 
 ### Zonas
@@ -92,9 +92,9 @@ El webhook va en `https://<host>/api/webhooks/whatsapp`. Para la verificación s
 ### Laravel Cloud (checklist de salida)
 Infraestructura:
 - [ ] Postgres (no SQLite).
-- [ ] Bucket de object storage privado y `SEGURIA_MEDIA_DISK=s3`. Las imágenes se sirven con URLs firmadas.
+- [ ] Bucket de object storage privado y `VIGILIA_MEDIA_DISK=s3`. Las imágenes se sirven con URLs firmadas.
 - [ ] Queue worker (`php artisan queue:work`): alertas, escalamiento y revisión de IA.
-- [ ] Scheduler activo. Corre `seguria:watch-equipment` cada minuto (edge o cámara caída) y `seguria:prune-media` a diario (retención).
+- [ ] Scheduler activo. Corre `vigilia:watch-equipment` cada minuto (edge o cámara caída) y `vigilia:prune-media` a diario (retención).
 - [ ] Reverb (WebSockets) para la consola en vivo.
 - [ ] Servicio de mail (`MAIL_*`) para invitaciones y recuperación de contraseña.
 - [ ] Dominio con HTTPS: el push y la PWA lo exigen.
@@ -104,17 +104,17 @@ Variables (ver `.env.example`):
 - [ ] `ANTHROPIC_API_KEY`.
 - [ ] `WHATSAPP_*`, con la plantilla aprobada por Meta.
 - [ ] `VAPID_*`, generadas con `php artisan webpush:vapid`.
-- [ ] `SEGURIA_RETENTION_DAYS`: 30 por defecto.
+- [ ] `VIGILIA_RETENTION_DAYS`: 30 por defecto.
 
 Antes de abrir:
-- [ ] `php artisan migrate --force`. El seeder de demo **no corre en producción** salvo con `SEGURIA_SEED_DEMO=true`. Los simuladores (`seguria:fake-edge`, `seguria:simulate*`) se niegan a correr.
+- [ ] `php artisan migrate --force`. El seeder de demo **no corre en producción** salvo con `VIGILIA_SEED_DEMO=true`. Los simuladores (`vigilia:fake-edge`, `vigilia:simulate*`) se niegan a correr.
 - [ ] Crear el usuario administrador real y dar de alta edificios, countries y edges.
 - [ ] Probar una alerta de punta a punta: edge, IA, WhatsApp, push y escalamiento.
 
 ## Edge (demo con videos grabados)
 ```bash
 cd edge
-cp .env.example .env              # SEGURIA_API_URL + SEGURIA_TOKEN
+cp .env.example .env              # VIGILIA_API_URL + VIGILIA_TOKEN
 # dejar perimetro_norte.mp4 y perimetro_sur.mp4 en demo-videos/
 docker compose --profile demo up -d
 open http://localhost:5000        # UI de Frigate: ajustar las zonas "alambrado"

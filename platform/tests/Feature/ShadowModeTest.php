@@ -40,7 +40,7 @@ it('queues the challenger only when enabled, for real sites and within the sampl
     app(ShadowMode::class)->consider($event);
     Queue::assertNothingPushed();
 
-    config(['seguria.ai.shadow.enabled' => true, 'seguria.ai.shadow.sample_rate' => 1.0]);
+    config(['vigilia.ai.shadow.enabled' => true, 'vigilia.ai.shadow.sample_rate' => 1.0]);
     app(ShadowMode::class)->consider($event);
     Queue::assertPushed(RunShadowVerification::class);
 

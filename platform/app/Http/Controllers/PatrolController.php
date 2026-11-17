@@ -38,7 +38,7 @@ class PatrolController extends Controller
     public function frame(Request $request, Patrol $patrol, int $camera, MediaAccessLog $log): StreamedResponse
     {
         $path = collect($patrol->findings ?? [])->firstWhere('camera_id', $camera)['frame_path'] ?? null;
-        $disk = Storage::disk(config('seguria.media_disk'));
+        $disk = Storage::disk(config('vigilia.media_disk'));
         abort_unless($path && $disk->exists($path), 404);
 
         $finding = collect($patrol->findings)->firstWhere('camera_id', $camera);

@@ -1,7 +1,7 @@
 import { IconCircle } from '@/components/icon-circle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { timeAgo } from '@/lib/seguria';
+import { timeAgo } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { Car, Phone } from 'lucide-react';
