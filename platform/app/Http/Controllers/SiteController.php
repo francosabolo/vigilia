@@ -184,6 +184,7 @@ class SiteController extends Controller
                         'is_guard_post' => $camera->is_guard_post,
                         'is_checkpoint' => $camera->is_checkpoint,
                         'is_access' => $camera->is_access,
+                        'is_ptz' => $camera->is_ptz,
                         'ai_notes' => $canManage ? $camera->ai_notes : null,
                         'speaker_test' => ($test = DeterrenceCommand::where('camera_id', $camera->id)->whereNull('incident_id')->latest('id')->first())
                             ? ['status' => $test->status, 'result' => $test->result, 'at' => $test->created_at->toIso8601String()]

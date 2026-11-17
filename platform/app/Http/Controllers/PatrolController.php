@@ -26,9 +26,10 @@ class PatrolController extends Controller
             throw ValidationException::withMessages(['patrol' => 'Ya hay una ronda en curso en este lugar.']);
         }
 
-        $patrols->start($site, 'manual', $request->user());
+        $closing = $request->boolean('closing');
+        $patrols->start($site, $closing ? 'closing' : 'manual', $request->user());
 
-        return back();
+        return back()->with('notice', $closing ? 'Revisando que no quede nadie adentro. El resultado aparece en la ronda en unos segundos.' : null);
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Http\Controllers\ImpersonationController;
 use App\Services\Sites\SiteScope;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -51,6 +52,10 @@ class HandleInertiaRequests extends Middleware
             'siteContext' => fn () => app(SiteScope::class)->share($request),
             'impersonating' => fn () => $request->session()->has(ImpersonationController::SESSION_KEY) && $request->user()
                 ? ['name' => $request->user()->name, 'role' => $request->user()->role->value]
+                : null,
+            // M24 — the AI stopped answering: alerts keep going out, unfiltered; the console says so.
+            'aiUnavailableSince' => fn () => $request->user() && ! $request->user()->isResident() && Cache::has('ai-unavailable-until')
+                ? Cache::get('ai-unavailable-since')
                 : null,
             'unreadNotifications' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,
             'flash' => fn () => ['notice' => $request->session()->get('notice')],

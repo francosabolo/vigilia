@@ -18,7 +18,7 @@ export interface PatrolFinding {
 
 export interface PatrolRound {
     id: number;
-    trigger: 'manual' | 'scheduled';
+    trigger: 'manual' | 'scheduled' | 'closing';
     requested_by: string | null;
     status: 'running' | 'done' | 'failed';
     summary: string | null;
@@ -44,6 +44,7 @@ const severityText: Record<PatrolFinding['severity'], string> = {
 };
 
 function who(round: PatrolRound): string {
+    if (round.trigger === 'closing') return `cierre, pedido por ${round.requested_by ?? 'alguien del equipo'}`;
     return round.trigger === 'manual' ? `pedida por ${round.requested_by ?? 'alguien del equipo'}` : 'automática';
 }
 
@@ -55,11 +56,14 @@ export function PatrolCard({
     patrols,
     intervalMinutes,
     canManage,
+    closingCheck = false,
 }: {
     siteId: number;
     patrols: PatrolRound[];
     intervalMinutes: number | null;
     canManage: boolean;
+    /** M20 — shops and warehouses: check that nobody stayed inside at closing time. */
+    closingCheck?: boolean;
 }) {
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
     const [sending, setSending] = useState(false);
@@ -89,9 +93,26 @@ export function PatrolCard({
                         )}
                     </p>
                 </div>
-                <Button variant="outline" onClick={start} disabled={running || sending}>
-                    {running ? 'Ronda en curso…' : 'Hacer una ronda ahora'}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    {closingCheck && (
+                        <Button
+                            onClick={() => {
+                                router.post(
+                                    `/sites/${siteId}/patrols`,
+                                    { closing: true },
+                                    { preserveScroll: true, onFinish: () => setSending(false) },
+                                );
+                                setSending(true);
+                            }}
+                            disabled={running || sending}
+                        >
+                            Cerrar el local: revisar que no quede nadie
+                        </Button>
+                    )}
+                    <Button variant="outline" onClick={start} disabled={running || sending}>
+                        {running ? 'Ronda en curso…' : 'Hacer una ronda ahora'}
+                    </Button>
+                </div>
             </div>
             <InputError message={errors.patrol} />
 

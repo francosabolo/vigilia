@@ -89,6 +89,7 @@ Route::middleware('auth')->group(function () {
         Route::post('incidents/{incident}/acknowledge', [IncidentController::class, 'acknowledge'])->name('incidents.acknowledge');
         Route::post('incidents/{incident}/resolve', [IncidentController::class, 'resolve'])->name('incidents.resolve');
         Route::get('incidents/{incident}/report', [ReportController::class, 'incident'])->name('reports.incident');
+        Route::get('incidents/{incident}/evidence', [ReportController::class, 'evidence'])->name('reports.evidence');
         Route::get('sites/{site}/report', [ReportController::class, 'site'])->name('reports.site');
         Route::post('incidents/{incident}/speaker', [SpeakerController::class, 'speak'])->middleware('throttle:20,1')->name('incidents.speaker');
         Route::post('cameras/{camera}/speaker-test', [SpeakerController::class, 'test'])->middleware('throttle:10,1')->name('cameras.speaker-test');
@@ -103,6 +104,7 @@ Route::middleware('auth')->group(function () {
         Route::get('ai/shadow', [ShadowController::class, 'index'])->name('shadow.index');
         Route::get('ai/quality', [QualityController::class, 'index'])->name('quality.index');
         Route::post('ai/quality/{detectionEvent}', [QualityController::class, 'label'])->name('quality.label');
+        Route::post('ai/quality/closures/{incident}', [QualityController::class, 'reviewClosure'])->name('quality.closure');
         Route::post('ai/shadow/detections/{detectionEvent}/label', [ShadowController::class, 'label'])->name('shadow.label');
         Route::get('team', [TeamController::class, 'index'])->name('team.index');
         Route::post('team', [TeamController::class, 'store'])->name('team.store');

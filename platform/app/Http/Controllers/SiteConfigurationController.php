@@ -101,6 +101,7 @@ class SiteConfigurationController extends Controller
             'is_guard_post' => ['required', 'boolean'],
             'is_checkpoint' => ['required', 'boolean'],
             'is_access' => ['sometimes', 'boolean'],
+            'is_ptz' => ['sometimes', 'boolean'],
         ]));
 
         return back();

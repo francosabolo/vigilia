@@ -116,7 +116,7 @@ class VirtualPatrol
             $reference = $disk->exists($referencePath) ? $disk->get($referencePath) : null;
 
             try {
-                $result = $this->inspector->inspect($camera, $current, $reference, $this->context($site, $camera));
+                $result = $this->inspector->inspect($camera, $current, $reference, $this->context($site, $camera, $patrol->trigger));
             } catch (Throwable $exception) {
                 report($exception);
                 $skipped[] = ['camera_id' => $camera->id, 'camera' => $camera->name, 'reason' => 'La IA no respondió'];
@@ -227,8 +227,13 @@ class VirtualPatrol
         IncidentChanged::dispatch($incident, $opened ? 'opened' : 'patrol');
     }
 
-    private function context(Site $site, Camera $camera): string
+    private function context(Site $site, Camera $camera, string $trigger = 'scheduled'): string
     {
+        // M20 — closing a shop or a warehouse: nobody should be left inside.
+        if ($trigger === 'closing') {
+            return sprintf('Cámara "%s" de %s. Es el cierre: el lugar acaba de cerrar y no debería quedar ninguna persona adentro. Cualquier persona visible es una novedad de severidad alta (kind persona).', $camera->name, $site->name);
+        }
+
         $local = now()->setTimezone($site->timezone ?? config('app.timezone'));
         $armed = $camera->zones->contains(fn ($zone) => $this->arming->isArmed($zone, now(), $site->timezone ?? config('app.timezone')));
 

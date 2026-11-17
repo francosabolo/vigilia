@@ -20,13 +20,23 @@ interface SiteStats {
     alerts_measured: number;
 }
 
+interface Closure {
+    id: number;
+    title: string;
+    site: string;
+    closed_by: string | null;
+    resolved_at: string | null;
+    snapshot_url: string | null;
+}
+
 interface Props {
+    closures: Closure[];
     pending: ActivityItem[];
     pendingCount: number;
     stats: SiteStats[];
 }
 
-export default function Quality({ pending, pendingCount, stats }: Props) {
+export default function Quality({ pending, pendingCount, stats, closures }: Props) {
     const label = (id: number, missed: boolean) => router.post(`/ai/quality/${id}`, { missed }, { preserveScroll: true });
 
     return (
@@ -103,6 +113,48 @@ export default function Quality({ pending, pendingCount, stats }: Props) {
                         Con menos de 50 revisadas el porcentaje todavía puede moverse mucho: mirá también la cantidad.
                     </p>
                 </section>
+
+                {closures.length > 0 && (
+                    <section className="flex flex-col gap-3">
+                        <h2 className="text-lg font-semibold">Cierres de falsa alarma para revisar ({closures.length})</h2>
+                        <p className="text-muted-foreground -mt-1 text-sm">
+                            Una muestra de lo que las guardias cerraron como falsa alarma. Si alguno era real, queda registrado en el incidente.
+                        </p>
+                        <ul className="grid gap-3 sm:grid-cols-2">
+                            {closures.map((closure) => (
+                                <li key={closure.id} className="bg-card flex flex-col gap-2 rounded-xl border p-3 text-sm">
+                                    {closure.snapshot_url && (
+                                        <img src={closure.snapshot_url} alt="" className="aspect-video w-full rounded object-cover" />
+                                    )}
+                                    <p className="font-medium">{closure.title}</p>
+                                    <p className="text-muted-foreground">
+                                        {closure.site}, cerrado {closure.resolved_at ? timeAgo(closure.resolved_at) : ''} por{' '}
+                                        {closure.closed_by ?? 'la guardia'}
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() =>
+                                                router.post(`/ai/quality/closures/${closure.id}`, { correct: true }, { preserveScroll: true })
+                                            }
+                                        >
+                                            Bien cerrado
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            className="border-alarm/60 text-alarm hover:bg-alarm/10 hover:text-alarm"
+                                            onClick={() =>
+                                                router.post(`/ai/quality/closures/${closure.id}`, { correct: false }, { preserveScroll: true })
+                                            }
+                                        >
+                                            Era real
+                                        </Button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
 
                 <section className="flex flex-col gap-3">
                     <h2 className="text-lg font-semibold">Para revisar ({pendingCount})</h2>

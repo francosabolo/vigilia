@@ -1,3 +1,4 @@
+import { AiStatusBanner } from '@/components/ai-status-banner';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -11,6 +12,7 @@ export default function AppSidebarLayout({ children, breadcrumbs = [] }: { child
             <AppSidebar />
             <AppContent variant="sidebar">
                 <ImpersonationBanner />
+                <AiStatusBanner />
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 {children}
             </AppContent>

@@ -74,6 +74,7 @@ interface Camera {
     is_guard_post: boolean;
     is_checkpoint: boolean;
     is_access: boolean;
+    is_ptz: boolean;
     ai_notes: string | null;
     speaker_test: { status: string; result: string | null; at: string } | null;
     view_status: 'ok' | 'moved' | 'covered';
@@ -327,7 +328,13 @@ function Summary({ site, metrics, canManage, patrols }: Pick<Props, 'site' | 'me
             {site.cameras.length === 0 && <NoCameras siteId={site.id} />}
 
             {site.cameras.length > 0 && (
-                <PatrolCard siteId={site.id} patrols={patrols} intervalMinutes={site.patrol_interval_minutes} canManage={canManage} />
+                <PatrolCard
+                    siteId={site.id}
+                    patrols={patrols}
+                    intervalMinutes={site.patrol_interval_minutes}
+                    canManage={canManage}
+                    closingCheck={site.kind === 'store' || site.kind === 'warehouse'}
+                />
             )}
 
             <div className="grid gap-8 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -656,10 +663,16 @@ function CameraNotes({ camera }: { camera: Camera }) {
 }
 
 function CameraRoles({ camera }: { camera: Camera }) {
-    const toggle = (role: 'is_guard_post' | 'is_checkpoint' | 'is_access') =>
+    const toggle = (role: 'is_guard_post' | 'is_checkpoint' | 'is_access' | 'is_ptz') =>
         router.patch(
             `/cameras/${camera.id}/roles`,
-            { is_guard_post: camera.is_guard_post, is_checkpoint: camera.is_checkpoint, is_access: camera.is_access, [role]: !camera[role] },
+            {
+                is_guard_post: camera.is_guard_post,
+                is_checkpoint: camera.is_checkpoint,
+                is_access: camera.is_access,
+                is_ptz: camera.is_ptz,
+                [role]: !camera[role],
+            },
             { preserveScroll: true },
         );
 
@@ -670,6 +683,7 @@ function CameraRoles({ camera }: { camera: Camera }) {
                     ['is_access', 'Cámara del acceso'],
                     ['is_guard_post', 'Es la garita'],
                     ['is_checkpoint', 'Punto de ronda'],
+                    ['is_ptz', 'Se mueve sola (PTZ)'],
                 ] as const
             ).map(([role, label]) => (
                 <label key={role} className="flex items-center gap-2">

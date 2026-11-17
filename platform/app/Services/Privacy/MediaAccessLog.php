@@ -19,6 +19,7 @@ class MediaAccessLog
         'patrol' => 'Imagen de la ronda virtual',
         'live' => 'Cámara en vivo',
         'access' => 'Foto de un ingreso',
+        'evidence' => 'Evidencia descargada',
     ];
 
     public function record(Request $request, int $siteId, string $kind, string $subject, ?string $reference = null): void

@@ -27,6 +27,11 @@ class CameraViewMonitor
     /** Below this share of the reference's sharpness the image counts as blurry. */
     private const BLUR_RATIO = 0.35;
 
+    private const REFERENCE_MAX_AGE_DAYS = 7;
+
+    /** M3 — glare shorter than this is the daily sun, not tampering. */
+    private const GLARE_MINUTES = 45;
+
     public function __construct(private readonly ViewAnalyzer $analyzer) {}
 
     public function check(Camera $camera, string $frameBytes): ?Incident
@@ -45,10 +50,25 @@ class CameraViewMonitor
         $result = $probe['status'] === 'covered' ? $probe : $this->analyzer->compare($frameBytes, $disk->get($referencePath), $camera->fov);
         $disk->put($this->latestPath($camera), $frameBytes);
 
+        // M23 — a PTZ camera moves through its positions on purpose: only a covered view counts.
+        if ($result['status'] === 'moved' && $camera->is_ptz) {
+            $result['status'] = 'ok';
+        }
+
         if ($result['status'] === 'ok') {
             $camera->forceFill(['view_anomaly_count' => 0, 'view_checked_at' => now()])->save();
+            Cache::forget("camera-glare:{$camera->id}");
+            $this->refreshReference($referencePath, $frameBytes);
 
             return $this->checkSharpness($camera, $frameBytes, $disk->get($referencePath));
+        }
+
+        // M3 — the sun into the lens at dawn or dusk blinds the camera for a while every day: only if it lasts it
+        // is treated as covered.
+        if (($result['glare'] ?? false) && ! $this->glareLasted($camera)) {
+            $camera->forceFill(['view_checked_at' => now()])->save();
+
+            return null;
         }
 
         $count = $camera->view_anomaly_count + 1;
@@ -77,6 +97,25 @@ class CameraViewMonitor
         }
 
         $camera->forceFill(['view_status' => CameraViewStatus::Ok, 'view_anomaly_count' => 0, 'view_shift_deg' => null])->save();
+    }
+
+    /**
+     * M25 — vegetation grows and seasons change: a reference older than a week is renewed from a frame that still
+     * matches it, so the slow change is never mistaken for a moved camera.
+     */
+    private function refreshReference(string $referencePath, string $frameBytes): void
+    {
+        $disk = Storage::disk(config('seguria.media_disk'));
+        if ($disk->lastModified($referencePath) < now()->subDays(self::REFERENCE_MAX_AGE_DAYS)->timestamp) {
+            $disk->put($referencePath, $frameBytes);
+        }
+    }
+
+    private function glareLasted(Camera $camera): bool
+    {
+        $since = Cache::remember("camera-glare:{$camera->id}", now()->addHours(3), fn () => now()->timestamp);
+
+        return now()->timestamp - $since >= self::GLARE_MINUTES * 60;
     }
 
     /**

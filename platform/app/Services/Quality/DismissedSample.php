@@ -17,6 +17,8 @@ class DismissedSample
 {
     public const PER_SITE = 20;
 
+    public const CLOSURES_PER_SITE = 5;
+
     /**
      * @return int how many detections were sampled
      */
@@ -39,6 +41,13 @@ class DismissedSample
 
             DetectionEvent::whereIn('id', $ids)->update(['qa_requested_at' => now()]);
             $total += $ids->count();
+
+            // M18 — a few of the guards' false-alarm closures, to catch a negligent or complicit guard.
+            $closures = Incident::where('site_id', $siteId)->where('resolution', IncidentResolution::FalseAlarm)
+                ->where('resolved_at', '>=', now()->subWeek())->whereNull('qa_requested_at')
+                ->inRandomOrder()->limit(self::CLOSURES_PER_SITE)->pluck('id');
+            Incident::whereIn('id', $closures)->update(['qa_requested_at' => now()]);
+            $total += $closures->count();
         }
 
         return $total;
@@ -79,6 +88,8 @@ class DismissedSample
                 'alert_p50' => $latencies->isEmpty() ? null : (int) round($latencies->get((int) floor(0.5 * ($latencies->count() - 1)))),
                 'alert_p95' => $latencies->isEmpty() ? null : (int) round($latencies->get((int) floor(0.95 * ($latencies->count() - 1)))),
                 'alerts_measured' => $latencies->count(),
+                'closures_reviewed' => Incident::where('site_id', $site->id)->whereNotNull('qa_result')->where('qa_requested_at', '>=', $since)->count(),
+                'closures_wrong' => Incident::where('site_id', $site->id)->where('qa_result', 'wrong')->where('qa_requested_at', '>=', $since)->count(),
             ];
         })->all();
     }

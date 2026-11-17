@@ -32,7 +32,8 @@ class ViewAnalyzer
         $std = sqrt(array_sum(array_map(fn ($v) => ($v - $mean) ** 2, $gray)) / count($gray));
 
         if ($std < 6 || $mean < 6 || $mean > 248) {
-            return ['status' => 'covered', 'similarity' => 0.0, 'shift_x' => null, 'shift_deg' => null, 'bucket' => $bucket];
+            // M3 — overexposed is usually the sun straight into the lens, not someone covering it.
+            return ['status' => 'covered', 'similarity' => 0.0, 'shift_x' => null, 'shift_deg' => null, 'bucket' => $bucket, 'glare' => $mean > 248];
         }
 
         if ($referenceBytes === null) {

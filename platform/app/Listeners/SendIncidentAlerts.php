@@ -8,6 +8,7 @@ use App\Jobs\EscalateIncident;
 use App\Models\User;
 use App\Notifications\IncidentAlert;
 use App\Notifications\IncidentNotice;
+use App\Notifications\OwnerAlert;
 use App\Services\Incidents\IncidentWorkflow;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Notification;
@@ -45,6 +46,16 @@ class SendIncidentAlerts implements ShouldQueue
         if ($site->guard_whatsapp) {
             Notification::route('whatsapp', $site->guard_whatsapp)->notify(new IncidentAlert($incident));
             $channels[] = 'guard_whatsapp';
+        }
+
+        // M22 — no guard and no guard phone (a house, a shop): the owner hears it directly; the central takes over
+        // through the usual escalation.
+        if ($channels === [] && ! $site->kind->hasUnits()) {
+            $owners = User::where('site_id', $site->id)->where('role', UserRole::Resident)->get();
+            Notification::send($owners, new OwnerAlert($incident->loadMissing('site')));
+            if ($owners->isNotEmpty()) {
+                $channels[] = 'owner';
+            }
         }
 
         // The client's administration follows its properties: informed, not asked to respond.

@@ -134,6 +134,25 @@ function ResponsePanel({ incident }: { incident: IncidentDetail }) {
                             maxLength={200}
                         />
                     )}
+                    {confirming === 'false_alarm' && incident.source === 'detection' && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {['Era un vecino', 'Personal de la casa o de obra', 'Un animal', 'Lluvia, sombra o insectos', 'Un auto que pasaba'].map(
+                                (quick) => (
+                                    <button
+                                        key={quick}
+                                        type="button"
+                                        onClick={() => setLesson(quick)}
+                                        className={cn(
+                                            'rounded-full border px-2.5 py-1 text-xs',
+                                            lesson === quick ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-accent',
+                                        )}
+                                    >
+                                        {quick}
+                                    </button>
+                                ),
+                            )}
+                        </div>
+                    )}
                     {confirming === 'false_alarm' && lesson.trim() && (
                         <p className="text-muted-foreground text-xs">La IA lo va a tener en cuenta la próxima vez en esta cámara.</p>
                     )}
@@ -216,6 +235,12 @@ export default function IncidentShow({ incident, channel }: Props) {
                             <ItemActionLink kind="view" href={`/incidents/${incident.id}/report`}>
                                 Informe para denuncia o seguro
                             </ItemActionLink>
+                            <a
+                                href={`/incidents/${incident.id}/evidence`}
+                                className="text-muted-foreground hover:bg-accent hover:text-foreground inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium"
+                            >
+                                Descargar evidencia
+                            </a>
                         </div>
                     </header>
 

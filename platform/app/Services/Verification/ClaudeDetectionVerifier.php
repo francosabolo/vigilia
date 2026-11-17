@@ -8,6 +8,7 @@ use Anthropic\Messages\Message;
 use App\Models\Camera;
 use App\Models\DetectionEvent;
 use App\Services\Detection\SiteSituation;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
@@ -268,9 +269,14 @@ class ClaudeDetectionVerifier implements DetectionVerifier
                 $result = $this->ask(config('seguria.ai.review_model'), $context, $images, $fallbackSubject, $system);
             }
 
+            Cache::forget('ai-unavailable-since');
+            Cache::forget('ai-unavailable-until');
+
             return $result;
         } catch (Throwable $exception) {
             // Timeout, network or API error: never lose the alert — it goes out without the AI filter.
+            Cache::add('ai-unavailable-since', now()->toIso8601String(), now()->addMinutes(10));
+            Cache::put('ai-unavailable-until', now()->addMinutes(5)->toIso8601String(), now()->addMinutes(5));
             Log::warning('AI verification failed, escalating without verdict', [
                 'camera_id' => $camera->id,
                 'error' => $exception->getMessage(),

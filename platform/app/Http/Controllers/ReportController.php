@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Incident;
 use App\Models\Site;
+use App\Services\Evidence\EvidenceExport;
+use App\Services\Privacy\MediaAccessLog;
 use App\Services\Reports\IncidentReport;
 use App\Services\Reports\MonthlyReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Printable reports: the browser saves them as PDF.
@@ -38,6 +41,17 @@ class ReportController extends Controller
             'months' => $months,
             'organization' => $site->organization->name,
         ]);
+    }
+
+    /**
+     * M19 — original images, clip and record with their SHA-256, for the chain of custody. Logged as an image view.
+     */
+    public function evidence(Request $request, Incident $incident, EvidenceExport $export, MediaAccessLog $log): BinaryFileResponse
+    {
+        Gate::authorize('view', $incident);
+        $log->record($request, $incident->site_id, 'evidence', "Evidencia del incidente {$incident->id}", "evidence:{$incident->id}:".now()->timestamp);
+
+        return response()->download($export->build($incident, $request->user()), "evidencia-incidente-{$incident->id}.zip")->deleteFileAfterSend();
     }
 
     /**
