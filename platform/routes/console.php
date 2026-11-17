@@ -19,3 +19,9 @@ Schedule::command('seguria:watch-guards')->everyFiveMinutes()->withoutOverlappin
 
 // F6: residents get one sentence about their week, Monday morning.
 Schedule::command('seguria:resident-weekly')->weeklyOn(1, '09:00')->withoutOverlapping();
+
+// F9: residents who said they were arriving and never confirmed they got in.
+Schedule::command('seguria:check-arrivals')->everyMinute()->withoutOverlapping();
+
+// I7: a random sample of what the AI dismissed, for a person to review, Monday morning.
+Schedule::command('seguria:sample-dismissed')->weeklyOn(1, '08:00')->withoutOverlapping();

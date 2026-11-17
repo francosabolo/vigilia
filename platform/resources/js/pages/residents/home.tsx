@@ -4,6 +4,7 @@ import { IconCircle } from '@/components/icon-circle';
 import { NotificationBell } from '@/components/notification-bell';
 import { PushToggle } from '@/components/push-toggle';
 import { ResidentVisits, type GateEntry, type ResidentVisit } from '@/components/resident-visits';
+import { SafeArrivalCard, type Arrival } from '@/components/safe-arrival';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDuration, theSite, timeAgo, unitNoun, type IncidentStatus, type Metrics, type SiteKind } from '@/lib/seguria';
@@ -30,6 +31,7 @@ interface Props {
     visits: ResidentVisit[];
     atGate: GateEntry[];
     contacts: EmergencyContact[];
+    arrival: Arrival | null;
 }
 
 function noticeText(notice: Notice): string {
@@ -184,8 +186,8 @@ function AwayMode({ awayUntil, hasLot }: { awayUntil: string | null; hasLot: boo
     );
 }
 
-export default function ResidentHome({ resident, sectors, notices, metrics, vapidPublicKey, visits, atGate, contacts }: Props) {
-    usePoll(atGate.some((entry) => entry.status === 'waiting') ? 4000 : 30000, { only: ['visits', 'atGate'] });
+export default function ResidentHome({ resident, sectors, notices, metrics, vapidPublicKey, visits, atGate, contacts, arrival }: Props) {
+    usePoll(atGate.some((entry) => entry.status === 'waiting') ? 4000 : 30000, { only: ['visits', 'atGate', 'arrival'] });
     usePoll(15000, { only: ['notices'] });
 
     return (
@@ -260,6 +262,8 @@ export default function ResidentHome({ resident, sectors, notices, metrics, vapi
                         ))}
                     </CardContent>
                 </Card>
+
+                <SafeArrivalCard arrival={arrival} />
 
                 <ResidentVisits visits={visits} atGate={atGate} siteName={resident.site} />
 

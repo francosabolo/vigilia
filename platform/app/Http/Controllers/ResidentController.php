@@ -6,6 +6,7 @@ use App\Models\AccessAuthorization;
 use App\Models\AccessEntry;
 use App\Models\Camera;
 use App\Models\Incident;
+use App\Models\SafeArrival;
 use App\Services\Reports\SiteMetrics;
 use App\Services\Residents\ResidentAlerts;
 use Illuminate\Http\RedirectResponse;
@@ -56,6 +57,7 @@ class ResidentController extends Controller
             'notices' => $notices,
             'metrics' => $metrics->forSites([$resident->site_id], now()->subDays(30), now()),
             'vapidPublicKey' => config('webpush.vapid.public_key'),
+            'arrival' => SafeArrival::where('user_id', $resident->id)->where('status', 'arriving')->latest('id')->first()?->toPayload(),
             'contacts' => $resident->contacts()->get()->map->toPayload(),
             'visits' => AccessAuthorization::where('resident_id', $resident->id)->whereNull('revoked_at')->where('valid_until', '>=', now()->toDateString())
                 ->with('site:id,timezone')->orderBy('valid_from')->get()->map->toPayload(),

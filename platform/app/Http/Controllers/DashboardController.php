@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\IncidentStatus;
 use App\Models\EdgeDevice;
 use App\Models\Incident;
+use App\Models\SafeArrival;
 use App\Models\ShiftHandover;
 use App\Models\Site;
 use App\Services\Activity\ActivityFeed;
@@ -70,6 +71,8 @@ class DashboardController extends Controller
             'vapidPublicKey' => config('webpush.vapid.public_key'),
             'channel' => $request->user()->liveChannel(),
             // C5 — the guard who comes in reads how the previous shift ended; one site in view = it can hand over.
+            'arrivals' => SafeArrival::whereIn('site_id', $siteIds)->whereIn('status', ['arriving', 'unconfirmed'])
+                ->where('created_at', '>', now()->subHours(3))->with('resident:id,name,lot,phone')->latest()->get()->map->toPayload(),
             'lastHandover' => ShiftHandover::whereIn('site_id', $siteIds)->with(['site:id,name', 'user:id,name'])->latest()->first()?->toPayload(),
             'handoverSiteId' => count($siteIds) === 1 ? $siteIds[0] : null,
         ]);

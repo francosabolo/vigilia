@@ -22,13 +22,14 @@ class DetectionEvent extends Model
     protected $fillable = [
         'edge_device_id', 'camera_id', 'external_id', 'label', 'score', 'zones',
         'started_at', 'ended_at', 'snapshot_path', 'clip_path', 'status', 'ai_verdict', 'trace', 'incident_id',
-        'ground_truth', 'ground_truth_source', 'reviewed_by', 'frame_paths', 'is_test',
+        'ground_truth', 'ground_truth_source', 'reviewed_by', 'frame_paths', 'is_test', 'qa_requested_at',
     ];
 
     protected function casts(): array
     {
         return [
             'is_test' => 'boolean',
+            'qa_requested_at' => 'datetime',
             'zones' => 'array',
             'ai_verdict' => 'array',
             'ground_truth' => 'boolean',

@@ -4,13 +4,14 @@ import { ShiftHandoverCard, type Handover } from '@/components/console/shift-han
 import { SectionTitle } from '@/components/icon-circle';
 import { ItemActionHint } from '@/components/item-action';
 import { PushToggle } from '@/components/push-toggle';
+import { ArrivalsPanel, type Arrival } from '@/components/safe-arrival';
 import { Button } from '@/components/ui/button';
 import { useLiveIncidents } from '@/hooks/use-live-incidents';
 import AppLayout from '@/layouts/app-layout';
 import { formatDuration, plural, type ActivityItem, type IncidentStatus, type Metrics, type Severity } from '@/lib/seguria';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePoll } from '@inertiajs/react';
 import { Building2, Cctv, Cpu, Filter, Siren } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Panel', href: '/dashboard' }];
@@ -44,6 +45,7 @@ interface Props {
     vapidPublicKey: string | null;
     channel: string;
     lastHandover: Handover | null;
+    arrivals: Arrival[];
     handoverSiteId: number | null;
 }
 
@@ -155,13 +157,16 @@ export default function Dashboard({
     channel,
     lastHandover,
     handoverSiteId,
+    arrivals,
 }: Props) {
+    usePoll(arrivals.length > 0 ? 10000 : 30000, { only: ['arrivals'] });
     useLiveIncidents(channel, ['metrics', 'openIncidents', 'openCount', 'escalatedCount', 'sites', 'siteContext', 'lastHandover']);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Panel" />
             <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 p-4 md:p-6">
+                <ArrivalsPanel arrivals={arrivals} />
                 <WatchStatus openIncidents={openIncidents} openCount={openCount} escalatedCount={escalatedCount} edgesOffline={edgesOffline} />
 
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(340px,2fr)]">

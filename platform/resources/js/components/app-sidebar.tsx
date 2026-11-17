@@ -3,7 +3,20 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Briefcase, Building2, Cctv, ChartNoAxesCombined, DoorOpen, FlaskConical, LayoutGrid, Search, ShieldCheck, Siren, Users } from 'lucide-react';
+import {
+    Briefcase,
+    Building2,
+    Cctv,
+    ChartNoAxesCombined,
+    DoorOpen,
+    FlaskConical,
+    Gauge,
+    LayoutGrid,
+    Search,
+    ShieldCheck,
+    Siren,
+    Users,
+} from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -48,6 +61,11 @@ const supervisionNavItems: NavItem[] = [
 ];
 
 const centralNavItems: NavItem[] = [
+    {
+        title: 'Calidad de la IA',
+        url: '/ai/quality',
+        icon: Gauge,
+    },
     {
         title: 'Pruebas de IA',
         url: '/ai/shadow',
