@@ -20,7 +20,7 @@ class Camera extends Model
      */
     protected $attributes = ['view_status' => 'ok', 'view_anomaly_count' => 0, 'heading' => 0, 'fov' => 90, 'range_m' => 40];
 
-    protected $fillable = ['site_id', 'edge_device_id', 'name', 'frigate_name', 'sector', 'lat', 'lng', 'heading', 'fov', 'range_m', 'view_status', 'view_shift_deg', 'view_anomaly_count', 'view_checked_at', 'is_online', 'last_seen_at', 'offline_since', 'is_guard_post', 'is_checkpoint', 'is_access', 'ai_notes', 'is_ptz'];
+    protected $fillable = ['site_id', 'edge_device_id', 'name', 'frigate_name', 'sector', 'lat', 'lng', 'heading', 'fov', 'range_m', 'view_status', 'view_shift_deg', 'view_anomaly_count', 'view_checked_at', 'is_online', 'last_seen_at', 'offline_since', 'is_guard_post', 'is_checkpoint', 'is_access', 'ai_notes', 'is_ptz', 'model', 'serial', 'installed_at', 'warranty_until', 'framing_review', 'framing_reviewed_at'];
 
     protected function casts(): array
     {
@@ -29,6 +29,10 @@ class Camera extends Model
             'is_checkpoint' => 'boolean',
             'is_access' => 'boolean',
             'is_ptz' => 'boolean',
+            'installed_at' => 'date',
+            'warranty_until' => 'date',
+            'framing_review' => 'array',
+            'framing_reviewed_at' => 'datetime',
             'is_online' => 'boolean',
             'lat' => 'float',
             'lng' => 'float',

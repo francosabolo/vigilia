@@ -264,6 +264,22 @@ def latest_frame(camera: str) -> bytes | None:
 
 
 DETER_COMMAND = os.environ.get("SEGURIA_DETER_COMMAND", "").strip()
+# E6 — how this box updates itself when the console asks, e.g. "cd /opt/vigilia/edge && docker compose pull && docker compose up -d".
+UPDATE_COMMAND = os.environ.get("SEGURIA_UPDATE_COMMAND", "").strip()
+_last_update_attempt = 0.0
+
+
+def update_self() -> None:
+    """Runs the site's update command at most once every 30 minutes; the new version shows in the next heartbeat."""
+    global _last_update_attempt
+    if not UPDATE_COMMAND or time.time() - _last_update_attempt < 1800:
+        return
+    _last_update_attempt = time.time()
+    log.info("update requested by the console, running SEGURIA_UPDATE_COMMAND")
+    try:
+        subprocess.run(UPDATE_COMMAND, shell=True, timeout=900, check=False)
+    except subprocess.SubprocessError as exc:
+        log.error("update failed: %s", exc)
 
 
 def deter(command: dict) -> None:
@@ -312,6 +328,9 @@ def command_loop() -> None:
         # Deterrence first: every second counts.
         for command in commands.get("deterrence", []):
             threading.Thread(target=deter, args=(command,), daemon=True).start()
+
+        if commands.get("update"):
+            threading.Thread(target=update_self, daemon=True).start()
 
         for snapshot in commands.get("snapshots", []):
             frame = latest_frame(snapshot["camera"])

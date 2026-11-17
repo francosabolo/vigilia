@@ -57,6 +57,14 @@ class HandleInertiaRequests extends Middleware
             'aiUnavailableSince' => fn () => $request->user() && ! $request->user()->isResident() && Cache::has('ai-unavailable-until')
                 ? Cache::get('ai-unavailable-since')
                 : null,
+            // H3 — the security company's own brand over the console and the residents' app.
+            'brand' => function () use ($request): ?array {
+                $organization = $request->user()?->organization;
+
+                return $organization?->brand_name || $organization?->brand_color
+                    ? ['name' => $organization->brand_name, 'color' => $organization->brand_color]
+                    : null;
+            },
             'unreadNotifications' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,
             'flash' => fn () => ['notice' => $request->session()->get('notice')],
         ]);

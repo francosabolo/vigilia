@@ -20,6 +20,9 @@ class HeartbeatController extends Controller
             'version' => $data['version'] ?? null,
             'zones_version' => $data['zones_version'] ?? null,
         ]));
+        if (($data['version'] ?? null) === config('seguria.edge.latest_version') && $device->update_requested_at) {
+            $device->update(['update_requested_at' => null]);
+        }
 
         foreach ($data['cameras'] ?? [] as $cam) {
             $camera = Camera::withTrashed()->firstOrNew(

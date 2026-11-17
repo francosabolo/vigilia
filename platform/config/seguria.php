@@ -33,6 +33,11 @@ return [
         'demotion_false_alarms' => 2,
     ],
 
+    // E6 — the bridge version edge boxes should run; older ones show "Actualizar" in Equipos.
+    'edge' => [
+        'latest_version' => env('SEGURIA_EDGE_LATEST', '0.6.0'),
+    ],
+
     'tracking' => [
         'window_seconds' => (int) env('SEGURIA_TRACKING_WINDOW', 180),
         'max_distance_m' => (int) env('SEGURIA_TRACKING_DISTANCE', 150),

@@ -8,6 +8,7 @@ import {
     Building2,
     Cctv,
     ChartNoAxesCombined,
+    Cpu,
     DoorOpen,
     FlaskConical,
     Gauge,
@@ -39,6 +40,7 @@ const operationItems: Entry[] = [
 /** Setting things up and following how the service goes. */
 const managementItems: Entry[] = [
     { title: 'Propiedades', url: '/sites', icon: Building2 },
+    { title: 'Equipos', url: '/equipment', icon: Cpu, roles: ['admin', 'operator', 'site_admin', 'client_admin'] },
     { title: 'Guardias', url: '/guards', icon: ShieldCheck, roles: ['admin', 'operator', 'site_admin', 'client_admin'] },
     { title: 'Clientes', url: '/clients', icon: Briefcase, roles: ['admin'] },
     { title: 'Usuarios', url: '/team', icon: Users, roles: ['admin'] },

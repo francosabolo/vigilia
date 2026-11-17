@@ -39,7 +39,14 @@ interface ClientRow {
 
 interface Props {
     month: string;
-    organization: { currency: string; price_per_camera: number | null; operator_hour_cost: number | null; usd_rate: number | null };
+    organization: {
+        currency: string;
+        price_per_camera: number | null;
+        operator_hour_cost: number | null;
+        usd_rate: number | null;
+        brand_name: string | null;
+        brand_color: string | null;
+    };
     report: {
         sites: SiteRow[];
         clients: ClientRow[];
@@ -166,6 +173,8 @@ function Settings({ organization, missing }: { organization: Props['organization
         price_per_camera: organization.price_per_camera ?? '',
         operator_hour_cost: organization.operator_hour_cost ?? '',
         usd_rate: organization.usd_rate ?? '',
+        brand_name: organization.brand_name ?? '',
+        brand_color: organization.brand_color ?? '#e5252e',
     });
 
     return (
@@ -209,6 +218,25 @@ function Settings({ organization, missing }: { organization: Props['organization
                     min="0"
                     value={form.data.usd_rate}
                     onChange={(e) => form.setData('usd_rate', e.target.value === '' ? '' : Number(e.target.value))}
+                />
+            </div>
+            <div className="grid gap-1.5 sm:col-span-2">
+                <Label htmlFor="brand-name">Nombre de tu empresa en la app (marca propia)</Label>
+                <Input
+                    id="brand-name"
+                    placeholder="Ej: Seguridad del Norte"
+                    value={form.data.brand_name}
+                    onChange={(e) => form.setData('brand_name', e.target.value)}
+                />
+            </div>
+            <div className="grid gap-1.5">
+                <Label htmlFor="brand-color">Color de tu marca</Label>
+                <input
+                    id="brand-color"
+                    type="color"
+                    value={form.data.brand_color}
+                    onChange={(e) => form.setData('brand_color', e.target.value)}
+                    className="h-9 w-full cursor-pointer rounded-md border"
                 />
             </div>
             <Button type="submit" variant="outline" disabled={form.processing || !form.isDirty}>

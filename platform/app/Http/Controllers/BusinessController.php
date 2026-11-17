@@ -30,6 +30,8 @@ class BusinessController extends Controller
                 'price_per_camera' => $organization->price_per_camera !== null ? (float) $organization->price_per_camera : null,
                 'operator_hour_cost' => $organization->operator_hour_cost !== null ? (float) $organization->operator_hour_cost : null,
                 'usd_rate' => $organization->usd_rate !== null ? (float) $organization->usd_rate : null,
+                'brand_name' => $organization->brand_name,
+                'brand_color' => $organization->brand_color,
             ],
             'report' => $report->build($organization, $from, $from->endOfMonth()),
         ]);
@@ -43,6 +45,8 @@ class BusinessController extends Controller
             'price_per_camera' => ['nullable', 'numeric', 'min:0'],
             'operator_hour_cost' => ['nullable', 'numeric', 'min:0'],
             'usd_rate' => ['nullable', 'numeric', 'min:0'],
+            'brand_name' => ['nullable', 'string', 'max:60'],
+            'brand_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
         ]));
 
         return back();

@@ -59,6 +59,8 @@ class CommandController extends Controller
                 ? ['cameras' => $device->cameras()->pluck('frigate_name'), 'interval' => CameraWall::PREVIEW_INTERVAL]
                 : null,
             'zones' => $zones->payloadFor($device),
+            // E6 — run the site's update command once; the new version shows in the next heartbeat.
+            'update' => $device->update_requested_at !== null && $device->version !== config('seguria.edge.latest_version'),
             'health_check' => [
                 'interval' => CameraViewMonitor::CHECK_INTERVAL,
                 'cameras' => $device->cameras()->pluck('frigate_name'),
