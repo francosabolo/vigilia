@@ -1,3 +1,4 @@
+import { CameraDiscovery, type CameraSetupRow, type DiscoveredCamera } from '@/components/camera-discovery';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
@@ -23,6 +24,11 @@ interface Device {
     version?: string | null;
     update_requested_at?: string | null;
     online?: boolean;
+    host?: string | null;
+    discovering?: boolean;
+    discovered?: DiscoveredCamera[];
+    discovered_at?: string | null;
+    setups?: CameraSetupRow[];
 }
 
 interface Props {
@@ -63,6 +69,7 @@ export default function Equipment({ latestEdgeVersion, sites }: Props) {
                                     device={device}
                                     latest={latestEdgeVersion}
                                     siblings={site.devices.filter((other) => other.type === 'camera' && other.id !== device.id)}
+                                    knownHosts={site.devices.map((other) => other.host).filter((host): host is string => !!host)}
                                 />
                             ))}
                         </ul>
@@ -73,7 +80,7 @@ export default function Equipment({ latestEdgeVersion, sites }: Props) {
     );
 }
 
-function DeviceRow({ device, latest, siblings }: { device: Device; latest: string; siblings: Device[] }) {
+function DeviceRow({ device, latest, siblings, knownHosts }: { device: Device; latest: string; siblings: Device[]; knownHosts: string[] }) {
     const form = useForm({
         model: device.model ?? '',
         serial: device.serial ?? '',
@@ -159,6 +166,16 @@ function DeviceRow({ device, latest, siblings }: { device: Device; latest: strin
                     </>
                 )}
             </div>
+            {device.type === 'edge' && (
+                <CameraDiscovery
+                    edgeId={device.id}
+                    discovering={!!device.discovering}
+                    discovered={device.discovered ?? []}
+                    discoveredAt={device.discovered_at ?? null}
+                    setups={device.setups ?? []}
+                    knownHosts={knownHosts}
+                />
+            )}
             {device.framing_review && (
                 <div className="bg-muted rounded-lg px-3 py-2 text-sm">
                     <span className="font-semibold">Encuadre {device.framing_review.rating}</span>

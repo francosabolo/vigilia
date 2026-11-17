@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CameraDiscoveryController;
 use App\Http\Controllers\Edge\CommandController;
 use App\Http\Controllers\Edge\DetectionEventController;
 use App\Http\Controllers\Edge\HeartbeatController;
@@ -13,6 +14,8 @@ Route::prefix('edge')->middleware(['edge', 'throttle:1200,1'])->group(function (
     Route::post('snapshots/{snapshotRequest}', [CommandController::class, 'storeSnapshot'])->name('edge.snapshots.store');
     Route::post('deterrence/{deterrenceCommand}', [CommandController::class, 'storeDeterrenceResult'])->name('edge.deterrence.store');
     Route::post('previews', [CommandController::class, 'storePreview'])->name('edge.previews.store');
+    Route::post('discovered', [CameraDiscoveryController::class, 'discovered'])->name('edge.discovered');
+    Route::post('camera-setups/{cameraSetup}', [CameraDiscoveryController::class, 'setupResult'])->name('edge.camera-setups.result');
     Route::post('health-frames', [CommandController::class, 'storeHealthFrame'])->name('edge.health-frames.store');
 });
 

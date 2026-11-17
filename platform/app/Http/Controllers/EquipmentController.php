@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Anthropic\Client;
 use App\Enums\UserRole;
 use App\Models\Camera;
+use App\Models\CameraSetup;
 use App\Models\DetectionEvent;
 use App\Models\EdgeDevice;
 use App\Models\Site;
@@ -38,7 +39,14 @@ class EquipmentController extends Controller
                 'name' => $site->name,
                 'client' => $site->client?->name,
                 'devices' => collect()
-                    ->concat($site->edgeDevices->map(fn (EdgeDevice $edge) => $this->row('edge', $edge->id, $edge->name, $edge, ['version' => $edge->version, 'update_requested_at' => $edge->update_requested_at?->toIso8601String()])))
+                    ->concat($site->edgeDevices->map(fn (EdgeDevice $edge) => $this->row('edge', $edge->id, $edge->name, $edge, [
+                        'version' => $edge->version,
+                        'update_requested_at' => $edge->update_requested_at?->toIso8601String(),
+                        'discovering' => $edge->discovery_requested_at !== null && $edge->discovery_requested_at->gt(now()->subMinutes(10)),
+                        'discovered' => $edge->discovered ?? [],
+                        'discovered_at' => $edge->discovered_at?->toIso8601String(),
+                        'setups' => CameraSetup::where('edge_device_id', $edge->id)->latest()->limit(10)->get(['id', 'name', 'host', 'status', 'result'])->toArray(),
+                    ])))
                     ->concat($site->cameras->sortBy('name')->map(fn (Camera $camera) => $this->row('camera', $camera->id, $camera->name, $camera, ['online' => $camera->is_online])))
                     ->values(),
             ]),

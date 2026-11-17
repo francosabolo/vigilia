@@ -13,7 +13,9 @@
 import json
 import logging
 import os
+import re
 import shutil
+import socket
 import subprocess
 import threading
 import time
@@ -253,6 +255,71 @@ def apply_zones(payload: dict) -> None:
     ZONES_VERSION_FILE.write_text(payload["version"])
 
 
+WS_DISCOVERY_PROBE = """<?xml version="1.0" encoding="UTF-8"?>
+<e:Envelope xmlns:e="http://www.w3.org/2003/05/soap-envelope" xmlns:w="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+ xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery" xmlns:dn="http://www.onvif.org/ver10/network/wsdl">
+<e:Header><w:MessageID>uuid:{uid}</w:MessageID><w:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</w:To>
+<w:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</w:Action></e:Header>
+<e:Body><d:Probe><d:Types>dn:NetworkVideoTransmitter</d:Types></d:Probe></e:Body></e:Envelope>"""
+
+
+def discover_cameras(timeout: float = 4.0) -> list[dict]:
+    """K8 — ONVIF WS-Discovery: every camera on the local network answers the multicast probe with its address."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+    sock.settimeout(timeout)
+    sock.sendto(WS_DISCOVERY_PROBE.format(uid=os.urandom(8).hex()).encode(), ("239.255.255.250", 3702))
+    found: dict[str, dict] = {}
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            data, (address, _) = sock.recvfrom(65535)
+        except socket.timeout:
+            break
+        text = data.decode(errors="ignore")
+        names = re.findall(r"onvif://www\.onvif\.org/(?:name|hardware)/([^\s<]+)", text)
+        found[address] = {"address": address, "name": " ".join(requests.utils.unquote(n) for n in names)[:200] or None}
+    sock.close()
+    return list(found.values())
+
+
+def run_discovery() -> None:
+    try:
+        devices = discover_cameras()
+        session.post(f"{API_URL}/api/edge/discovered", json={"devices": devices}, timeout=10)
+        log.info("discovery found %d cameras", len(devices))
+    except Exception as exc:  # noqa: BLE001 — a failed scan must not stop the bridge
+        log.error("discovery failed: %s", exc)
+
+
+def add_cameras(setups: list[dict]) -> None:
+    """K8 — add the cameras the technician picked to Frigate (detect on the main stream) and restart it once."""
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    config = yaml.load(FRIGATE_CONFIG.read_text())
+    cameras = config.setdefault("cameras", {})
+    results = []
+    for setup in setups:
+        if setup["name"] in cameras:
+            results.append((setup["id"], False, "Ya existe una cámara con ese nombre"))
+            continue
+        cameras[setup["name"]] = {
+            "ffmpeg": {"inputs": [{"path": setup["url"], "roles": ["detect", "record"]}]},
+            "detect": {"width": 1280, "height": 720, "fps": 5},
+        }
+        results.append((setup["id"], True, "Agregada a Frigate"))
+    if any(ok for _, ok, _ in results):
+        FRIGATE_CONFIG.with_suffix(".yml.bak").write_text(FRIGATE_CONFIG.read_text())
+        with FRIGATE_CONFIG.open("w") as fh:
+            yaml.dump(config, fh)
+        try:
+            requests.post(f"{FRIGATE_URL}/api/restart", timeout=10)
+        except requests.RequestException:
+            pass
+    for setup_id, ok, result in results:
+        session.post(f"{API_URL}/api/edge/camera-setups/{setup_id}", json={"ok": ok, "result": result}, timeout=10)
+
+
 def latest_frame(camera: str) -> bytes | None:
     """Current frame of a camera from Frigate (720p JPEG keeps uploads small)."""
     try:
@@ -331,6 +398,15 @@ def command_loop() -> None:
 
         if commands.get("update"):
             threading.Thread(target=update_self, daemon=True).start()
+
+        if commands.get("discover"):
+            threading.Thread(target=run_discovery, daemon=True).start()
+
+        if commands.get("add_cameras"):
+            try:
+                add_cameras(commands["add_cameras"])
+            except Exception as exc:  # never let a bad config stop the bridge
+                log.error("could not add cameras: %s", exc)
 
         for snapshot in commands.get("snapshots", []):
             frame = latest_frame(snapshot["camera"])

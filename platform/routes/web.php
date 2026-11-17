@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccessController;
 use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\CameraDiscoveryController;
 use App\Http\Controllers\CameraWallController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CurrentSiteController;
@@ -116,6 +117,8 @@ Route::middleware('auth')->group(function () {
         Route::get('equipment', [EquipmentController::class, 'index'])->name('equipment.index');
         Route::patch('equipment/{type}/{id}', [EquipmentController::class, 'update'])->whereIn('type', ['camera', 'edge'])->whereNumber('id')->name('equipment.update');
         Route::post('edges/{edge}/update', [EquipmentController::class, 'requestUpdate'])->name('edges.update-request');
+        Route::post('edges/{edge}/discover', [CameraDiscoveryController::class, 'request'])->name('edges.discover');
+        Route::post('edges/{edge}/cameras', [CameraDiscoveryController::class, 'add'])->middleware('throttle:30,1')->name('edges.cameras.add');
         Route::post('cameras/{camera}/framing', [EquipmentController::class, 'reviewFraming'])->middleware('throttle:10,1')->name('cameras.framing');
         Route::post('cameras/{camera}/replace', [EquipmentController::class, 'replace'])->name('cameras.replace');
         Route::get('residents', ResidentDirectoryController::class)->name('staff.residents');

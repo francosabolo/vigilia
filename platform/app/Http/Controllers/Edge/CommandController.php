@@ -6,6 +6,7 @@ use App\Events\IncidentChanged;
 use App\Http\Controllers\Controller;
 use App\Jobs\ReviewReportedSnapshot;
 use App\Models\Camera;
+use App\Models\CameraSetup;
 use App\Models\DeterrenceCommand;
 use App\Models\EdgeDevice;
 use App\Models\SnapshotRequest;
@@ -15,6 +16,7 @@ use App\Services\Privacy\PrivacyMask;
 use App\Services\Zones\ZoneSync;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -45,7 +47,15 @@ class CommandController extends Controller
             ->get();
         DeterrenceCommand::whereIn('id', $deterrence->pluck('id'))->update(['status' => 'sent', 'sent_at' => now()]);
 
+        // K8 — cameras the technician asked to add: sent once, with their stream URL, then marked as sent.
+        $setups = CameraSetup::where('edge_device_id', $device->id)->where('status', 'pending')->get();
+        CameraSetup::whereIn('id', $setups->pluck('id'))->update(['status' => 'sent']);
+
         return response()->json([
+            // Sent once per request: the scan takes a few seconds and the bridge polls every few.
+            'discover' => $device->discovery_requested_at !== null && $device->discovery_requested_at->gt(now()->subMinutes(10))
+                && Cache::add("edge-discover-{$device->id}-{$device->discovery_requested_at->timestamp}", true, 600),
+            'add_cameras' => $setups->map(fn (CameraSetup $setup): array => ['id' => $setup->id, 'name' => $setup->name, 'url' => $setup->stream_url])->values(),
             'snapshots' => $snapshots->map(fn (SnapshotRequest $snapshot): array => [
                 'id' => $snapshot->id,
                 'camera' => $snapshot->camera->frigate_name,
