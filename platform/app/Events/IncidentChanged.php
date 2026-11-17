@@ -32,6 +32,14 @@ class IncidentChanged implements ShouldBroadcast
         ]));
     }
 
+    /**
+     * The screen must not wait behind long jobs (patrols, reports): incident updates go with the alerts.
+     */
+    public function broadcastQueue(): string
+    {
+        return 'alerts';
+    }
+
     public function broadcastAs(): string
     {
         return 'incident.changed';
@@ -47,6 +55,7 @@ class IncidentChanged implements ShouldBroadcast
             'incident' => [
                 'id' => $this->incident->id,
                 'site_id' => $this->incident->site_id,
+                'site' => $this->incident->site->name,
                 'status' => $this->incident->status->value,
                 'severity' => $this->incident->severity->value,
                 'title' => $this->incident->title,

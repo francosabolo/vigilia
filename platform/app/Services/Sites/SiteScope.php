@@ -70,6 +70,10 @@ class SiteScope
             'alerts' => [
                 'open' => (clone $open)->count(),
                 'escalated' => (clone $open)->where('status', IncidentStatus::Escalated)->count(),
+                // With one property selected, what is going on in the rest: the live alerts cover every property.
+                'elsewhere' => $current
+                    ? Incident::whereIn('site_id', array_diff($user->accessibleSiteIds(), [$current->id]))->where('status', '!=', IncidentStatus::Resolved)->count()
+                    : 0,
             ],
         ];
     }

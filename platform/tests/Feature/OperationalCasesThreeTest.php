@@ -111,3 +111,11 @@ it('sets up the camera siren from the console and sends it with the speaker test
         ->assertJsonPath('deterrence.0.siren.password', 's3creta');
     $this->actingAs($admin)->get("/sites/{$this->site->id}?tab=camaras")->assertDontSee('s3creta');
 });
+
+it('sends incident updates to the screen with the alerts, saying which property', function () {
+    $incident = Incident::factory()->create(['site_id' => $this->site->id]);
+    $event = new App\Events\IncidentChanged($incident, 'opened');
+
+    expect($event->broadcastQueue())->toBe('alerts')
+        ->and($event->broadcastWith()['incident']['site'])->toBe($this->site->name);
+});

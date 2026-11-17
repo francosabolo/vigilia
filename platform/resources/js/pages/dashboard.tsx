@@ -11,7 +11,7 @@ import AppLayout from '@/layouts/app-layout';
 import { formatDuration, plural, type ActivityItem, type IncidentStatus, type Metrics, type Severity } from '@/lib/seguria';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, usePoll } from '@inertiajs/react';
+import { Head, Link, router, usePage, usePoll } from '@inertiajs/react';
 import { Building2, Cctv, Cpu, Filter, Siren } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Panel', href: '/dashboard' }];
@@ -49,6 +49,32 @@ interface Props {
     handoverSiteId: number | null;
 }
 
+/**
+ * Filtered to one property, the live alerts still cover every property: say what is going on in the rest so a sound
+ * is never about something this screen does not show.
+ */
+function ElsewhereNotice() {
+    const context = usePage<{ siteContext: { current: { name: string } | null; alerts: { elsewhere?: number } } | null }>().props.siteContext;
+    const elsewhere = context?.alerts.elsewhere ?? 0;
+    if (!context?.current || elsewhere === 0) return null;
+
+    return (
+        <div className="bg-card flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-5 py-4 text-[15px]">
+            <span>
+                Estás mirando solo {context.current.name}. Hay {elsewhere === 1 ? '1 incidente abierto' : `${elsewhere} incidentes abiertos`} en otras
+                propiedades.
+            </span>
+            <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => router.put('/current-site', { site_id: null }, { preserveScroll: true })}
+            >
+                Ver todas las propiedades
+            </Button>
+        </div>
+    );
+}
+
 function WatchStatus({
     openIncidents,
     openCount,
@@ -56,6 +82,7 @@ function WatchStatus({
     edgesOffline,
 }: Pick<Props, 'openIncidents' | 'openCount' | 'escalatedCount' | 'edgesOffline'>) {
     const first = openIncidents[0];
+    const currentSite = usePage<{ siteContext: { current: { name: string } | null } | null }>().props.siteContext?.current?.name;
 
     if (escalatedCount > 0 && first) {
         return (
@@ -99,7 +126,7 @@ function WatchStatus({
         <section className="border-ok/40 bg-ok/10 flex items-center gap-6 rounded-xl border p-5">
             <span className="bg-ok size-4 shrink-0 rounded-full" aria-hidden />
             <div>
-                <h1 className="font-display text-3xl leading-tight font-semibold">Todo en orden</h1>
+                <h1 className="font-display text-3xl leading-tight font-semibold">Todo en orden{currentSite ? ` en ${currentSite}` : ''}</h1>
                 <p className="text-muted-foreground mt-1 text-[15px]">
                     {edgesOffline > 0
                         ? `Atención: ${plural(edgesOffline, 'equipo edge', 'equipos edge')} sin señal.`
@@ -168,6 +195,7 @@ export default function Dashboard({
             <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 p-4 md:p-6">
                 <ArrivalsPanel arrivals={arrivals} />
                 <WatchStatus openIncidents={openIncidents} openCount={openCount} escalatedCount={escalatedCount} edgesOffline={edgesOffline} />
+                <ElsewhereNotice />
 
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(340px,2fr)]">
                     <div className="flex min-w-0 flex-col gap-5">

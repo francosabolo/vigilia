@@ -1,10 +1,10 @@
-import { playAlarm } from '@/hooks/use-live-incidents';
+import { incidentAlertKey, raiseAlert } from '@/lib/alarm';
 import { timeAgo } from '@/lib/seguria';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useEchoNotification } from '@laravel/echo-react';
-import { Bell, X } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface InboxItem {
@@ -57,7 +57,6 @@ export function NotificationBell({ className, showAll = true }: { className?: st
     const [open, setOpen] = useState(false);
     const [unread, setUnread] = useState(unreadNotifications ?? 0);
     const [items, setItems] = useState<InboxItem[] | null>(null);
-    const [toast, setToast] = useState<LivePayload | null>(null);
     const panel = useRef<HTMLDivElement>(null);
 
     useEffect(() => setUnread(unreadNotifications ?? 0), [unreadNotifications]);
@@ -73,15 +72,20 @@ export function NotificationBell({ className, showAll = true }: { className?: st
     useEchoNotification<LivePayload>(`App.Models.User.${auth.user.id}`, (payload) => {
         setUnread((count) => count + 1);
         setItems(null);
-        setToast(payload);
-        if (payload.level === 'alarm') playAlarm();
+        // An incident the console already sounded for (it arrives first, by its own channel) does not sound again.
+        const incidentId = payload.kind === 'incident' ? payload.url?.match(/\/incidents\/(\d+)/)?.[1] : undefined;
+        const key = incidentId
+            ? incidentAlertKey(incidentId, payload.title.startsWith('Escalado') ? 'escalated' : 'opened')
+            : `notification:${payload.id}`;
+        raiseAlert({
+            key,
+            title: payload.title,
+            detail: payload.body || null,
+            url: payload.url ? `/notifications/${payload.id}` : null,
+            urgent: payload.level === 'alarm',
+            silent: payload.level === 'info',
+        });
     });
-
-    useEffect(() => {
-        if (!toast) return;
-        const timer = setTimeout(() => setToast(null), 8000);
-        return () => clearTimeout(timer);
-    }, [toast]);
 
     useEffect(() => {
         if (!open) return;
@@ -145,39 +149,6 @@ export function NotificationBell({ className, showAll = true }: { className?: st
                             Ver todas
                         </Link>
                     )}
-                </div>
-            )}
-
-            {toast && (
-                <div
-                    role="status"
-                    className={cn(
-                        'bg-popover fixed right-4 bottom-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] gap-3 rounded-xl border p-4 shadow-lg',
-                        toast.level === 'alarm' && 'border-alarm border-2',
-                    )}
-                >
-                    <span className={cn('mt-1.5 size-2.5 shrink-0 rounded-full', levelDot[toast.level])} aria-hidden />
-                    <div className="min-w-0 flex-1">
-                        <p className="font-semibold">{toast.title}</p>
-                        {toast.body && <p className="text-muted-foreground line-clamp-2 text-sm">{toast.body}</p>}
-                        {toast.url && (
-                            <Link
-                                href={`/notifications/${toast.id}`}
-                                className="mt-1 inline-block text-sm font-medium underline underline-offset-2"
-                                onClick={() => setToast(null)}
-                            >
-                                Abrir
-                            </Link>
-                        )}
-                    </div>
-                    <button
-                        type="button"
-                        aria-label="Cerrar aviso"
-                        onClick={() => setToast(null)}
-                        className="text-muted-foreground hover:text-foreground self-start"
-                    >
-                        <X className="size-4" />
-                    </button>
                 </div>
             )}
         </div>
