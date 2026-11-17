@@ -73,6 +73,7 @@ interface Camera {
     is_checkpoint: boolean;
     is_access: boolean;
     ai_notes: string | null;
+    speaker_test: { status: string; result: string | null; at: string } | null;
     view_status: 'ok' | 'moved' | 'covered';
     view_shift_deg: number | null;
     position: LatLng | null;
@@ -655,6 +656,31 @@ function CameraRoles({ camera }: { camera: Camera }) {
                 </label>
             ))}
             <CameraNotes camera={camera} />
+            <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground text-left text-sm underline underline-offset-2"
+                onClick={() => router.post(`/cameras/${camera.id}/speaker-test`, {}, { preserveScroll: true })}
+            >
+                Probar altavoz
+            </button>
+            {camera.speaker_test && (
+                <span
+                    className={cn(
+                        'text-xs',
+                        camera.speaker_test.status === 'done'
+                            ? 'text-ok'
+                            : camera.speaker_test.status === 'failed'
+                              ? 'text-alarm'
+                              : 'text-muted-foreground',
+                    )}
+                >
+                    {camera.speaker_test.status === 'done'
+                        ? 'El altavoz funcionó'
+                        : camera.speaker_test.status === 'failed'
+                          ? (camera.speaker_test.result ?? 'El altavoz no respondió')
+                          : 'Prueba enviada, esperando al equipo…'}
+                </span>
+            )}
         </div>
     );
 }

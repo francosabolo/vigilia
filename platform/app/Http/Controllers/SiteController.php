@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Models\ArmingSchedule;
 use App\Models\Camera;
 use App\Models\Client;
+use App\Models\DeterrenceCommand;
 use App\Models\EdgeDevice;
 use App\Models\MediaView;
 use App\Models\Patrol;
@@ -176,6 +177,9 @@ class SiteController extends Controller
                         'is_checkpoint' => $camera->is_checkpoint,
                         'is_access' => $camera->is_access,
                         'ai_notes' => $canManage ? $camera->ai_notes : null,
+                        'speaker_test' => ($test = DeterrenceCommand::where('camera_id', $camera->id)->whereNull('incident_id')->latest('id')->first())
+                            ? ['status' => $test->status, 'result' => $test->result, 'at' => $test->created_at->toIso8601String()]
+                            : null,
                         'view_shift_deg' => $camera->view_shift_deg,
                         'position' => $camera->lat !== null ? [$camera->lat, $camera->lng] : null,
                         'heading' => $camera->heading,

@@ -1,4 +1,5 @@
 import { DecisionTrail } from '@/components/console/decision-trail';
+import { EmergencyCallDialog, SpeakerDialog } from '@/components/console/incident-response-tools';
 import { SeverityText, StatusSignal } from '@/components/incident-badges';
 import { IncidentRoute } from '@/components/incident-route';
 import { ItemActionLink } from '@/components/item-action';
@@ -204,9 +205,17 @@ export default function IncidentShow({ incident, channel }: Props) {
                         <p className="text-muted-foreground mt-1">
                             {place}. Detectado el {formatDateTime(incident.detected_at)}
                         </p>
-                        <ItemActionLink kind="view" href={`/incidents/${incident.id}/report`} className="mt-1 -ml-3">
-                            Informe para denuncia o seguro
-                        </ItemActionLink>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                            {incident.status !== 'resolved' && incident.source !== 'equipment' && (
+                                <>
+                                    {incident.camera && <SpeakerDialog incident={incident} />}
+                                    <EmergencyCallDialog incident={incident} address={incident.site.address ?? null} />
+                                </>
+                            )}
+                            <ItemActionLink kind="view" href={`/incidents/${incident.id}/report`}>
+                                Informe para denuncia o seguro
+                            </ItemActionLink>
+                        </div>
                     </header>
 
                     {incident.tamper ? (

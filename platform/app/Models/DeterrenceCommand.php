@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DeterrenceCommand extends Model
 {
-    protected $fillable = ['incident_id', 'edge_device_id', 'camera_id', 'message', 'status', 'sent_at', 'done_at', 'result'];
+    protected $fillable = ['incident_id', 'edge_device_id', 'camera_id', 'message', 'status', 'sent_at', 'done_at', 'result', 'requested_by'];
 
     protected function casts(): array
     {

@@ -28,7 +28,7 @@ class IncidentController extends Controller
         $filter = $request->query('filter', 'open');
 
         $incidents = Incident::query()
-            ->with(['site:id,name', 'camera:id,name'])
+            ->with(['site:id,name,address', 'camera:id,name'])
             ->whereIn('site_id', $scope->siteIds($request))
             ->when($filter === 'open', fn ($query) => $query->where('status', '!=', IncidentStatus::Resolved))
             ->orderByRaw("case when status = 'escalated' then 0 when status in ('new', 'notified') then 1 else 2 end")
@@ -62,7 +62,7 @@ class IncidentController extends Controller
      */
     public function detail(Incident $incident): array
     {
-        $incident->load(['site:id,name,organization_id', 'camera:id,name,sector,view_status', 'zone:id,name', 'reporter:id,name,lot,phone', 'acknowledgedBy:id,name', 'actions.user:id,name', 'snapshotRequests.camera:id,name']);
+        $incident->load(['site:id,name,address,organization_id', 'camera:id,name,sector,view_status', 'zone:id,name', 'reporter:id,name,lot,phone', 'acknowledgedBy:id,name', 'actions.user:id,name', 'snapshotRequests.camera:id,name']);
 
         return $this->summary($incident) + [
             'description' => $incident->description,
@@ -184,7 +184,7 @@ class IncidentController extends Controller
             'title' => $incident->title,
             'status' => $incident->status->value,
             'severity' => $incident->severity->value,
-            'site' => ['id' => $incident->site->id, 'name' => $incident->site->name],
+            'site' => ['id' => $incident->site->id, 'name' => $incident->site->name, 'address' => $incident->site->address],
             'camera' => $incident->camera?->name ?? ($incident->sector ? "Sector {$incident->sector}" : 'Sin cámara'),
             'source' => $incident->source->value,
             'thumbnail_url' => $incident->mediaUrl('snapshot'),

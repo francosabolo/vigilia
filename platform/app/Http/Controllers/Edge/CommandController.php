@@ -78,6 +78,10 @@ class CommandController extends Controller
         $data = $request->validate(['ok' => ['required', 'boolean'], 'result' => ['nullable', 'string', 'max:255']]);
         $deterrenceCommand->forceFill(['status' => $data['ok'] ? 'done' : 'failed', 'done_at' => now(), 'result' => $data['result'] ?? null])->save();
 
+        if (! $deterrenceCommand->incident) {
+            return response()->json(['ok' => true]); // K11 — a speaker test: the result is shown on the camera.
+        }
+
         $deterrenceCommand->incident->actions()->create([
             'type' => $data['ok'] ? 'deterrence_done' : 'deterrence_failed',
             'channel' => 'edge',

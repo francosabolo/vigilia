@@ -16,3 +16,6 @@ Schedule::command('seguria:monthly-reports')->monthlyOn(1, '08:00')->withoutOver
 
 // C2/C3: guard posts and round checkpoints, where the company turned supervision on.
 Schedule::command('seguria:watch-guards')->everyFiveMinutes()->withoutOverlapping();
+
+// F6: residents get one sentence about their week, Monday morning.
+Schedule::command('seguria:resident-weekly')->weeklyOn(1, '09:00')->withoutOverlapping();

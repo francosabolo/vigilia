@@ -7,7 +7,7 @@ export interface IncidentSummary {
     title: string;
     status: IncidentStatus;
     severity: Severity;
-    site: { id: number; name: string };
+    site: { id: number; name: string; address?: string | null };
     camera: string;
     thumbnail_url: string | null;
     detected_at: string;
@@ -201,6 +201,7 @@ export const actionLabel: Record<string, string> = {
     autonomy_demoted: 'La zona volvió a Asistida',
     equipment_down: 'Equipo sin señal',
     patrol: 'Novedad de la ronda virtual',
+    speaker_message: 'Mensaje por el altavoz',
     note: 'Nota',
     panic: 'Botón de pánico activado por un vecino',
     resident_report: 'Reporte de un vecino',

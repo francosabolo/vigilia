@@ -22,6 +22,7 @@ use App\Http\Controllers\ShadowController;
 use App\Http\Controllers\SiteConfigurationController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SiteSetupController;
+use App\Http\Controllers\SpeakerController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ZoneEditorController;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +77,8 @@ Route::middleware('auth')->group(function () {
         Route::post('incidents/{incident}/resolve', [IncidentController::class, 'resolve'])->name('incidents.resolve');
         Route::get('incidents/{incident}/report', [ReportController::class, 'incident'])->name('reports.incident');
         Route::get('sites/{site}/report', [ReportController::class, 'site'])->name('reports.site');
+        Route::post('incidents/{incident}/speaker', [SpeakerController::class, 'speak'])->middleware('throttle:20,1')->name('incidents.speaker');
+        Route::post('cameras/{camera}/speaker-test', [SpeakerController::class, 'test'])->middleware('throttle:10,1')->name('cameras.speaker-test');
         Route::post('incidents/{incident}/notes', [IncidentController::class, 'note'])->name('incidents.notes');
         Route::post('incidents/{incident}/camera-view', [IncidentController::class, 'fixCameraView'])->name('incidents.camera-view');
 
