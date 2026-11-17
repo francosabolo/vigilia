@@ -149,7 +149,18 @@ export const objectLabels: Record<string, string> = {
     dog: 'Perros',
 };
 
-export type ZoneKind = 'perimeter' | 'door' | 'window' | 'sensitive' | 'garage' | 'common_area' | 'pool' | 'construction' | 'privacy';
+export type ZoneKind =
+    | 'perimeter'
+    | 'door'
+    | 'window'
+    | 'sensitive'
+    | 'garage'
+    | 'common_area'
+    | 'pool'
+    | 'construction'
+    | 'loading'
+    | 'hazard'
+    | 'privacy';
 
 export const zoneKinds: { id: ZoneKind; label: string; example: string; labels: string[] }[] = [
     { id: 'perimeter', label: 'Perímetro', example: 'Ej: alambrado norte', labels: ['person', 'car', 'motorcycle'] },
@@ -160,6 +171,8 @@ export const zoneKinds: { id: ZoneKind; label: string; example: string; labels: 
     { id: 'common_area', label: 'Espacio común', example: 'Ej: hall de entrada', labels: ['person'] },
     { id: 'pool', label: 'Pileta', example: 'Ej: pileta del club house', labels: ['person'] },
     { id: 'construction', label: 'Obra', example: 'Ej: obra del lote 30', labels: ['person'] },
+    { id: 'loading', label: 'Zona de carga', example: 'Ej: playón de camiones', labels: ['person', 'car', 'truck'] },
+    { id: 'hazard', label: 'Zona de riesgo', example: 'Ej: pasillo de montacargas', labels: ['person'] },
     { id: 'privacy', label: 'Privacidad', example: 'Ej: la calle o la ventana del vecino', labels: [] },
 ];
 

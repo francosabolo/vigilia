@@ -102,6 +102,8 @@ class SiteConfigurationController extends Controller
             'is_checkpoint' => ['required', 'boolean'],
             'is_access' => ['sometimes', 'boolean'],
             'is_ptz' => ['sometimes', 'boolean'],
+            'watch_motion' => ['sometimes', 'boolean'],
+            'fire_watch' => ['sometimes', 'boolean'],
         ]));
 
         return back();

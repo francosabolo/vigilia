@@ -230,7 +230,7 @@ class DetectionProcessor
         }
 
         $matching = $zones->filter(fn (Zone $zone): bool => in_array($zone->frigate_zone, $event->zones ?? [], true)
-            && (empty($zone->watched_labels) || in_array($event->label, $zone->watched_labels, true)));
+            && ($event->label === 'motion' || empty($zone->watched_labels) || in_array($event->label, $zone->watched_labels, true)));
 
         return $matching->isEmpty() ? false : $matching->values()->all();
     }

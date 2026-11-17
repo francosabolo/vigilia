@@ -17,6 +17,8 @@ class HeartbeatRequest extends FormRequest
             'version' => ['nullable', 'string', 'max:50'],
             'zones_version' => ['nullable', 'string', 'max:40'],
             'cameras' => ['nullable', 'array'],
+            'power' => ['nullable', 'in:mains,battery'],
+            'queued' => ['nullable', 'integer', 'min:0'],
             'cameras.*.name' => ['required', 'string', 'max:100'],
             'cameras.*.online' => ['required', 'boolean'],
         ];

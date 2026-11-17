@@ -75,6 +75,8 @@ interface Camera {
     is_checkpoint: boolean;
     is_access: boolean;
     is_ptz: boolean;
+    watch_motion: boolean;
+    fire_watch: boolean;
     ai_notes: string | null;
     speaker_test: { status: string; result: string | null; at: string } | null;
     view_status: 'ok' | 'moved' | 'covered';
@@ -663,7 +665,7 @@ function CameraNotes({ camera }: { camera: Camera }) {
 }
 
 function CameraRoles({ camera }: { camera: Camera }) {
-    const toggle = (role: 'is_guard_post' | 'is_checkpoint' | 'is_access' | 'is_ptz') =>
+    const toggle = (role: 'is_guard_post' | 'is_checkpoint' | 'is_access' | 'is_ptz' | 'watch_motion' | 'fire_watch') =>
         router.patch(
             `/cameras/${camera.id}/roles`,
             {
@@ -671,6 +673,8 @@ function CameraRoles({ camera }: { camera: Camera }) {
                 is_checkpoint: camera.is_checkpoint,
                 is_access: camera.is_access,
                 is_ptz: camera.is_ptz,
+                watch_motion: camera.watch_motion,
+                fire_watch: camera.fire_watch,
                 [role]: !camera[role],
             },
             { preserveScroll: true },
@@ -684,6 +688,8 @@ function CameraRoles({ camera }: { camera: Camera }) {
                     ['is_guard_post', 'Es la garita'],
                     ['is_checkpoint', 'Punto de ronda'],
                     ['is_ptz', 'Se mueve sola (PTZ)'],
+                    ['watch_motion', 'Avisar movimiento aunque no vea a nadie'],
+                    ['fire_watch', 'Vigilar humo y fuego'],
                 ] as const
             ).map(([role, label]) => (
                 <label key={role} className="flex items-center gap-2">

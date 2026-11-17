@@ -42,6 +42,11 @@ class EquipmentController extends Controller
                     ->concat($site->edgeDevices->map(fn (EdgeDevice $edge) => $this->row('edge', $edge->id, $edge->name, $edge, [
                         'version' => $edge->version,
                         'update_requested_at' => $edge->update_requested_at?->toIso8601String(),
+                        'on_battery_since' => $edge->on_battery_since?->toIso8601String(),
+                        'queued_events' => $edge->queued_events,
+                        'gaps' => collect($edge->connectivity_gaps ?? [])->reverse()->take(3)->map(fn (array $gap): array => $gap + [
+                            'recovered' => DetectionEvent::where('edge_device_id', $edge->id)->whereBetween('started_at', [$gap['from'], $gap['to']])->count(),
+                        ])->values(),
                         'discovering' => $edge->discovery_requested_at !== null && $edge->discovery_requested_at->gt(now()->subMinutes(10)),
                         'discovered' => $edge->discovered ?? [],
                         'discovered_at' => $edge->discovered_at?->toIso8601String(),

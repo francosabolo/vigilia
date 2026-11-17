@@ -31,6 +31,8 @@ import {
     RotateCcw,
     Target,
     Trash2,
+    TriangleAlert,
+    Truck,
     Undo2,
     VideoOff,
     Waves,
@@ -134,6 +136,8 @@ const KIND_ICONS: Record<ZoneKind, LucideIcon> = {
     common_area: Armchair,
     pool: Waves,
     construction: HardHat,
+    loading: Truck,
+    hazard: TriangleAlert,
     privacy: EyeOff,
 };
 

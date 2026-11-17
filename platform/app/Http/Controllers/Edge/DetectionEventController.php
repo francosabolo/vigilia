@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Edge;
 
 use App\Enums\DetectionStatus;
+use App\Enums\ZoneKind;
 use App\Events\DetectionEventReceived;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Edge\StoreDetectionEventRequest;
@@ -29,6 +30,14 @@ class DetectionEventController extends Controller
         );
         if ($camera->trashed()) {
             return response()->json(['ok' => true, 'ignored' => 'camera_removed']);
+        }
+
+        // M7 — motion without a person from a camera watched for it: it counts for the high-risk zones of the camera.
+        if ($data['label'] === 'motion') {
+            if (! $camera->watch_motion) {
+                return response()->json(['ok' => true, 'ignored' => 'motion_not_watched']);
+            }
+            $data['zones'] = $camera->zones()->get()->filter(fn ($zone) => $zone->kind->isAccessPoint() || $zone->kind === ZoneKind::Perimeter)->pluck('frigate_zone')->values()->all();
         }
 
         // The bridge retries on network failures: the Frigate event id makes ingest idempotent.

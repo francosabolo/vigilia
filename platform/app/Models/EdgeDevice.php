@@ -14,13 +14,13 @@ class EdgeDevice extends Model
     /** @use HasFactory<EdgeDeviceFactory> */
     use HasFactory;
 
-    protected $fillable = ['site_id', 'name', 'token_hash', 'version', 'zones_version', 'last_ip', 'last_seen_at', 'offline_since', 'model', 'serial', 'installed_at', 'warranty_until', 'update_requested_at', 'discovery_requested_at', 'discovered', 'discovered_at'];
+    protected $fillable = ['site_id', 'name', 'token_hash', 'version', 'zones_version', 'last_ip', 'last_seen_at', 'offline_since', 'model', 'serial', 'installed_at', 'warranty_until', 'update_requested_at', 'discovery_requested_at', 'discovered', 'discovered_at', 'on_battery_since', 'queued_events', 'connectivity_gaps'];
 
     protected $hidden = ['token_hash'];
 
     protected function casts(): array
     {
-        return ['last_seen_at' => 'datetime', 'offline_since' => 'datetime', 'installed_at' => 'date', 'warranty_until' => 'date', 'update_requested_at' => 'datetime', 'discovery_requested_at' => 'datetime', 'discovered' => 'array', 'discovered_at' => 'datetime'];
+        return ['last_seen_at' => 'datetime', 'offline_since' => 'datetime', 'installed_at' => 'date', 'warranty_until' => 'date', 'update_requested_at' => 'datetime', 'discovery_requested_at' => 'datetime', 'discovered' => 'array', 'discovered_at' => 'datetime', 'on_battery_since' => 'datetime', 'connectivity_gaps' => 'array'];
     }
 
     /**

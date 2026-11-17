@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Edge;
 
 use App\Events\IncidentChanged;
 use App\Http\Controllers\Controller;
+use App\Jobs\CheckForFire;
 use App\Jobs\ReviewReportedSnapshot;
 use App\Models\Camera;
 use App\Models\CameraSetup;
@@ -55,6 +56,7 @@ class CommandController extends Controller
             // Sent once per request: the scan takes a few seconds and the bridge polls every few.
             'discover' => $device->discovery_requested_at !== null && $device->discovery_requested_at->gt(now()->subMinutes(10))
                 && Cache::add("edge-discover-{$device->id}-{$device->discovery_requested_at->timestamp}", true, 600),
+            'motion_cameras' => Camera::where('edge_device_id', $device->id)->where('watch_motion', true)->pluck('frigate_name')->values(),
             'add_cameras' => $setups->map(fn (CameraSetup $setup): array => ['id' => $setup->id, 'name' => $setup->name, 'url' => $setup->stream_url])->values(),
             'snapshots' => $snapshots->map(fn (SnapshotRequest $snapshot): array => [
                 'id' => $snapshot->id,
@@ -136,7 +138,13 @@ class CommandController extends Controller
         ]);
 
         $camera = Camera::where('edge_device_id', $device->id)->where('frigate_name', $data['camera'])->firstOrFail();
-        $incident = $monitor->check($camera, app(PrivacyMask::class)->apply($camera, $request->file('image')->get()));
+        $image = app(PrivacyMask::class)->apply($camera, $request->file('image')->get());
+        $incident = $monitor->check($camera, $image);
+        // M13 — cameras watched for smoke or fire: every fresh frame is looked at, not only on patrols.
+        if ($camera->fire_watch && ($camera->fire_checked_at === null || $camera->fire_checked_at->lt(now()->subSeconds(50)))) {
+            $camera->forceFill(['fire_checked_at' => now()])->save();
+            CheckForFire::dispatch($camera, base64_encode($image))->onQueue('alerts');
+        }
 
         return response()->json(['ok' => true, 'view_status' => $camera->fresh()->view_status->value, 'incident_id' => $incident?->id]);
     }

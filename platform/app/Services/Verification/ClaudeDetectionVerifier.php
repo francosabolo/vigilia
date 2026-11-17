@@ -220,6 +220,10 @@ class ClaudeDetectionVerifier implements DetectionVerifier
         $matched = $event->camera->zones()->whereIn('frigate_zone', $event->zones ?? [])->get();
         $zones = $matched->map(fn ($zone): string => "{$zone->name} ({$zone->kind->label()})")->implode(', ');
         $hints = $matched->map(fn ($zone) => $zone->kind->aiHint())->filter()->unique()->implode(' ');
+        if ($event->label === 'motion') {
+            // M7 — the detector saw no person; someone crouching, hooded or in tall grass can still be there.
+            $hints .= ' El detector no reconoció a una persona: solo hubo movimiento en una zona de alto riesgo. Mirá con cuidado si hay alguien agachado, cubierto, con capucha, arrastrándose o entre pastizales o sombras; viento, animales chicos, lluvia o luces no son amenaza.';
+        }
 
         $sequence = '';
         if ($frames >= 2) {

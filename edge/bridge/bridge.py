@@ -25,7 +25,7 @@ import paho.mqtt.client as mqtt
 import requests
 from ruamel.yaml import YAML
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 API_URL = os.environ["SEGURIA_API_URL"].rstrip("/")
 TOKEN = os.environ["SEGURIA_TOKEN"]
 MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
@@ -204,7 +204,11 @@ def heartbeat_loop() -> None:
         try:
             session.post(
                 f"{API_URL}/api/edge/heartbeat",
-                json={"version": VERSION, "cameras": cameras, "zones_version": applied_zones_version()},
+                json={
+                    "version": VERSION, "cameras": cameras, "zones_version": applied_zones_version(),
+                    # M5 — events kept on site while the internet was down, still to be sent.
+                    "queued": sum(1 for d in QUEUE_DIR.iterdir() if (d / "event.json").exists()),
+                } | ({"power": power_state()} if power_state() else {}),
                 timeout=15,
             )
         except requests.RequestException as exc:
@@ -399,6 +403,9 @@ def command_loop() -> None:
         if commands.get("update"):
             threading.Thread(target=update_self, daemon=True).start()
 
+        MOTION_CAMERAS.clear()
+        MOTION_CAMERAS.update(commands.get("motion_cameras", []))
+
         if commands.get("discover"):
             threading.Thread(target=run_discovery, daemon=True).start()
 
@@ -453,12 +460,59 @@ def command_loop() -> None:
         time.sleep(COMMAND_POLL_SECONDS)
 
 
+# M4 — name of the UPS in NUT (upsc); empty when the box has no UPS.
+UPS_NAME = os.environ.get("SEGURIA_UPS", "").strip()
+# M7 — cameras the console asked to watch for motion without a person (updated by the command loop).
+MOTION_CAMERAS: set[str] = set()
+MOTION_SENT: dict[str, float] = {}
+
+
+def power_state() -> str | None:
+    """'battery' while the UPS runs on battery (status OB), 'mains' otherwise; None without a UPS."""
+    if not UPS_NAME:
+        return None
+    try:
+        out = subprocess.run(["upsc", UPS_NAME, "ups.status"], capture_output=True, text=True, timeout=5).stdout
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return None
+    return "battery" if "OB" in out.split() else "mains"
+
+
+def handle_motion(camera: str) -> None:
+    """M7 — motion in a watched camera with no object detected: three frames a second apart go to the AI."""
+    started = time.time()
+    directory = QUEUE_DIR / f"motion-{camera}-{int(started)}"
+    directory.mkdir(parents=True, exist_ok=True)
+    for i in range(3):
+        frame = latest_frame(camera)
+        if frame:
+            (directory / f"frame_{i}.jpg").write_bytes(frame)
+            if i == 0:
+                (directory / "snapshot.jpg").write_bytes(frame)
+        time.sleep(1)
+    (directory / "event.json").write_text(json.dumps({
+        "id": f"motion-{camera}-{int(started)}", "camera": camera, "label": "motion", "score": None,
+        "start_time": started, "end_time": time.time(), "zones": [],
+    }))
+    with queue_lock:
+        if upload(directory):
+            shutil.rmtree(directory, ignore_errors=True)
+
+
 def on_connect(client, _userdata, _flags, reason_code, _properties=None):
     log.info("connected to MQTT %s (%s), subscribing to %s", MQTT_HOST, reason_code, MQTT_TOPIC)
     client.subscribe(MQTT_TOPIC)
+    client.subscribe("frigate/+/motion")
 
 
 def on_message(_client, _userdata, msg):
+    if msg.topic.endswith("/motion"):
+        camera = msg.topic.split("/")[1]
+        # Frigate only sends motion; objects come by frigate/events. At most one motion check per camera every 30 s.
+        if msg.payload == b"ON" and camera in MOTION_CAMERAS and time.time() - MOTION_SENT.get(camera, 0) > 30:
+            MOTION_SENT[camera] = time.time()
+            threading.Thread(target=handle_motion, args=(camera,), daemon=True).start()
+        return
     try:
         message = json.loads(msg.payload)
     except ValueError:

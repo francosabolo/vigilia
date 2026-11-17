@@ -11,6 +11,7 @@ class LabelTranslator
         'bicycle' => 'bicicleta',
         'dog' => 'perro',
         'truck' => 'camión',
+        'motion' => 'movimiento sin persona detectada',
     ];
 
     private const MASCULINE = ['car', 'dog', 'truck'];

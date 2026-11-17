@@ -25,6 +25,9 @@ interface Device {
     update_requested_at?: string | null;
     online?: boolean;
     host?: string | null;
+    on_battery_since?: string | null;
+    queued_events?: number | null;
+    gaps?: { from: string; to: string; recovered: number }[];
     discovering?: boolean;
     discovered?: DiscoveredCamera[];
     discovered_at?: string | null;
@@ -166,6 +169,23 @@ function DeviceRow({ device, latest, siblings, knownHosts }: { device: Device; l
                     </>
                 )}
             </div>
+            {device.type === 'edge' && device.on_battery_since && (
+                <p className="border-pending bg-pending/10 rounded-lg border px-3 py-2 text-sm font-medium">
+                    Sin luz: funciona con la batería desde {timeAgo(device.on_battery_since)}.
+                </p>
+            )}
+            {device.type === 'edge' && ((device.gaps?.length ?? 0) > 0 || !!device.queued_events) && (
+                <ul className="text-muted-foreground text-sm">
+                    {!!device.queued_events && <li>{device.queued_events} eventos guardados en el lugar, enviándose.</li>}
+                    {device.gaps?.map((gap) => (
+                        <li key={gap.from}>
+                            Sin internet de {new Date(gap.from).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })} a{' '}
+                            {new Date(gap.to).toLocaleTimeString('es-AR', { timeStyle: 'short' })}:{' '}
+                            {gap.recovered === 1 ? '1 evento recuperado' : `${gap.recovered} eventos recuperados`} y analizados al volver.
+                        </li>
+                    ))}
+                </ul>
+            )}
             {device.type === 'edge' && (
                 <CameraDiscovery
                     edgeId={device.id}

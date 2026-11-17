@@ -20,6 +20,14 @@ class HeartbeatController extends Controller
             'version' => $data['version'] ?? null,
             'zones_version' => $data['zones_version'] ?? null,
         ]));
+        // M4 — the edge on a UPS says when it runs on battery; M5 — how many events it still has to send.
+        if (isset($data['power'])) {
+            $device->on_battery_since = $data['power'] === 'battery' ? ($device->on_battery_since ?? now()) : null;
+        }
+        if (array_key_exists('queued', $data)) {
+            $device->queued_events = $data['queued'];
+        }
+        $device->save();
         if (($data['version'] ?? null) === config('seguria.edge.latest_version') && $device->update_requested_at) {
             $device->update(['update_requested_at' => null]);
         }

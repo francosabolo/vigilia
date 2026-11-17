@@ -46,8 +46,26 @@ class EquipmentWatch
                     "El equipo {$edge->name} no reporta desde ".($edge->last_seen_at?->diffForHumans() ?? 'que se instaló').'. Las cámaras de este lugar no se están analizando.');
                 $opened++;
             } elseif (! $isDown && $edge->offline_since) {
-                $edge->forceFill(['offline_since' => null])->save();
-                $recovered += $this->recover(Incident::where('edge_device_id', $edge->id), "El equipo {$edge->name} volvió a reportar.");
+                // M5 — the gap stays on record; what happened meanwhile was kept on site and arrives now.
+                $gaps = array_slice([...($edge->connectivity_gaps ?? []), ['from' => $edge->offline_since->toIso8601String(), 'to' => now()->toIso8601String()]], -10);
+                $minutes = (int) $edge->offline_since->diffInMinutes(now(), absolute: true);
+                $edge->forceFill(['offline_since' => null, 'connectivity_gaps' => $gaps])->save();
+                $pending = $edge->queued_events ? " Tenía {$edge->queued_events} eventos guardados de ese rato: se están enviando y se analizan al llegar." : ' No quedó nada pendiente de ese rato.';
+                $recovered += $this->recover(Incident::where('edge_device_id', $edge->id), "El equipo {$edge->name} volvió a reportar después de {$minutes} min sin conexión.{$pending}");
+            }
+
+            // M4 — power cut: the edge keeps working on its UPS and says so.
+            if (! $isDown) {
+                $powerIncident = Incident::where('edge_device_id', $edge->id)->where('source', IncidentSource::Equipment)
+                    ->where('status', '!=', IncidentStatus::Resolved)->where('title', 'like', 'Corte de luz%');
+                if ($edge->on_battery_since && ! $powerIncident->exists()) {
+                    $this->open($edge->site_id, ['edge_device_id' => $edge->id], Severity::High,
+                        "Corte de luz en {$edge->site->name}",
+                        "El equipo {$edge->name} funciona con batería desde ".$edge->on_battery_since->format('H:i').'. Las cámaras sin respaldo se apagan: que la guardia revise el tablero y el perímetro.');
+                    $opened++;
+                } elseif (! $edge->on_battery_since && $powerIncident->exists()) {
+                    $recovered += $this->recover($powerIncident, 'Volvió la luz: el equipo dejó de usar la batería.');
+                }
             }
         }
 
@@ -89,7 +107,7 @@ class EquipmentWatch
         $recent = Camera::query()->whereNotNull('offline_since')->where('offline_since', '>=', now()->subMinutes(self::MASS_OUTAGE_MINUTES))
             ->whereHas('site', fn ($query) => $query->where('is_simulated', false))
             ->whereHas('edgeDevice', fn ($query) => $query->whereNull('offline_since'))
-            ->with('site')->get()->groupBy('site_id');
+            ->with('site', 'edgeDevice')->get()->groupBy('site_id');
 
         foreach ($recent as $siteId => $cameras) {
             if ($cameras->count() < self::MASS_OUTAGE_CAMERAS) {
@@ -102,6 +120,10 @@ class EquipmentWatch
             }
 
             $names = $cameras->pluck('name')->implode(', ');
+            // M4 — with the edge on battery it is a power cut, not an attack: the power-cut incident covers it.
+            if ($cameras->contains(fn (Camera $camera) => $camera->edgeDevice?->on_battery_since !== null)) {
+                continue;
+            }
             $this->open($siteId, ['sector' => $cameras->first()->sector], Severity::Critical,
                 "Posible sabotaje: {$cameras->count()} cámaras sin imagen a la vez",
                 "En {$cameras->first()->site->name} se cortaron {$names} en menos de ".self::MASS_OUTAGE_MINUTES.' minutos, con el equipo edge funcionando. Puede ser un corte de cables o un inhibidor de señal: que la guardia revise el lugar ya.');
