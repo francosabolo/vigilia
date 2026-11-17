@@ -18,6 +18,11 @@ use App\Models\Incident;
  */
 class EquipmentWatch
 {
+    /** M6 — this many cameras of one property down within this many minutes, with the edge online. */
+    private const MASS_OUTAGE_CAMERAS = 2;
+
+    private const MASS_OUTAGE_MINUTES = 5;
+
     public const CAMERA_GRACE_SECONDS = 180;
 
     public function __construct(private readonly IncidentWorkflow $workflow) {}
@@ -69,7 +74,41 @@ class EquipmentWatch
             }
         }
 
+        $opened += $this->detectMassOutage();
+
         return ['opened' => $opened, 'recovered' => $recovered];
+    }
+
+    /**
+     * M6 — several cameras of a property losing their image within a few minutes while the edge is still online is
+     * not a technical fault: cut cables or a signal jammer. It is raised as a possible attack, critical.
+     */
+    private function detectMassOutage(): int
+    {
+        $opened = 0;
+        $recent = Camera::query()->whereNotNull('offline_since')->where('offline_since', '>=', now()->subMinutes(self::MASS_OUTAGE_MINUTES))
+            ->whereHas('site', fn ($query) => $query->where('is_simulated', false))
+            ->whereHas('edgeDevice', fn ($query) => $query->whereNull('offline_since'))
+            ->with('site')->get()->groupBy('site_id');
+
+        foreach ($recent as $siteId => $cameras) {
+            if ($cameras->count() < self::MASS_OUTAGE_CAMERAS) {
+                continue;
+            }
+            $already = Incident::where('site_id', $siteId)->where('source', IncidentSource::Equipment)
+                ->where('status', '!=', IncidentStatus::Resolved)->where('title', 'like', 'Posible sabotaje%')->exists();
+            if ($already) {
+                continue;
+            }
+
+            $names = $cameras->pluck('name')->implode(', ');
+            $this->open($siteId, ['sector' => $cameras->first()->sector], Severity::Critical,
+                "Posible sabotaje: {$cameras->count()} cámaras sin imagen a la vez",
+                "En {$cameras->first()->site->name} se cortaron {$names} en menos de ".self::MASS_OUTAGE_MINUTES.' minutos, con el equipo edge funcionando. Puede ser un corte de cables o un inhibidor de señal: que la guardia revise el lugar ya.');
+            $opened++;
+        }
+
+        return $opened;
     }
 
     /**

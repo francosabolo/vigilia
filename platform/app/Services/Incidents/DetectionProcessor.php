@@ -17,6 +17,7 @@ use App\Models\Incident;
 use App\Models\Zone;
 use App\Services\Activity\ActivityFeed;
 use App\Services\Autonomy\AutonomyPolicy;
+use App\Services\Detection\NoisyCameras;
 use App\Services\Guards\GuardWatch;
 use App\Services\Rules\ArmingEvaluator;
 use App\Services\Shadow\ShadowMode;
@@ -90,6 +91,20 @@ class DetectionProcessor
             $zone && $zone->armingSchedules->isNotEmpty() => 'La zona está armada a esta hora.',
             default => 'La zona está armada las 24 h.',
         });
+
+        // M1/M2 — a noisy camera (storm, spider web, headlights): group with what the AI just dismissed there.
+        if (! $testing && ($previous = app(NoisyCameras::class)->groupWith($event, $zone))) {
+            $seconds = (int) $previous->started_at->diffInSeconds($event->started_at, absolute: true);
+            $this->step('ai', 'Vigilia', 'stop', "Cámara ruidosa: se agrupó con la detección de hace {$seconds} s, que la IA descartó. No se volvió a pagar el análisis.");
+            $event->forceFill([
+                'status' => DetectionStatus::Dismissed,
+                'ai_verdict' => ['grouped_with' => $previous->id, 'description' => $previous->ai_verdict['description'] ?? 'Agrupada con la anterior.'],
+                'trace' => $this->trace,
+            ])->save();
+            $this->broadcast($event);
+
+            return null;
+        }
 
         $this->broadcast($event, analyzing: true);
         $verdict = $this->verifier->verify($event);
