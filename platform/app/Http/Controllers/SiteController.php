@@ -173,6 +173,7 @@ class SiteController extends Controller
                         'view_status' => $camera->view_status->value,
                         'is_guard_post' => $camera->is_guard_post,
                         'is_checkpoint' => $camera->is_checkpoint,
+                        'is_access' => $camera->is_access,
                         'view_shift_deg' => $camera->view_shift_deg,
                         'position' => $camera->lat !== null ? [$camera->lat, $camera->lng] : null,
                         'heading' => $camera->heading,

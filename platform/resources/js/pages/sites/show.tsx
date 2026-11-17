@@ -70,6 +70,7 @@ interface Camera {
     is_online: boolean;
     is_guard_post: boolean;
     is_checkpoint: boolean;
+    is_access: boolean;
     view_status: 'ok' | 'moved' | 'covered';
     view_shift_deg: number | null;
     position: LatLng | null;
@@ -579,10 +580,10 @@ function MediaViewsSection({ views }: { views: MediaViewRow[] }) {
 }
 
 function CameraRoles({ camera }: { camera: Camera }) {
-    const toggle = (role: 'is_guard_post' | 'is_checkpoint') =>
+    const toggle = (role: 'is_guard_post' | 'is_checkpoint' | 'is_access') =>
         router.patch(
             `/cameras/${camera.id}/roles`,
-            { is_guard_post: camera.is_guard_post, is_checkpoint: camera.is_checkpoint, [role]: !camera[role] },
+            { is_guard_post: camera.is_guard_post, is_checkpoint: camera.is_checkpoint, is_access: camera.is_access, [role]: !camera[role] },
             { preserveScroll: true },
         );
 
@@ -590,6 +591,7 @@ function CameraRoles({ camera }: { camera: Camera }) {
         <div className="flex flex-col gap-1.5 text-sm sm:w-40">
             {(
                 [
+                    ['is_access', 'Cámara del acceso'],
                     ['is_guard_post', 'Es la garita'],
                     ['is_checkpoint', 'Punto de ronda'],
                 ] as const

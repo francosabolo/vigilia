@@ -1,0 +1,449 @@
+import { AccessAuthorizationForm } from '@/components/access-authorization-form';
+import { SectionTitle } from '@/components/icon-circle';
+import InputError from '@/components/input-error';
+import { ItemActionButton } from '@/components/item-action';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import AppLayout from '@/layouts/app-layout';
+import { timeAgo } from '@/lib/seguria';
+import { cn } from '@/lib/utils';
+import { type BreadcrumbItem } from '@/types';
+import { Head, router, useForm, usePage, usePoll } from '@inertiajs/react';
+import { DoorOpen, KeyRound, ListChecks, QrCode, ScrollText, UserRoundSearch } from 'lucide-react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Accesos', href: '/access' }];
+
+interface Entry {
+    id: number;
+    kind: string;
+    kind_label: string;
+    name: string;
+    plate: string | null;
+    status: 'allowed' | 'denied' | 'waiting';
+    reason: string | null;
+    resident: { name: string; lot: string | null } | null;
+    guard: string | null;
+    photo_url: string | null;
+    at: string;
+}
+
+interface Authorization {
+    id: number;
+    kind: string;
+    kind_label: string;
+    name: string;
+    plate: string | null;
+    code: string;
+    resident: { name: string; lot: string | null } | null;
+    valid_from: string;
+    valid_until: string;
+    days: number[] | null;
+    time_from: string | null;
+    time_to: string | null;
+    valid_now: boolean;
+}
+
+interface Props {
+    site: { id: number; name: string; kind: string; has_access_camera: boolean } | null;
+    sites?: { id: number; name: string }[];
+    waiting?: Entry[];
+    entries?: Entry[];
+    authorizations?: Authorization[];
+    residents?: { id: number; name: string; lot: string | null }[];
+    q?: string;
+}
+
+const DAY_NAMES = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
+const statusText = { allowed: 'Pasó', denied: 'No pasó', waiting: 'Esperando al vecino' };
+
+function when(auth: Authorization): string {
+    const dates =
+        auth.valid_from === auth.valid_until
+            ? new Date(auth.valid_from + 'T12:00').toLocaleDateString('es-AR')
+            : `hasta el ${new Date(auth.valid_until + 'T12:00').toLocaleDateString('es-AR')}`;
+    const days = auth.days?.length ? auth.days.map((day) => DAY_NAMES[day - 1]).join(', ') : null;
+    const hours = auth.time_from || auth.time_to ? `${auth.time_from ?? '00:00'} a ${auth.time_to ?? '23:59'}` : null;
+    return [dates, days, hours].filter(Boolean).join(', ');
+}
+
+export default function AccessIndex({ site, sites = [], waiting = [], entries = [], authorizations = [], residents = [], q = '' }: Props) {
+    const { flash } = usePage<{ flash: { notice: string | null } }>().props;
+    usePoll(waiting.length > 0 ? 3000 : 15000, { only: ['waiting', 'entries'] });
+
+    if (!site) {
+        return (
+            <AppLayout breadcrumbs={breadcrumbs}>
+                <Head title="Accesos" />
+                <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4 md:p-6">
+                    <h1 className="font-display text-3xl font-semibold">Accesos</h1>
+                    <p className="text-muted-foreground">Elegí la propiedad de la guardia que vas a atender.</p>
+                    <ul className="bg-card divide-y rounded-xl border">
+                        {sites.map((item) => (
+                            <li key={item.id}>
+                                <button
+                                    type="button"
+                                    className="hover:bg-accent w-full px-4 py-3 text-left font-medium"
+                                    onClick={() => router.put('/current-site', { site_id: item.id }, { onSuccess: () => router.visit('/access') })}
+                                >
+                                    {item.name}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </AppLayout>
+        );
+    }
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Accesos" />
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-6">
+                <div>
+                    <h1 className="font-display text-3xl font-semibold">Accesos de {site.name}</h1>
+                    <p className="text-muted-foreground">
+                        Validá el código de cada visita, avisá al vecino cuando alguien llega sin aviso y dejá registrado quién entró.
+                        {!site.has_access_camera &&
+                            ' Marcá la cámara del acceso en la pestaña Cámaras para guardar la foto y la patente de cada ingreso.'}
+                    </p>
+                </div>
+
+                {flash?.notice && (
+                    <p
+                        role="status"
+                        className={cn(
+                            'rounded-xl border-2 px-4 py-3 text-lg font-semibold',
+                            flash.notice.startsWith('No puede') ? 'border-alarm bg-alarm/10 text-alarm' : 'border-ok bg-ok/10',
+                        )}
+                    >
+                        {flash.notice}
+                    </p>
+                )}
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <CheckIn siteId={site.id} />
+                    <Announce siteId={site.id} residents={residents} />
+                </div>
+
+                {waiting.length > 0 && (
+                    <section className="flex flex-col gap-3">
+                        <SectionTitle icon={UserRoundSearch}>Esperando respuesta del vecino</SectionTitle>
+                        <ul className="border-pending/60 divide-y rounded-xl border-2">
+                            {waiting.map((entry) => (
+                                <li key={entry.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                                    {entry.photo_url && <img src={entry.photo_url} alt="" className="aspect-video w-28 rounded object-cover" />}
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-semibold">{entry.name}</p>
+                                        <p className="text-muted-foreground text-sm">
+                                            Visita a {entry.resident?.name}
+                                            {entry.resident?.lot && ` (${entry.resident.lot})`}, {timeAgo(entry.at)}
+                                            {entry.plate && `, patente ${entry.plate}`}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        onClick={() => router.post(`/access/entries/${entry.id}/answer`, { allow: true }, { preserveScroll: true })}
+                                    >
+                                        Dejar pasar
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => router.post(`/access/entries/${entry.id}/answer`, { allow: false }, { preserveScroll: true })}
+                                    >
+                                        No dejar pasar
+                                    </Button>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                <section className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <SectionTitle icon={ListChecks}>Autorizados</SectionTitle>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline">Autorizar a alguien</Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-h-[90vh] overflow-y-auto">
+                                <DialogHeader>
+                                    <DialogTitle>Autorizar el ingreso</DialogTitle>
+                                    <DialogDescription>Genera un código de 6 números para presentar en la guardia.</DialogDescription>
+                                </DialogHeader>
+                                <AccessAuthorizationForm action={`/access/${site.id}/authorizations`} residents={residents} />
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                    {authorizations.length === 0 ? (
+                        <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-sm">
+                            No hay nadie autorizado. Los vecinos invitan a sus visitas desde su app; los proveedores y el personal se cargan acá.
+                        </p>
+                    ) : (
+                        <ul className="bg-card divide-y rounded-xl border text-sm">
+                            {authorizations.map((auth) => (
+                                <li key={auth.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
+                                    <span className="font-display w-20 text-lg font-semibold tabular-nums">{auth.code}</span>
+                                    <div className="min-w-48 flex-1">
+                                        <p className="font-medium">
+                                            {auth.name} <span className="text-muted-foreground font-normal">({auth.kind_label.toLowerCase()})</span>
+                                        </p>
+                                        <p className="text-muted-foreground">
+                                            {when(auth)}
+                                            {auth.resident && `. Para ${auth.resident.name}${auth.resident.lot ? ` (${auth.resident.lot})` : ''}`}
+                                            {auth.plate && `. Patente ${auth.plate}`}
+                                        </p>
+                                    </div>
+                                    <span className={cn('text-sm', auth.valid_now ? 'text-ok' : 'text-muted-foreground')}>
+                                        {auth.valid_now ? 'Puede pasar ahora' : 'Fuera de horario'}
+                                    </span>
+                                    <ItemActionButton
+                                        kind="delete"
+                                        aria-label={`Cancelar la autorización de ${auth.name}`}
+                                        onClick={() => router.delete(`/access/authorizations/${auth.id}`, { preserveScroll: true })}
+                                    >
+                                        Cancelar
+                                    </ItemActionButton>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+
+                <EntryLog entries={entries} q={q} />
+            </div>
+        </AppLayout>
+    );
+}
+
+function CheckIn({ siteId }: { siteId: number }) {
+    const form = useForm({ code: '', plate: '' });
+    const [scanning, setScanning] = useState(false);
+
+    function submit(event?: FormEvent) {
+        event?.preventDefault();
+        form.post(`/access/${siteId}/check-in`, { preserveScroll: true, onSuccess: () => form.reset() });
+    }
+
+    return (
+        <section className="bg-card flex flex-col gap-3 rounded-2xl border p-4">
+            <SectionTitle icon={KeyRound}>Validar código</SectionTitle>
+            <form onSubmit={submit} className="flex flex-col gap-3">
+                <div className="flex gap-2">
+                    <Input
+                        aria-label="Código de ingreso"
+                        inputMode="numeric"
+                        placeholder="Código de 6 números"
+                        value={form.data.code}
+                        onChange={(e) => form.setData('code', e.target.value.replace(/\s/g, ''))}
+                        className="font-display h-12 text-2xl tracking-widest"
+                        autoFocus
+                    />
+                    <Button type="button" variant="outline" className="h-12" onClick={() => setScanning(true)} aria-label="Escanear QR">
+                        <QrCode className="size-5" />
+                    </Button>
+                </div>
+                <Input
+                    placeholder="Patente (opcional)"
+                    value={form.data.plate}
+                    onChange={(e) => form.setData('plate', e.target.value.toUpperCase())}
+                />
+                <InputError message={form.errors.code} />
+                <Button type="submit" disabled={form.processing || form.data.code.length < 6} className="h-11">
+                    <DoorOpen className="mr-1 size-4" /> Validar
+                </Button>
+            </form>
+            {scanning && (
+                <QrScanner
+                    onClose={() => setScanning(false)}
+                    onCode={(code) => {
+                        setScanning(false);
+                        form.setData('code', code);
+                        router.post(
+                            `/access/${siteId}/check-in`,
+                            { code, plate: form.data.plate },
+                            { preserveScroll: true, onSuccess: () => form.reset() },
+                        );
+                    }}
+                />
+            )}
+        </section>
+    );
+}
+
+/**
+ * Reads the visit's QR with the device camera (BarcodeDetector, available in Chrome on Android and desktop).
+ */
+function QrScanner({ onCode, onClose }: { onCode: (code: string) => void; onClose: () => void }) {
+    const video = useRef<HTMLVideoElement>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const Detector = (
+            window as unknown as {
+                BarcodeDetector?: new (options: { formats: string[] }) => { detect: (source: HTMLVideoElement) => Promise<{ rawValue: string }[]> };
+            }
+        ).BarcodeDetector;
+        if (!Detector) {
+            setError('Este navegador no puede leer QR. Escribí el código de 6 números.');
+            return;
+        }
+        let stream: MediaStream | null = null;
+        let stopped = false;
+        const detector = new Detector({ formats: ['qr_code'] });
+
+        navigator.mediaDevices
+            .getUserMedia({ video: { facingMode: 'environment' } })
+            .then(async (media) => {
+                stream = media;
+                if (!video.current) return;
+                video.current.srcObject = media;
+                await video.current.play();
+                const tick = async () => {
+                    if (stopped || !video.current) return;
+                    const codes = await detector.detect(video.current).catch(() => []);
+                    if (codes[0]?.rawValue) onCode(codes[0].rawValue);
+                    else requestAnimationFrame(tick);
+                };
+                tick();
+            })
+            .catch(() => setError('No se pudo usar la cámara. Escribí el código de 6 números.'));
+
+        return () => {
+            stopped = true;
+            stream?.getTracks().forEach((track) => track.stop());
+        };
+    }, [onCode]);
+
+    return (
+        <div className="flex flex-col gap-2">
+            {error ? (
+                <p className="text-alarm text-sm">{error}</p>
+            ) : (
+                <video ref={video} className="aspect-video w-full rounded-lg bg-black object-cover" muted playsInline />
+            )}
+            <Button variant="ghost" onClick={onClose}>
+                Cerrar la cámara
+            </Button>
+        </div>
+    );
+}
+
+function Announce({ siteId, residents }: { siteId: number; residents: { id: number; name: string; lot: string | null }[] }) {
+    const form = useForm({ name: '', plate: '', resident_id: '' });
+
+    return (
+        <section className="bg-card flex flex-col gap-3 rounded-2xl border p-4">
+            <SectionTitle icon={UserRoundSearch}>Llegó alguien sin aviso</SectionTitle>
+            <form
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    form.post(`/access/${siteId}/announce`, { preserveScroll: true, onSuccess: () => form.reset() });
+                }}
+                className="flex flex-col gap-3"
+            >
+                <div className="grid gap-1.5">
+                    <Label htmlFor="announce-resident">A quién visita</Label>
+                    <select
+                        id="announce-resident"
+                        value={form.data.resident_id}
+                        onChange={(e) => form.setData('resident_id', e.target.value)}
+                        className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                    >
+                        <option value="">Elegí el vecino</option>
+                        {residents.map((resident) => (
+                            <option key={resident.id} value={resident.id}>
+                                {resident.lot ? `${resident.lot}, ` : ''}
+                                {resident.name}
+                            </option>
+                        ))}
+                    </select>
+                    <InputError message={form.errors.resident_id} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    <Input placeholder="Nombre de quien llega" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} />
+                    <Input
+                        placeholder="Patente (opcional)"
+                        value={form.data.plate}
+                        onChange={(e) => form.setData('plate', e.target.value.toUpperCase())}
+                    />
+                </div>
+                <InputError message={form.errors.name} />
+                <Button type="submit" variant="outline" disabled={form.processing || !form.data.name.trim() || !form.data.resident_id}>
+                    Avisar al vecino
+                </Button>
+                <p className="text-muted-foreground text-xs">Le llega al celular para que lo deje pasar o no. Su respuesta aparece acá.</p>
+            </form>
+        </section>
+    );
+}
+
+function EntryLog({ entries, q }: { entries: Entry[]; q: string }) {
+    const [query, setQuery] = useState(q);
+
+    useEffect(() => {
+        if (query === q) return;
+        const timer = setTimeout(
+            () => router.get('/access', { q: query || undefined }, { preserveState: true, replace: true, only: ['entries', 'q'] }),
+            300,
+        );
+        return () => clearTimeout(timer);
+    }, [query, q]);
+
+    return (
+        <section className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <SectionTitle icon={ScrollText}>Registro de ingresos</SectionTitle>
+                <Input
+                    aria-label="Buscar en el registro"
+                    placeholder="Buscar por nombre o patente"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="max-w-xs"
+                />
+            </div>
+            {entries.length === 0 ? (
+                <p className="text-muted-foreground text-sm">{q ? `Nadie coincide con «${q}».` : 'Todavía no hay ingresos registrados.'}</p>
+            ) : (
+                <ul className="bg-card divide-y rounded-xl border text-sm">
+                    {entries.map((entry) => (
+                        <li key={entry.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5">
+                            {entry.photo_url ? (
+                                <img src={entry.photo_url} alt="" className="aspect-video w-24 rounded object-cover" loading="lazy" />
+                            ) : (
+                                <span className="bg-muted aspect-video w-24 rounded" aria-hidden />
+                            )}
+                            <div className="min-w-44 flex-1">
+                                <p className="font-medium">
+                                    {entry.name} <span className="text-muted-foreground font-normal">({entry.kind_label.toLowerCase()})</span>
+                                </p>
+                                <p className="text-muted-foreground">
+                                    {[
+                                        entry.plate && `Patente ${entry.plate}`,
+                                        entry.resident && `para ${entry.resident.name}`,
+                                        entry.guard && `atendió ${entry.guard}`,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(', ')}
+                                </p>
+                                {entry.reason && entry.status !== 'allowed' && <p className="text-alarm">{entry.reason}</p>}
+                            </div>
+                            <span
+                                className={cn(
+                                    'font-medium',
+                                    entry.status === 'allowed' ? 'text-ok' : entry.status === 'denied' ? 'text-alarm' : 'text-pending',
+                                )}
+                            >
+                                {statusText[entry.status]}
+                            </span>
+                            <span className="text-muted-foreground w-28 text-right">{timeAgo(entry.at)}</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </section>
+    );
+}

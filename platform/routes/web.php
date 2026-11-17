@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccessController;
 use App\Http\Controllers\CameraWallController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CurrentSiteController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResidentAdminController;
 use App\Http\Controllers\ResidentController;
+use App\Http\Controllers\ResidentVisitController;
 use App\Http\Controllers\ShadowController;
 use App\Http\Controllers\SiteConfigurationController;
 use App\Http\Controllers\SiteController;
@@ -30,6 +32,7 @@ Route::middleware('signed')->group(function () {
         ->name('incidents.media');
     Route::get('media/live-frames/{snapshotRequest}', [IncidentMediaController::class, 'liveFrame'])->name('snapshots.media');
     Route::get('media/detections/{detectionEvent}', [IncidentMediaController::class, 'detection'])->name('detections.media');
+    Route::get('media/access/{accessEntry}', [AccessController::class, 'photo'])->name('access.photo');
     Route::get('media/patrols/{patrol}/{camera}', [PatrolController::class, 'frame'])->whereNumber('camera')->name('patrols.frame');
 });
 
@@ -48,6 +51,10 @@ Route::middleware('auth')->group(function () {
         Route::post('panic', [ResidentController::class, 'panic'])->middleware('throttle:5,1')->name('panic');
         Route::post('report', [ResidentController::class, 'report'])->middleware('throttle:10,1')->name('report');
         Route::put('away', [ResidentController::class, 'updateAway'])->name('away');
+        Route::post('visitas', [ResidentVisitController::class, 'store'])->name('visits.store');
+        Route::delete('visitas/{authorization}', [ResidentVisitController::class, 'destroy'])->name('visits.destroy');
+        Route::get('visitas/{authorization}/qr', [ResidentVisitController::class, 'qr'])->name('visits.qr');
+        Route::post('accesos/{accessEntry}/respuesta', [ResidentVisitController::class, 'answer'])->name('access.answer');
     });
 
     Route::middleware(['staff', 'two-factor'])->group(function () {
@@ -89,6 +96,12 @@ Route::middleware('auth')->group(function () {
         Route::get('sites/{site}', [SiteController::class, 'show'])->name('sites.show');
         Route::patch('sites/{site}', [SiteConfigurationController::class, 'updateSite'])->name('sites.update');
         Route::get('guards', [GuardController::class, 'index'])->name('guards.index');
+        Route::get('access', [AccessController::class, 'index'])->name('access.index');
+        Route::post('access/{site}/check-in', [AccessController::class, 'checkIn'])->middleware('throttle:60,1')->name('access.check-in');
+        Route::post('access/{site}/announce', [AccessController::class, 'announce'])->name('access.announce');
+        Route::post('access/{site}/authorizations', [AccessController::class, 'storeAuthorization'])->name('access.authorizations.store');
+        Route::delete('access/authorizations/{authorization}', [AccessController::class, 'revoke'])->name('access.authorizations.destroy');
+        Route::post('access/entries/{accessEntry}/answer', [AccessController::class, 'answer'])->name('access.entries.answer');
         Route::post('sites/{site}/handover', [GuardController::class, 'handOver'])->name('sites.handover');
         Route::get('sites/{site}/setup', [SiteSetupController::class, 'show'])->name('sites.setup');
         Route::post('sites/{site}/test-mode', [SiteSetupController::class, 'startTest'])->name('sites.test-mode');

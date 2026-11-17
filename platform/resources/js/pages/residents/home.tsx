@@ -2,6 +2,7 @@ import AppLogoIcon from '@/components/app-logo-icon';
 import { IconCircle } from '@/components/icon-circle';
 import { NotificationBell } from '@/components/notification-bell';
 import { PushToggle } from '@/components/push-toggle';
+import { ResidentVisits, type GateEntry, type ResidentVisit } from '@/components/resident-visits';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDuration, theSite, timeAgo, unitNoun, type IncidentStatus, type Metrics, type SiteKind } from '@/lib/seguria';
@@ -25,6 +26,8 @@ interface Props {
     notices: Notice[];
     metrics: Metrics;
     vapidPublicKey: string | null;
+    visits: ResidentVisit[];
+    atGate: GateEntry[];
 }
 
 function noticeText(notice: Notice): string {
@@ -179,7 +182,8 @@ function AwayMode({ awayUntil, hasLot }: { awayUntil: string | null; hasLot: boo
     );
 }
 
-export default function ResidentHome({ resident, sectors, notices, metrics, vapidPublicKey }: Props) {
+export default function ResidentHome({ resident, sectors, notices, metrics, vapidPublicKey, visits, atGate }: Props) {
+    usePoll(atGate.some((entry) => entry.status === 'waiting') ? 4000 : 30000, { only: ['visits', 'atGate'] });
     usePoll(15000, { only: ['notices'] });
 
     return (
@@ -254,6 +258,8 @@ export default function ResidentHome({ resident, sectors, notices, metrics, vapi
                         ))}
                     </CardContent>
                 </Card>
+
+                <ResidentVisits visits={visits} atGate={atGate} siteName={resident.site} />
 
                 <Card>
                     <CardHeader>

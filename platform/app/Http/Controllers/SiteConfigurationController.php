@@ -100,6 +100,7 @@ class SiteConfigurationController extends Controller
         $camera->update($request->validate([
             'is_guard_post' => ['required', 'boolean'],
             'is_checkpoint' => ['required', 'boolean'],
+            'is_access' => ['sometimes', 'boolean'],
         ]));
 
         return back();

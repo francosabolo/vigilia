@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Briefcase, Building2, Cctv, FlaskConical, LayoutGrid, ShieldCheck, Siren, Users } from 'lucide-react';
+import { Briefcase, Building2, Cctv, DoorOpen, FlaskConical, LayoutGrid, ShieldCheck, Siren, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -21,6 +21,11 @@ const mainNavItems: NavItem[] = [
         title: 'Incidentes',
         url: '/incidents',
         icon: Siren,
+    },
+    {
+        title: 'Accesos',
+        url: '/access',
+        icon: DoorOpen,
     },
     {
         title: 'Propiedades',

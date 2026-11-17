@@ -198,8 +198,19 @@ class VirtualPatrol
                 'snapshot_path' => $first['frame_path'],
                 'detected_at' => now(),
             ]);
-        } elseif ($severity === Severity::High && $incident->severity !== Severity::Critical) {
-            $incident->update(['severity' => Severity::High]);
+        } else {
+            // D4 — the same gate or door still open on a later round: it has been open since the first one.
+            $open = $relevant->firstWhere('kind', 'porton_abierto');
+            $firstSeen = $open ? Patrol::where('incident_id', $incident->id)->orderBy('started_at')->get()
+                ->first(fn (Patrol $previous) => collect($previous->findings)->contains(fn ($f) => $f['kind'] === 'porton_abierto' && $f['camera_id'] === $open['camera_id']))?->started_at : null;
+            if ($open && $firstSeen) {
+                $severity = Severity::High;
+                $incident->title = 'Ronda: portón o puerta abierta hace '.(int) $firstSeen->diffInMinutes(now(), absolute: true)." min ({$open['camera']})";
+            }
+            if ($severity === Severity::High && $incident->severity !== Severity::Critical) {
+                $incident->severity = Severity::High;
+            }
+            $incident->save();
         }
 
         $incident->actions()->create([

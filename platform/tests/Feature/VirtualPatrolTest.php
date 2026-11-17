@@ -127,3 +127,16 @@ it('lets the site managers set the automatic interval', function () {
     $this->actingAs($admin)->patch("/sites/{$this->site->id}", ['ack_timeout_seconds' => 120, 'patrol_interval_minutes' => null])->assertSessionHasNoErrors();
     expect($this->site->fresh()->patrol_interval_minutes)->toBeNull();
 });
+
+it('raises a gate left open across rounds and says for how long', function () {
+    frameFor($this->gate);
+    fakeInspector(['Portón' => ['has_novelty' => true, 'kind' => 'porton_abierto', 'severity' => 'media', 'description' => 'El portón quedó abierto.', 'confidence' => 0.9, 'model' => 'fake']]);
+    $patrols = app(VirtualPatrol::class);
+
+    $patrols->run(Patrol::create(['site_id' => $this->site->id, 'trigger' => 'scheduled', 'started_at' => now()]));
+    $this->travel(30)->minutes();
+    frameFor($this->gate);
+    $patrols->run(Patrol::create(['site_id' => $this->site->id, 'trigger' => 'scheduled', 'started_at' => now()]));
+
+    expect(Incident::sole())->severity->value->toBe('high')->title->toContain('abierta hace 30 min');
+});
