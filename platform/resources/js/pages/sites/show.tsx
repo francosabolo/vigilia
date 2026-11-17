@@ -1,3 +1,4 @@
+import { AddressFields } from '@/components/address-fields';
 import { LocationPicker } from '@/components/clients-map';
 import { PatrolCard, type PatrolRound } from '@/components/console/patrol-card';
 import { ResidentsPanel, type SentMessage } from '@/components/console/residents-panel';
@@ -118,6 +119,9 @@ interface Props {
         kind: SiteKind;
         is_simulated: boolean;
         address: string | null;
+        city: string | null;
+        province: string | null;
+        full_address: string;
         client_id: number | null;
         perimeter: LatLng[];
         center: LatLng | null;
@@ -311,7 +315,14 @@ function Summary({ site, metrics, canManage, patrols }: Pick<Props, 'site' | 'me
 
     return (
         <div className="flex flex-col gap-8">
-            <SiteMap siteId={site.id} perimeter={site.perimeter} center={site.center} cameras={site.cameras} canManage={canManage} />
+            <SiteMap
+                siteId={site.id}
+                perimeter={site.perimeter}
+                center={site.center}
+                cameras={site.cameras}
+                canManage={canManage}
+                address={site.full_address}
+            />
 
             {site.cameras.length === 0 && <NoCameras siteId={site.id} />}
 
@@ -437,7 +448,14 @@ function CamerasTab({ site, canManage }: Pick<Props, 'site' | 'canManage'>) {
 }
 
 function SiteDetailsForm({ site, clients, isAdmin }: Pick<Props, 'site' | 'clients' | 'isAdmin'>) {
-    const form = useForm({ name: site.name, address: site.address ?? '', kind: site.kind, client_id: site.client_id ? String(site.client_id) : '' });
+    const form = useForm({
+        name: site.name,
+        address: site.address ?? '',
+        city: site.city ?? '',
+        province: site.province ?? '',
+        kind: site.kind,
+        client_id: site.client_id ? String(site.client_id) : '',
+    });
 
     function submit(event: FormEvent) {
         event.preventDefault();
@@ -445,18 +463,20 @@ function SiteDetailsForm({ site, clients, isAdmin }: Pick<Props, 'site' | 'clien
     }
 
     return (
-        <form onSubmit={submit} className="flex max-w-xl flex-col gap-4">
+        <form onSubmit={submit} className="flex max-w-3xl flex-col gap-4">
             <SectionTitle icon={Building2}>Datos del lugar</SectionTitle>
             <div className="grid gap-1.5">
                 <Label htmlFor="site-name">Nombre</Label>
                 <Input id="site-name" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} />
                 <InputError message={form.errors.name} />
             </div>
-            <div className="grid gap-1.5">
-                <Label htmlFor="site-address">Dirección</Label>
-                <Input id="site-address" value={form.data.address} onChange={(e) => form.setData('address', e.target.value)} />
-                <InputError message={form.errors.address} />
-            </div>
+            <AddressFields
+                prefix="site-details"
+                value={form.data}
+                onChange={(field, value) => form.setData(field, value)}
+                errors={form.errors}
+                required
+            />
             <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-1.5">
                     <Label htmlFor="site-kind">Tipo</Label>
@@ -1544,6 +1564,7 @@ export default function SiteShow({
                         cameras={site.cameras}
                         canManage={canManage}
                         variant="coverage"
+                        address={site.full_address}
                     />
                 )}
                 {tab === 'camaras' && <CamerasTab site={site} canManage={canManage} />}

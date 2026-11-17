@@ -17,6 +17,12 @@ use Illuminate\Support\Facades\Notification;
  */
 class SendIncidentAlerts implements ShouldQueue
 {
+    /** Alerts have their own queue: nothing slow (patrols, reports, AI tests) can delay them. */
+    public function viaQueue(): string
+    {
+        return 'alerts';
+    }
+
     public function __construct(private readonly IncidentWorkflow $workflow) {}
 
     public function handle(IncidentOpened $event): void

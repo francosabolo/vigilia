@@ -14,6 +14,12 @@ use Illuminate\Support\Facades\Notification;
 
 class NotifyResidentsOfSector implements ShouldQueue
 {
+    /** Alerts have their own queue: nothing slow (patrols, reports, AI tests) can delay them. */
+    public function viaQueue(): string
+    {
+        return 'default';
+    }
+
     public function handleOpened(IncidentOpened $event): void
     {
         $this->notify($event->incident, closed: false);

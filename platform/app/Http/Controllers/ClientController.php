@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use App\Models\Client;
 use App\Models\Site;
 use App\Models\User;
+use App\Support\Provinces;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
@@ -54,6 +55,8 @@ class ClientController extends Controller
                 'id' => $client->id,
                 'name' => $client->name,
                 'address' => $client->address,
+                'city' => $client->city,
+                'province' => $client->province,
                 'position' => $client->lat !== null ? [$client->lat, $client->lng] : null,
                 'contact_name' => $client->contact_name,
                 'contact_email' => $client->contact_email,
@@ -163,6 +166,8 @@ class ClientController extends Controller
         return $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'address' => ['nullable', 'string', 'max:200'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'province' => ['nullable', 'string', Rule::in(Provinces::ALL)],
             'lat' => ['nullable', 'numeric', 'between:-90,90', 'required_with:lng'],
             'lng' => ['nullable', 'numeric', 'between:-180,180', 'required_with:lat'],
             'contact_name' => ['nullable', 'string', 'max:100'],

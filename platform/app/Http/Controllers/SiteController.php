@@ -25,6 +25,7 @@ use App\Services\Residents\ResidentDevices;
 use App\Services\Sites\SiteArchive;
 use App\Services\Sites\SiteScope;
 use App\Services\Verification\AiBudget;
+use App\Support\Provinces;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -75,6 +76,8 @@ class SiteController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'kind' => ['required', Rule::enum(SiteKind::class)],
             'address' => ['required', 'string', 'max:200'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'province' => ['nullable', 'string', Rule::in(Provinces::ALL)],
             'client_id' => ['nullable', Rule::exists('clients', 'id')->where('organization_id', $request->user()->organization_id)],
         ]);
 
@@ -95,6 +98,8 @@ class SiteController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'address' => ['required', 'string', 'max:200'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'province' => ['nullable', 'string', Rule::in(Provinces::ALL)],
             'kind' => ['required', Rule::enum(SiteKind::class)],
             'client_id' => ['nullable', Rule::exists('clients', 'id')->where('organization_id', $site->organization_id)],
         ]);
@@ -151,6 +156,9 @@ class SiteController extends Controller
                 'kind' => $site->kind->value,
                 'is_simulated' => $site->is_simulated,
                 'address' => $site->address,
+                'city' => $site->city,
+                'province' => $site->province,
+                'full_address' => $site->fullAddress(),
                 'client_id' => $site->client_id,
                 'perimeter' => $site->perimeter ?? [],
                 'center' => $site->lat !== null ? [$site->lat, $site->lng] : null,

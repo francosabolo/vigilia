@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { timeAgo, type ActivityItem } from '@/lib/seguria';
+import { formatDuration, timeAgo, type ActivityItem } from '@/lib/seguria';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
@@ -15,6 +15,9 @@ interface SiteStats {
     closed: number;
     false_alarms: number;
     false_alarm_rate: number | null;
+    alert_p50: number | null;
+    alert_p95: number | null;
+    alerts_measured: number;
 }
 
 interface Props {
@@ -48,6 +51,7 @@ export default function Quality({ pending, pendingCount, stats }: Props) {
                                     <th className="px-4 py-2.5 font-medium">Propiedad</th>
                                     <th className="px-4 py-2.5 font-medium">Intrusiones que se le escaparon</th>
                                     <th className="px-4 py-2.5 font-medium">Falsas alarmas</th>
+                                    <th className="px-4 py-2.5 font-medium">Tiempo hasta la alerta (7 días)</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
@@ -74,6 +78,18 @@ export default function Quality({ pending, pendingCount, stats }: Props) {
                                                     {row.false_alarm_rate}%{' '}
                                                     <span className="text-muted-foreground font-normal">
                                                         ({row.false_alarms} de {row.closed} cerrados)
+                                                    </span>
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {row.alert_p50 === null ? (
+                                                <span className="text-muted-foreground">Sin alertas</span>
+                                            ) : (
+                                                <span className={cn('tabular-nums', (row.alert_p95 ?? 0) > 30 && 'text-alarm font-semibold')}>
+                                                    {formatDuration(row.alert_p50)}{' '}
+                                                    <span className="text-muted-foreground">
+                                                        (el 95 % en menos de {formatDuration(row.alert_p95)})
                                                     </span>
                                                 </span>
                                             )}

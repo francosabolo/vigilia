@@ -3,13 +3,13 @@
 namespace App\Services\Verification;
 
 use Anthropic\Client;
-use Anthropic\Core\Exceptions\APIException;
 use Anthropic\Lib\Helpers\StructuredOutput;
 use Anthropic\Messages\Message;
 use App\Models\Camera;
 use App\Models\DetectionEvent;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 /**
  * Verifies edge detections with a Claude vision model.
@@ -268,7 +268,8 @@ class ClaudeDetectionVerifier implements DetectionVerifier
             }
 
             return $result;
-        } catch (APIException $exception) {
+        } catch (Throwable $exception) {
+            // Timeout, network or API error: never lose the alert — it goes out without the AI filter.
             Log::warning('AI verification failed, escalating without verdict', [
                 'camera_id' => $camera->id,
                 'error' => $exception->getMessage(),

@@ -1,3 +1,4 @@
+import { AddressFields } from '@/components/address-fields';
 import InputError from '@/components/input-error';
 import { SiteMap } from '@/components/site-map';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ interface OnboardingSite {
     id: number;
     name: string;
     kind: SiteKind;
+    full_address: string;
     perimeter: LatLng[];
     center: LatLng | null;
     guard_whatsapp: string | null;
@@ -176,7 +178,7 @@ function StepTitle({ title, children }: { title: string; children: ReactNode }) 
 }
 
 function PropertyStep({ clients }: { clients: { id: number; name: string }[] }) {
-    const form = useForm({ name: '', kind: 'building' as SiteKind, address: '', client_id: '' });
+    const form = useForm({ name: '', kind: 'building' as SiteKind, address: '', city: '', province: '', client_id: '' });
 
     return (
         <form
@@ -220,10 +222,14 @@ function PropertyStep({ clients }: { clients: { id: number; name: string }[] }) 
                     />
                     <InputError message={form.errors.name} />
                 </div>
-                <div className="grid gap-1.5">
-                    <Label htmlFor="onb-address">Dirección</Label>
-                    <Input id="onb-address" value={form.data.address} onChange={(e) => form.setData('address', e.target.value)} />
-                    <InputError message={form.errors.address} />
+                <div className="sm:col-span-2">
+                    <AddressFields
+                        prefix="onb"
+                        value={form.data}
+                        onChange={(field, value) => form.setData(field, value)}
+                        errors={form.errors}
+                        required
+                    />
                 </div>
                 {clients.length > 0 && (
                     <div className="grid gap-1.5">
@@ -260,7 +266,7 @@ function LocationStep({ site }: { site: OnboardingSite }) {
                 Buscá la propiedad en el mapa y tocá «Editar perímetro» para marcar sus esquinas. Así medimos qué parte ven las cámaras y ubicamos
                 cada una.
             </StepTitle>
-            <SiteMap siteId={site.id} perimeter={site.perimeter} center={site.center} cameras={[]} canManage />
+            <SiteMap siteId={site.id} perimeter={site.perimeter} center={site.center} cameras={[]} canManage address={site.full_address} />
         </>
     );
 }

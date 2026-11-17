@@ -16,7 +16,10 @@ class ReviewReportedSnapshot implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public SnapshotRequest $snapshotRequest) {}
+    public function __construct(public SnapshotRequest $snapshotRequest)
+    {
+        $this->onQueue('alerts');
+    }
 
     public function handle(DetectionVerifier $verifier): void
     {

@@ -1,7 +1,9 @@
+import { geocode } from '@/lib/address';
 import { type LatLng } from '@/lib/geo';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { CircleMarker, MapContainer, Marker, TileLayer, Tooltip, useMapEvents } from 'react-leaflet';
+import { useEffect, useState } from 'react';
+import { CircleMarker, MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 
 const BUENOS_AIRES: LatLng = [-34.6037, -58.3816];
 const TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
@@ -65,6 +67,14 @@ export function ClientsMap({ clients }: { clients: MapClient[] }) {
     );
 }
 
+function Recenter({ point }: { point: LatLng | null }) {
+    const map = useMap();
+    useEffect(() => {
+        if (point) map.setView(point, Math.max(map.getZoom(), 16));
+    }, [point, map]);
+    return null;
+}
+
 function Picker({ onPick }: { onPick: (point: LatLng) => void }) {
     useMapEvents({ click: (event) => onPick([Number(event.latlng.lat.toFixed(7)), Number(event.latlng.lng.toFixed(7))]) });
     return null;
@@ -76,22 +86,43 @@ function Picker({ onPick }: { onPick: (point: LatLng) => void }) {
 export function LocationPicker({
     value,
     fallback,
+    address,
     onChange,
 }: {
     value: LatLng | null;
     fallback: LatLng | null;
+    address?: string;
     onChange: (point: LatLng | null) => void;
 }) {
+    const [searching, setSearching] = useState(false);
+    const [notFound, setNotFound] = useState(false);
+
+    async function findAddress() {
+        if (!address) return;
+        setSearching(true);
+        const point = await geocode(address);
+        setSearching(false);
+        setNotFound(!point);
+        if (point) onChange(point);
+    }
+
     return (
         <div className="flex flex-col gap-1.5">
             <div className="h-48 overflow-hidden rounded-xl border">
                 <MapContainer center={value ?? fallback ?? BUENOS_AIRES} zoom={value || fallback ? 16 : 11} maxZoom={20} className="size-full">
+                    <Recenter point={value} />
                     <TileLayer url={TILES} attribution="Imágenes &copy; Esri" maxNativeZoom={19} maxZoom={20} />
                     <Picker onPick={onChange} />
                     {value && <Marker position={value} icon={pin} />}
                 </MapContainer>
             </div>
             <p className="text-muted-foreground text-sm">
+                {address && address.length > 4 && (
+                    <button type="button" className="mr-2 underline underline-offset-2" onClick={findAddress} disabled={searching}>
+                        {searching ? 'Buscando…' : 'Ubicar el domicilio en el mapa'}
+                    </button>
+                )}
+                {notFound && <span className="text-pending mr-2">No lo encontramos: marcalo tocando el mapa.</span>}
                 {value ? 'Tocá el mapa para mover el punto.' : 'Tocá el mapa para marcar el domicilio (opcional).'}
                 {value && (
                     <button type="button" className="ml-2 underline underline-offset-2" onClick={() => onChange(null)}>

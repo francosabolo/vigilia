@@ -18,6 +18,16 @@ class IncidentAlert extends InboxNotification implements ShouldQueue
     public function __construct(public Incident $incident, public bool $escalated = false) {}
 
     /**
+     * Alerts to the guard and the central travel on the alerts queue.
+     *
+     * @return array<string, string>
+     */
+    public function viaQueues(): array
+    {
+        return ['database' => 'alerts', 'broadcast' => 'alerts', 'mail' => 'alerts', WhatsAppChannel::class => 'alerts', WebPushChannel::class => 'alerts'];
+    }
+
+    /**
      * @return array<int, string>
      */
     public function via(object $notifiable): array

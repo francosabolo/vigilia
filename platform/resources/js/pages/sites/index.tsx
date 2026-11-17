@@ -1,3 +1,4 @@
+import { AddressFields } from '@/components/address-fields';
 import InputError from '@/components/input-error';
 import { ItemActionHint, ItemActionLink, ItemActions } from '@/components/item-action';
 import { Button } from '@/components/ui/button';
@@ -112,7 +113,7 @@ export default function SitesIndex({ sites, canCreate, clients }: { sites: SiteR
 }
 
 function CreateSite({ clients }: { clients: ClientOption[] }) {
-    const form = useForm({ name: '', kind: 'building' as SiteKind, address: '', client_id: '' });
+    const form = useForm({ name: '', kind: 'building' as SiteKind, address: '', city: '', province: '', client_id: '' });
 
     function submit(event: FormEvent) {
         event.preventDefault();
@@ -124,7 +125,7 @@ function CreateSite({ clients }: { clients: ClientOption[] }) {
             <DialogTrigger asChild>
                 <Button variant="outline">Alta rápida</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-2xl">
                 <form onSubmit={submit} className="flex flex-col gap-4">
                     <DialogHeader>
                         <DialogTitle>Agregar propiedad</DialogTitle>
@@ -162,11 +163,13 @@ function CreateSite({ clients }: { clients: ClientOption[] }) {
                         />
                         <InputError message={form.errors.name} />
                     </div>
-                    <div className="grid gap-1.5">
-                        <Label htmlFor="site-address">Dirección</Label>
-                        <Input id="site-address" value={form.data.address} onChange={(e) => form.setData('address', e.target.value)} />
-                        <InputError message={form.errors.address} />
-                    </div>
+                    <AddressFields
+                        prefix="site"
+                        value={form.data}
+                        onChange={(field, value) => form.setData(field, value)}
+                        errors={form.errors}
+                        required
+                    />
                     {clients.length > 0 && (
                         <div className="grid gap-1.5">
                             <Label htmlFor="site-client">Cliente</Label>

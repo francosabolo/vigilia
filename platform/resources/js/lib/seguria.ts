@@ -45,6 +45,14 @@ export interface IncidentDetail extends IncidentSummary {
     reporter: { name: string; lot: string | null; phone: string | null } | null;
     /** Cameras that saw the person, in order (only when followed across 2+ cameras). */
     route: { camera_id: number; camera: string; position: [number, number] | null; at: string }[];
+    /** A10 — following the intruder while the incident is open. */
+    follow?: {
+        current: { id: number; name: string; sector: string | null; preview_url: string | null; seen_at: string };
+        heading: string | null;
+        look_for: string | null;
+        next: { id: number; name: string; sector: string | null; preview_url: string | null; distance_m: number | null; ahead: boolean }[];
+        sightings: number;
+    } | null;
     live_frames: { camera: string; url: string }[];
     actions: IncidentAction[];
 }

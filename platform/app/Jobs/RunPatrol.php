@@ -16,7 +16,10 @@ class RunPatrol implements ShouldQueue
 
     public int $tries = 1;
 
-    public function __construct(public Patrol $patrol) {}
+    public function __construct(public Patrol $patrol)
+    {
+        $this->onQueue('background');
+    }
 
     public function handle(VirtualPatrol $patrols): void
     {

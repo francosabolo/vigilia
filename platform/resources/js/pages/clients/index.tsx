@@ -1,3 +1,4 @@
+import { AddressFields } from '@/components/address-fields';
 import { ClientsMap, LocationPicker } from '@/components/clients-map';
 import { SectionTitle } from '@/components/icon-circle';
 import InputError from '@/components/input-error';
@@ -16,6 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
+import { fullAddress } from '@/lib/address';
 import { type LatLng } from '@/lib/geo';
 import { plural, siteNoun, timeAgo, type SiteKind } from '@/lib/seguria';
 import { type BreadcrumbItem } from '@/types';
@@ -47,6 +49,8 @@ interface Client {
     id: number;
     name: string;
     address: string | null;
+    city: string | null;
+    province: string | null;
     position: LatLng | null;
     contact_name: string | null;
     contact_email: string | null;
@@ -119,7 +123,7 @@ function ClientCard({ client, unassignedSites }: { client: Client; unassignedSit
                     <h2 className="font-display text-2xl font-semibold">{client.name}</h2>
                     <p className="text-muted-foreground text-sm">
                         <MapPin className="mr-1 inline size-3.5" />
-                        {client.address || 'Sin domicilio'}
+                        {fullAddress(client) || 'Sin domicilio'}
                     </p>
                     <p className="text-muted-foreground text-sm">{contact || 'Sin datos de contacto'}</p>
                 </div>
@@ -278,6 +282,8 @@ function ClientDialog({ client, fallback = null }: { client?: Client; fallback?:
     const form = useForm({
         name: client?.name ?? '',
         address: client?.address ?? '',
+        city: client?.city ?? '',
+        province: client?.province ?? '',
         lat: client?.position?.[0] ?? (null as number | null),
         lng: client?.position?.[1] ?? (null as number | null),
         contact_name: client?.contact_name ?? '',
@@ -306,7 +312,7 @@ function ClientDialog({ client, fallback = null }: { client?: Client; fallback?:
             <DialogTrigger asChild>
                 {client ? <ItemActionButton kind="edit" aria-label={`Editar ${client.name}`} /> : <Button>Agregar cliente</Button>}
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                 <form onSubmit={submit} className="flex flex-col gap-4">
                     <DialogHeader>
                         <DialogTitle>{client ? `Editar ${client.name}` : 'Agregar cliente'}</DialogTitle>
@@ -323,19 +329,19 @@ function ClientDialog({ client, fallback = null }: { client?: Client; fallback?:
                         />
                         <InputError message={form.errors.name} />
                     </div>
-                    <div className="grid gap-1.5">
-                        <Label htmlFor={`${prefix}-address`}>Domicilio</Label>
-                        <Input
-                            id={`${prefix}-address`}
-                            placeholder="Av. Santa Fe 1234, piso 3, CABA"
-                            value={form.data.address}
-                            onChange={(e) => form.setData('address', e.target.value)}
+                    <div className="grid gap-2">
+                        <p className="text-sm font-medium">Domicilio</p>
+                        <AddressFields
+                            prefix={prefix}
+                            value={form.data}
+                            onChange={(field, value) => form.setData(field, value)}
+                            errors={form.errors}
                         />
-                        <InputError message={form.errors.address} />
                         {open && (
                             <LocationPicker
                                 value={form.data.lat !== null && form.data.lng !== null ? [form.data.lat, form.data.lng] : null}
                                 fallback={fallback}
+                                address={fullAddress(form.data)}
                                 onChange={(point) => form.setData((data) => ({ ...data, lat: point?.[0] ?? null, lng: point?.[1] ?? null }))}
                             />
                         )}

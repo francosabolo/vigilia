@@ -13,7 +13,10 @@ class RunShadowVerification implements ShouldQueue
 
     public int $tries = 1;
 
-    public function __construct(public int $detectionEventId) {}
+    public function __construct(public int $detectionEventId)
+    {
+        $this->onQueue('background');
+    }
 
     public function handle(ShadowMode $shadow): void
     {

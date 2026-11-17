@@ -20,7 +20,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(Client::class, fn (): Client => new Client(apiKey: config('services.anthropic.key')));
+        // Short timeout and one retry: an alert never waits minutes on the AI; past this it goes out unfiltered.
+        $this->app->singleton(Client::class, fn (): Client => new Client(
+            apiKey: config('services.anthropic.key'),
+            requestOptions: [
+                'timeout' => (float) config('seguria.ai.timeout_seconds'),
+                'maxRetries' => (int) config('seguria.ai.max_retries'),
+                'transporter' => new \GuzzleHttp\Client(['timeout' => (float) config('seguria.ai.timeout_seconds'), 'connect_timeout' => 3]),
+            ],
+        ));
 
         $this->app->bind(DetectionVerifier::class, fn ($app): DetectionVerifier => config('seguria.ai.enabled')
             ? $app->make(ClaudeDetectionVerifier::class)

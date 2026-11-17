@@ -8,6 +8,12 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class ProcessDetectionEvent implements ShouldQueue
 {
+    /** Alerts have their own queue: nothing slow (patrols, reports, AI tests) can delay them. */
+    public function viaQueue(): string
+    {
+        return 'alerts';
+    }
+
     public int $tries = 3;
 
     /**

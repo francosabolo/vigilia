@@ -46,6 +46,7 @@ class OnboardingController extends Controller
                 'id' => $site->id,
                 'name' => $site->name,
                 'kind' => $site->kind->value,
+                'full_address' => $site->fullAddress(),
                 'perimeter' => $site->perimeter ?? [],
                 'center' => $site->lat !== null ? [$site->lat, $site->lng] : null,
                 'guard_whatsapp' => $site->guard_whatsapp,

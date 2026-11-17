@@ -62,6 +62,10 @@ class DismissedSample
                 ->where('source', '!=', IncidentSource::Equipment)
                 ->whereIn('resolution', [IncidentResolution::Confirmed, IncidentResolution::FalseAlarm])->get(['resolution']);
             $missed = $reviewed->where('ground_truth', true)->count();
+            // Real time: from the moment the edge saw it to the moment the guard was notified.
+            $latencies = Incident::where('site_id', $site->id)->where('source', IncidentSource::Detection)->where('detected_at', '>=', now()->subWeek())
+                ->whereNotNull('notified_at')->get(['detected_at', 'notified_at'])
+                ->map(fn (Incident $incident) => $incident->detected_at->diffInSeconds($incident->notified_at, absolute: true))->sort()->values();
             $false = $closed->where('resolution', IncidentResolution::FalseAlarm)->count();
 
             return [
@@ -72,6 +76,9 @@ class DismissedSample
                 'closed' => $closed->count(),
                 'false_alarms' => $false,
                 'false_alarm_rate' => $closed->isEmpty() ? null : round(100 * $false / $closed->count(), 1),
+                'alert_p50' => $latencies->isEmpty() ? null : (int) round($latencies->get((int) floor(0.5 * ($latencies->count() - 1)))),
+                'alert_p95' => $latencies->isEmpty() ? null : (int) round($latencies->get((int) floor(0.95 * ($latencies->count() - 1)))),
+                'alerts_measured' => $latencies->count(),
             ];
         })->all();
     }

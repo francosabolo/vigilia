@@ -13,6 +13,7 @@ use App\Services\Activity\ActivityFeed;
 use App\Services\Cameras\CameraViewMonitor;
 use App\Services\Incidents\IncidentWorkflow;
 use App\Services\Sites\SiteScope;
+use App\Services\Tracking\IntruderFollow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -77,6 +78,7 @@ class IncidentController extends Controller
                 'can_fix' => Gate::allows('manage', $incident->site),
             ] : null,
             'route' => $this->route($incident),
+            'follow' => app(IntruderFollow::class)->for($incident),
             'decisions' => $incident->detectionEvents()->with('camera.site:id,name')->orderBy('started_at')->get()->map(fn ($event) => app(ActivityFeed::class)->item($event)),
             'reporter' => $incident->reporter ? ['name' => $incident->reporter->name, 'lot' => $incident->reporter->lot, 'phone' => $incident->reporter->phone] : null,
             'live_frames' => $incident->source === IncidentSource::Patrol

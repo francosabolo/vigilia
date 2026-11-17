@@ -2,6 +2,7 @@ import { ItemActionButton, ItemActionLink, ItemActions } from '@/components/item
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { geocode } from '@/lib/address';
 import { CAMERA_MODELS, fovPolygon, insertVertex, perimeterCoverage, planCoverage, type CameraPlacement, type LatLng } from '@/lib/geo';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
@@ -26,11 +27,29 @@ interface Props {
     canManage: boolean;
     /** 'overview' shows cameras and lets managers edit; 'coverage' finds blind spots and suggests cameras. */
     variant?: 'overview' | 'coverage';
+    /** Where to start when the property has no point yet: its address, found on the map. */
+    address?: string | null;
 }
 
 type Mode = 'view' | 'perimeter' | 'camera';
 
-const DEFAULT_CENTER: LatLng = [-34.4587, -58.9142];
+const DEFAULT_CENTER: LatLng = [-34.6037, -58.3816];
+
+/** Moves the map to the property's address the first time, when it has no point of its own. */
+function CenterOnAddress({ address, enabled }: { address?: string | null; enabled: boolean }) {
+    const map = useMap();
+    useEffect(() => {
+        if (!enabled || !address) return;
+        let cancelled = false;
+        geocode(address).then((point) => {
+            if (point && !cancelled) map.setView(point, 17);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [address, enabled, map]);
+    return null;
+}
 
 /** Draggable perimeter vertex: a round handle with a × to remove it (same rule as the zone editor). */
 const vertexIcon = L.divIcon({
@@ -64,7 +83,7 @@ function CenterReporter({ onMove }: { onMove: (center: LatLng) => void }) {
     return null;
 }
 
-export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant = 'overview' }: Props) {
+export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant = 'overview', address = null }: Props) {
     const [mode, setMode] = useState<Mode>('view');
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [draftPerimeter, setDraftPerimeter] = useState<LatLng[]>(perimeter);
@@ -159,6 +178,7 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                         maxZoom={20}
                     />
                     <FitBounds points={fitPoints} />
+                    <CenterOnAddress address={address} enabled={!center && fitPoints.length === 0} />
                     <ClickHandler onClick={handleMapClick} />
                     <CenterReporter onMove={setMapCenter} />
 

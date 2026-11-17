@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DetectionStatus;
 use App\Events\DetectionEventReceived;
 use App\Models\Camera;
 use App\Models\DetectionEvent;
@@ -112,4 +113,16 @@ it('stores the clip frames sent by bridge 0.4 in time order', function () {
 
     $url = URL::temporarySignedRoute('detections.media', now()->addHour(), ['detectionEvent' => $event->id, 'frame' => 2]);
     $this->get($url)->assertOk();
+});
+
+it('sends early and completes the same event at the end, looking again at a vehicle that stayed', function () {
+    $early = frigatePayload(['id' => 'ev-car', 'label' => 'car', 'end_time' => null]);
+    $this->withToken($this->token)->postJson('/api/edge/events', $early)->assertCreated();
+    $event = DetectionEvent::sole();
+    $event->forceFill(['status' => DetectionStatus::Dismissed])->save();
+
+    $this->withToken($this->token)->postJson('/api/edge/events', frigatePayload(['id' => 'ev-car', 'label' => 'car', 'end_time' => 1731790000.12 + 600]))->assertOk();
+
+    expect(DetectionEvent::count())->toBe(1)->and($event->fresh()->status)->toBe(DetectionStatus::Pending);
+    Event::assertDispatchedTimes(DetectionEventReceived::class, 2);
 });

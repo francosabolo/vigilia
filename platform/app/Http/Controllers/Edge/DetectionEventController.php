@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Edge;
 
+use App\Enums\DetectionStatus;
 use App\Events\DetectionEventReceived;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Edge\StoreDetectionEventRequest;
@@ -59,6 +60,11 @@ class DetectionEventController extends Controller
         ]))->save();
 
         if ($isNew) {
+            DetectionEventReceived::dispatch($event);
+        } elseif ($event->status === DetectionStatus::Dismissed && $event->ended_at && in_array($event->label, ['car', 'truck', 'motorcycle'], true)
+            && $event->started_at->diffInMinutes($event->ended_at, absolute: true) >= (int) config('seguria.tracking.stopped_vehicle_minutes', 5)) {
+            // A6 — the early send was dismissed; the end of the event shows the vehicle stayed: look again.
+            $event->forceFill(['status' => DetectionStatus::Pending])->save();
             DetectionEventReceived::dispatch($event);
         }
 

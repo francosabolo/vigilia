@@ -1,4 +1,5 @@
 import { DecisionTrail } from '@/components/console/decision-trail';
+import { FollowIntruder } from '@/components/console/follow-intruder';
 import { EmergencyCallDialog, SpeakerDialog } from '@/components/console/incident-response-tools';
 import { SeverityText, StatusSignal } from '@/components/incident-badges';
 import { IncidentRoute } from '@/components/incident-route';
@@ -225,6 +226,8 @@ export default function IncidentShow({ incident, channel }: Props) {
                             <Media incident={incident} />
                         </div>
                     ) : null}
+
+                    {incident.follow && <FollowIntruder follow={incident.follow} />}
 
                     {incident.route.length >= 2 && <IncidentRoute route={incident.route} />}
 

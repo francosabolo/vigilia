@@ -18,7 +18,10 @@ class EscalateIncident implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public Incident $incident) {}
+    public function __construct(public Incident $incident)
+    {
+        $this->onQueue('alerts');
+    }
 
     public function handle(IncidentWorkflow $workflow): void
     {

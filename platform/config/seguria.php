@@ -82,6 +82,10 @@ return [
         'review_band' => [0.35, 0.75],
         // Minimum confidence to raise an incident.
         'threat_threshold' => (float) env('SEGURIA_AI_THREAT_THRESHOLD', 0.5),
+        // Reliability: a verification that takes longer than this alerts anyway, without the AI filter (fail-open).
+        'timeout_seconds' => (float) env('SEGURIA_AI_TIMEOUT', 10),
+        'max_retries' => (int) env('SEGURIA_AI_RETRIES', 1),
+
         // H5/H6 — estimated cost of one verification (image ~2.000 tokens in, ~150 out on Haiku, rounded up).
         'estimated_cost_per_call_usd' => (float) env('SEGURIA_AI_COST_PER_CALL', 0.0005),
         // H6 — seconds an operator would spend looking at each movement the AI filtered out.

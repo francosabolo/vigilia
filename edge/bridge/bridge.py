@@ -1,6 +1,7 @@
 """seguria-bridge: forwards Frigate events (MQTT) to the Vigilia cloud platform.
 
-- Listens to `frigate/events`; on each finished event, downloads snapshot + clip
+- Listens to `frigate/events`: sends each event as soon as someone enters a zone (real time) and, when it
+  ends, completes it with the clip and frames downloaded
   from the local Frigate API and POSTs them to /api/edge/events.
 - If the cloud is unreachable, persists the event to QUEUE_DIR and retries later.
 - Sends a heartbeat with camera status every HEARTBEAT_SECONDS.
@@ -22,7 +23,7 @@ import paho.mqtt.client as mqtt
 import requests
 from ruamel.yaml import YAML
 
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 API_URL = os.environ["SEGURIA_API_URL"].rstrip("/")
 TOKEN = os.environ["SEGURIA_TOKEN"]
 MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
@@ -143,6 +144,28 @@ def upload(directory: Path) -> bool:
         return r.status_code == 422  # drop invalid payloads; keep on auth errors
     log.warning("upload %s got %s, will retry", payload["id"], r.status_code)
     return False
+
+
+EARLY_SENT: dict[str, float] = {}
+
+
+def handle_early(event: dict) -> None:
+    """Real time: send the event as soon as someone enters a zone, with the snapshot of that moment. The alert must
+    not wait for the person to leave; the clip and the frames complete the same event when it ends."""
+    directory = QUEUE_DIR / (event["id"].replace("/", "_") + "-early")
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "event.json").write_text(json.dumps(to_payload(event) | {"end_time": None}))
+    for url in (f"{FRIGATE_URL}/api/events/{event['id']}/snapshot.jpg", f"{FRIGATE_URL}/api/{event['camera']}/latest.jpg"):
+        try:
+            r = requests.get(url, timeout=5)
+            if r.ok and r.content:
+                (directory / "snapshot.jpg").write_bytes(r.content)
+                break
+        except requests.RequestException:
+            continue
+    with queue_lock:
+        if upload(directory):
+            shutil.rmtree(directory, ignore_errors=True)
 
 
 def handle_event(event: dict) -> None:
@@ -345,8 +368,16 @@ def on_message(_client, _userdata, msg):
         message = json.loads(msg.payload)
     except ValueError:
         return
-    if message.get("type") == "end":
-        threading.Thread(target=handle_event, args=(message["after"],), daemon=True).start()
+    after = message.get("after") or {}
+    kind = message.get("type")
+    if kind in ("new", "update") and after.get("id") not in EARLY_SENT and not after.get("false_positive") \
+            and (after.get("entered_zones") or after.get("has_snapshot")):
+        EARLY_SENT[after["id"]] = time.time()
+        for old in [key for key, at in EARLY_SENT.items() if at < time.time() - 3600]:
+            EARLY_SENT.pop(old, None)
+        threading.Thread(target=handle_early, args=(after,), daemon=True).start()
+    if kind == "end":
+        threading.Thread(target=handle_event, args=(after,), daemon=True).start()
 
 
 def main() -> None:
