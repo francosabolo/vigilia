@@ -5,6 +5,7 @@ import { EmergencyContacts, type EmergencyContact } from '@/components/emergency
 import { SectionTitle } from '@/components/icon-circle';
 import InputError from '@/components/input-error';
 import { ItemActionButton, ItemActionLink, ItemActions } from '@/components/item-action';
+import { ResidentVehicles, type Vehicle } from '@/components/resident-vehicles';
 import { SiteMap } from '@/components/site-map';
 import { Button } from '@/components/ui/button';
 import {
@@ -99,6 +100,7 @@ interface Resident {
     push_devices: number;
     home: LatLng | null;
     contacts: EmergencyContact[];
+    vehicles: Vehicle[];
 }
 
 interface Props {
@@ -985,6 +987,14 @@ function EditResident({
                             <InputError message={form.errors.home_lat} />
                         </div>
                     )}
+                    <div className="grid gap-1.5">
+                        <Label>Vehículos</Label>
+                        <ResidentVehicles
+                            vehicles={resident.vehicles}
+                            addAction={`/sites/${siteId}/residents/${resident.id}/vehicles`}
+                            removeAction={(vehicle) => `/sites/${siteId}/vehicles/${vehicle.id}`}
+                        />
+                    </div>
                     <div className="grid gap-1.5">
                         <Label>Contactos de emergencia</Label>
                         <EmergencyContacts

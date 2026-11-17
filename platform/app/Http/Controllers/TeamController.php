@@ -38,7 +38,7 @@ class TeamController extends Controller
         $base = User::query()->where('organization_id', $admin->organization_id);
         $members = (clone $base)
             ->when($filters['role'] ?? null, fn ($query, $role) => $query->where('role', $role))
-            ->when($filters['q'] ?? null, fn ($query, $q) => $query->where(fn ($query) => $query->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%")->orWhere('lot', $q)))
+            ->when($filters['q'] ?? null, fn ($query, $q) => $query->where(fn ($query) => $query->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%")->orWhere('lot', $q)->orWhereHas('vehicles', fn ($query) => $query->where('plate', 'like', '%'.strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $q)).'%'))))
             ->with(['site:id,name', 'client:id,name'])
             ->orderBy('name')
             ->paginate(40)

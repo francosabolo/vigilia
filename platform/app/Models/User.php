@@ -189,6 +189,11 @@ class User extends Authenticatable
     /**
      * F7 — emergency contacts, in the order to call them.
      */
+    public function vehicles(): HasMany
+    {
+        return $this->hasMany(ResidentVehicle::class)->orderBy('id');
+    }
+
     public function contacts(): HasMany
     {
         return $this->hasMany(ResidentContact::class)->orderBy('position')->orderBy('id');

@@ -64,6 +64,8 @@ Route::middleware('auth')->group(function () {
         Route::put('away', [ResidentController::class, 'updateAway'])->name('away');
         Route::post('llegada', [SafeArrivalController::class, 'start'])->middleware('throttle:10,1')->name('arrival.start');
         Route::post('llegada/{arrival}/listo', [SafeArrivalController::class, 'arrivedOwn'])->name('arrival.done');
+        Route::post('vehiculos', [ResidentContactController::class, 'storeOwnVehicle'])->name('vehicles.store');
+        Route::delete('vehiculos/{vehicle}', [ResidentContactController::class, 'destroyOwnVehicle'])->name('vehicles.destroy');
         Route::post('contactos', [ResidentContactController::class, 'storeOwn'])->name('contacts.store');
         Route::delete('contactos/{contact}', [ResidentContactController::class, 'destroyOwn'])->name('contacts.destroy');
         Route::post('visitas', [ResidentVisitController::class, 'store'])->name('visits.store');
@@ -140,6 +142,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('sites/{site}/details', [SiteController::class, 'updateDetails'])->name('sites.details');
         Route::delete('sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
         Route::post('sites/{site}/residents', [ResidentAdminController::class, 'store'])->name('residents.store');
+        Route::post('sites/{site}/residents/{resident}/vehicles', [ResidentContactController::class, 'storeVehicle'])->name('residents.vehicles.store');
+        Route::delete('sites/{site}/vehicles/{vehicle}', [ResidentContactController::class, 'destroyVehicle'])->name('residents.vehicles.destroy');
         Route::post('sites/{site}/residents/{resident}/contacts', [ResidentContactController::class, 'store'])->name('residents.contacts.store');
         Route::delete('sites/{site}/contacts/{contact}', [ResidentContactController::class, 'destroy'])->name('residents.contacts.destroy');
         Route::post('sites/{site}/residents/import', [ResidentAdminController::class, 'import'])->name('residents.import');

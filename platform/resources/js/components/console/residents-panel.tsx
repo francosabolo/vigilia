@@ -26,6 +26,7 @@ export interface PanelResident {
     push_devices: number;
     home: LatLng | null;
     contacts: EmergencyContact[];
+    vehicles: { id: number; plate: string; make_model: string | null; color: string | null }[];
 }
 
 export interface SentMessage {
@@ -190,7 +191,7 @@ export function ResidentsPanel({
                     <Search className="text-muted-foreground absolute top-2.5 left-3 size-4" />
                     <Input
                         aria-label="Buscar vecinos"
-                        placeholder={`Buscar por nombre, ${noun}, celular o email`}
+                        placeholder={`Buscar por nombre, ${noun}, celular, email o patente`}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         className="pl-9"
@@ -279,6 +280,13 @@ export function ResidentsPanel({
                                         .filter(Boolean)
                                         .join(', ') || resident.email}
                                 </p>
+                                {resident.vehicles.length > 0 && (
+                                    <p className="text-muted-foreground text-sm">
+                                        {resident.vehicles
+                                            .map((vehicle) => [vehicle.plate, vehicle.make_model, vehicle.color].filter(Boolean).join(' '))
+                                            .join(' · ')}
+                                    </p>
+                                )}
                                 {resident.contacts.length > 0 && (
                                     <p className="text-muted-foreground text-sm">
                                         Si no responde:{' '}

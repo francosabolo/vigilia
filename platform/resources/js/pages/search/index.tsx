@@ -16,6 +16,17 @@ interface Props {
         detections: ActivityItem[];
         incidents: { id: number; title: string; site: string; description: string | null; at: string }[];
         entries: { id: number; name: string; plate: string | null; status: string; kind_label: string; photo_url: string | null; at: string }[];
+        vehicles: {
+            id: number;
+            plate: string;
+            make_model: string | null;
+            color: string | null;
+            owner: string;
+            lot: string | null;
+            phone: string | null;
+            site: string | null;
+            site_id: number;
+        }[];
     };
 }
 
@@ -23,7 +34,7 @@ const EXAMPLES = ['campera roja', 'mochila', 'auto blanco', 'moto', 'dos persona
 
 export default function SearchPage({ q, days, results }: Props) {
     const [query, setQuery] = useState(q);
-    const total = results.detections.length + results.incidents.length + results.entries.length;
+    const total = results.detections.length + results.incidents.length + results.entries.length + results.vehicles.length;
     const search = (value: string, period = days) =>
         router.get('/search', { q: value || undefined, days: period }, { preserveState: true, replace: true });
 
@@ -41,8 +52,8 @@ export default function SearchPage({ q, days, results }: Props) {
                 <div>
                     <h1 className="font-display text-3xl font-semibold">Buscar en lo grabado</h1>
                     <p className="text-muted-foreground">
-                        Busca en lo que la IA describió de cada detección, en los incidentes y en el registro de accesos. Tienen que aparecer todas
-                        las palabras.
+                        Busca en lo que la IA describió de cada detección, en los incidentes, en el registro de accesos y en las patentes de los
+                        vecinos. Tienen que aparecer todas las palabras.
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -87,6 +98,34 @@ export default function SearchPage({ q, days, results }: Props) {
                     <p className="text-muted-foreground rounded-xl border border-dashed p-8 text-center">Nada coincide con «{q}» en este período.</p>
                 ) : (
                     <>
+                        {results.vehicles.length > 0 && (
+                            <section className="flex flex-col gap-3">
+                                <h2 className="font-semibold">Vehículos de vecinos ({results.vehicles.length})</h2>
+                                <ul className="bg-card divide-y rounded-xl border text-sm">
+                                    {results.vehicles.map((vehicle) => (
+                                        <li key={vehicle.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
+                                            <span className="font-display w-24 text-lg font-semibold tracking-wider">{vehicle.plate}</span>
+                                            <span className="flex-1">
+                                                <span className="font-medium">{vehicle.owner}</span>
+                                                <span className="text-muted-foreground">
+                                                    {vehicle.lot && `, ${vehicle.lot}`}, {vehicle.site}
+                                                    {(vehicle.make_model || vehicle.color) &&
+                                                        `. ${[vehicle.make_model, vehicle.color].filter(Boolean).join(', ')}`}
+                                                </span>
+                                            </span>
+                                            {vehicle.phone && (
+                                                <a href={`tel:${vehicle.phone}`} className="underline underline-offset-2">
+                                                    Llamar
+                                                </a>
+                                            )}
+                                            <Link href={`/sites/${vehicle.site_id}?tab=vecinos`} className="underline underline-offset-2">
+                                                Ver en Vecinos
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        )}
                         {results.detections.length > 0 && (
                             <section className="flex flex-col gap-3">
                                 <h2 className="font-semibold">Detecciones ({results.detections.length})</h2>

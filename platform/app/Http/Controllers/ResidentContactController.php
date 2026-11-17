@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ResidentContact;
+use App\Models\ResidentVehicle;
 use App\Models\Site;
 use App\Models\User;
+use App\Models\WatchedPlate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -48,6 +50,52 @@ class ResidentContactController extends Controller
         $contact->delete();
 
         return back();
+    }
+
+    // F10 — vehicles, from the app or by the property's staff.
+    public function storeOwnVehicle(Request $request): RedirectResponse
+    {
+        $this->addVehicle($request->user(), $request);
+
+        return back();
+    }
+
+    public function destroyOwnVehicle(Request $request, ResidentVehicle $vehicle): RedirectResponse
+    {
+        abort_unless($vehicle->user_id === $request->user()->id, 404);
+        $vehicle->delete();
+
+        return back();
+    }
+
+    public function storeVehicle(Request $request, Site $site, User $resident): RedirectResponse
+    {
+        Gate::authorize('manage', $site);
+        abort_unless($resident->isResident() && $resident->site_id === $site->id, 404);
+        $this->addVehicle($resident, $request);
+
+        return back();
+    }
+
+    public function destroyVehicle(Site $site, ResidentVehicle $vehicle): RedirectResponse
+    {
+        Gate::authorize('manage', $site);
+        abort_unless($vehicle->site_id === $site->id, 404);
+        $vehicle->delete();
+
+        return back();
+    }
+
+    private function addVehicle(User $resident, Request $request): void
+    {
+        $data = $request->validate([
+            'plate' => ['required', 'string', 'max:15'],
+            'make_model' => ['nullable', 'string', 'max:60'],
+            'color' => ['nullable', 'string', 'max:30'],
+        ]);
+        abort_if($resident->vehicles()->count() >= 6, 422, 'Hasta 6 vehículos por vecino.');
+
+        $resident->vehicles()->create(['plate' => WatchedPlate::normalize($data['plate']), 'site_id' => $resident->site_id] + $data);
     }
 
     private function add(User $resident, Request $request): void

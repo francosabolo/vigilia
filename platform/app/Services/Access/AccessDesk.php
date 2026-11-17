@@ -11,6 +11,7 @@ use App\Events\IncidentOpened;
 use App\Models\AccessAuthorization;
 use App\Models\AccessEntry;
 use App\Models\Incident;
+use App\Models\ResidentVehicle;
 use App\Models\Site;
 use App\Models\User;
 use App\Models\WatchedPlate;
@@ -154,8 +155,23 @@ class AccessDesk
         }
 
         $this->checkWatchlist($site, $entry->fresh());
+        $this->recognizeResidentVehicle($site, $entry->fresh());
 
         return $entry->fresh();
+    }
+
+    /**
+     * F10 — the plate belongs to a resident's car: the entry says whose it is.
+     */
+    private function recognizeResidentVehicle(Site $site, AccessEntry $entry): void
+    {
+        if (! $entry->plate) {
+            return;
+        }
+        $vehicle = ResidentVehicle::where('site_id', $site->id)->where('plate', WatchedPlate::normalize($entry->plate))->with('resident:id,name,lot')->first();
+        if ($vehicle && $entry->resident_id === null) {
+            $entry->update(['reason' => trim(($entry->reason ? $entry->reason.' ' : '')."Auto de {$vehicle->resident->name}".($vehicle->resident->lot ? " ({$vehicle->resident->lot})" : '').'.')]);
+        }
     }
 
     /**

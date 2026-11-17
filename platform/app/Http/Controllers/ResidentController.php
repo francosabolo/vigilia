@@ -59,6 +59,7 @@ class ResidentController extends Controller
             'vapidPublicKey' => config('webpush.vapid.public_key'),
             'arrival' => SafeArrival::where('user_id', $resident->id)->where('status', 'arriving')->latest('id')->first()?->toPayload(),
             'contacts' => $resident->contacts()->get()->map->toPayload(),
+            'vehicles' => $resident->vehicles()->get()->map->toPayload(),
             'visits' => AccessAuthorization::where('resident_id', $resident->id)->whereNull('revoked_at')->where('valid_until', '>=', now()->toDateString())
                 ->with('site:id,timezone')->orderBy('valid_from')->get()->map->toPayload(),
             'atGate' => AccessEntry::where('resident_id', $resident->id)->where('created_at', '>', now()->subDays(30))->latest()->limit(30)->get()->map->toPayload(),

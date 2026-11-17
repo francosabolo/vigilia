@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AccessEntry;
 use App\Models\DetectionEvent;
 use App\Models\Incident;
+use App\Models\ResidentVehicle;
 use App\Services\Activity\ActivityFeed;
 use App\Services\Sites\SiteScope;
 use Illuminate\Http\Request;
@@ -25,7 +26,7 @@ class SearchController extends Controller
         $siteIds = $scope->siteIds($request);
         $words = collect(preg_split('/\s+/', mb_strtolower($q)))->filter(fn ($word) => mb_strlen($word) >= 2)->take(6)->values();
 
-        $results = ['detections' => [], 'incidents' => [], 'entries' => []];
+        $results = ['detections' => [], 'incidents' => [], 'entries' => [], 'vehicles' => []];
 
         if ($words->isNotEmpty()) {
             $since = now()->subDays($days);
@@ -48,7 +49,17 @@ class SearchController extends Controller
                 ->where(fn ($query) => $words->each(fn ($word) => $query->whereRaw("LOWER(name || ' ' || COALESCE(plate, '')) LIKE ?", ["%{$word}%"])))
                 ->with(['resident:id,name,lot', 'guardUser:id,name'])->latest()->limit(30)->get();
 
+            // F10 — a plate typed in the search finds the resident who owns that car.
+            $plate = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $q));
+            $vehicles = strlen($plate) >= 3
+                ? ResidentVehicle::whereIn('site_id', $siteIds)->where('plate', 'like', "%{$plate}%")->with(['resident:id,name,lot,phone,site_id', 'resident.site:id,name'])->limit(20)->get()
+                : collect();
+
             $results = [
+                'vehicles' => $vehicles->map(fn (ResidentVehicle $vehicle): array => $vehicle->toPayload() + [
+                    'owner' => $vehicle->resident->name, 'lot' => $vehicle->resident->lot, 'phone' => $vehicle->resident->phone,
+                    'site' => $vehicle->resident->site?->name, 'site_id' => $vehicle->resident->site_id,
+                ])->all(),
                 'detections' => $detections->map(fn (DetectionEvent $event) => $feed->item($event))->all(),
                 'incidents' => $incidents->map(fn (Incident $incident): array => [
                     'id' => $incident->id, 'title' => $incident->title, 'site' => $incident->site->name,
