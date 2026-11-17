@@ -51,7 +51,7 @@ class DatabaseSeeder extends Seeder
         $users = [
             ['admin@seguria.test', 'Admin Vigilia', UserRole::Admin, null],
             ['central@seguria.test', 'Operador Central', UserRole::Operator, null],
-            ['guardia@seguria.test', 'Guardia Los Álamos', UserRole::Guard, $site->id],
+            ['guardia@seguria.test', 'Ramón Gutiérrez', UserRole::Guard, $site->id],
             ['admin.alamos@seguria.test', 'Administración Los Álamos', UserRole::SiteAdmin, $site->id],
             ['vecino@seguria.test', 'Laura Gómez', UserRole::Resident, $site->id],
         ];
@@ -163,7 +163,7 @@ class DatabaseSeeder extends Seeder
         }
 
         User::updateOrCreate(['email' => 'encargado@seguria.test'], [
-            'name' => 'Encargado Arenales', 'password' => 'password', 'email_verified_at' => now(),
+            'name' => 'Hugo Benítez', 'password' => 'password', 'email_verified_at' => now(),
             'role' => UserRole::Guard, 'organization_id' => $organization->id, 'site_id' => $building->id,
         ]);
         User::updateOrCreate(['email' => 'vecina.arenales@seguria.test'], [
