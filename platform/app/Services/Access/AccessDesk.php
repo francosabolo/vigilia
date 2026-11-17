@@ -8,6 +8,7 @@ use App\Enums\IncidentStatus;
 use App\Enums\Severity;
 use App\Events\IncidentChanged;
 use App\Events\IncidentOpened;
+use App\Jobs\CheckVisitorExit;
 use App\Models\AccessAuthorization;
 use App\Models\AccessEntry;
 use App\Models\Incident;
@@ -18,6 +19,7 @@ use App\Models\WatchedPlate;
 use App\Notifications\VisitorAtGate;
 use App\Services\Cameras\CameraViewMonitor;
 use App\Services\Verification\AiBudget;
+use App\Services\Visits\VisitWatch;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
@@ -112,6 +114,16 @@ class AccessDesk
     public function exit(AccessEntry $entry): void
     {
         $entry->update(['exited_at' => now()]);
+
+        // D8 — the picture on the way out, to compare with the one on the way in.
+        $camera = $entry->site->cameras()->where('is_access', true)->first();
+        $disk = Storage::disk(config('vigilia.media_disk'));
+        if ($camera && $entry->photo_path && $disk->exists($this->monitor->latestPath($camera))) {
+            $path = "sites/{$entry->site_id}/access/{$entry->id}-exit.jpg";
+            $disk->copy($this->monitor->latestPath($camera), $path);
+            $entry->update(['exit_photo_path' => $path]);
+            CheckVisitorExit::dispatch($entry->fresh());
+        }
     }
 
     /**
@@ -140,6 +152,8 @@ class AccessDesk
     private function entry(Site $site, User $guard, array $data): AccessEntry
     {
         $entry = AccessEntry::create($data + ['site_id' => $site->id, 'guard_id' => $guard->id]);
+        // D7 — when the visit should be over.
+        $entry->update(['expected_until' => app(VisitWatch::class)->expectedUntil($entry, $site)]);
 
         $camera = $site->cameras()->where('is_access', true)->first();
         $disk = Storage::disk(config('vigilia.media_disk'));

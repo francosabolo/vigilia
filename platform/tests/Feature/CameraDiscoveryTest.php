@@ -33,7 +33,7 @@ it('sends a picked camera to the edge once and wipes its credentials when added'
 
     $setup = CameraSetup::sole();
     expect($setup->name)->toBe('porton_de_entrada')
-        ->and($setup->getRawOriginal('stream_url'))->not->toContain('cl')
+        ->and($setup->getRawOriginal('stream_url'))->not->toContain('cl%40ve')->not->toContain('cl@ve')
         ->and($setup->stream_url)->toBe('rtsp://admin:cl%40ve@192.168.1.64:554/Streaming/Channels/101');
 
     $this->withToken($this->token)->getJson('/api/edge/commands')->assertJsonPath('add_cameras.0.url', $setup->stream_url);

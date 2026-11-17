@@ -11,11 +11,11 @@ use Illuminate\Support\Facades\URL;
  */
 class AccessEntry extends Model
 {
-    protected $fillable = ['site_id', 'authorization_id', 'resident_id', 'unit', 'visiting', 'guard_id', 'kind', 'name', 'document', 'plate', 'purpose', 'photo_path', 'status', 'reason', 'answered_at', 'exited_at'];
+    protected $fillable = ['site_id', 'authorization_id', 'resident_id', 'unit', 'visiting', 'guard_id', 'kind', 'name', 'document', 'plate', 'purpose', 'photo_path', 'status', 'reason', 'answered_at', 'exited_at', 'expected_until', 'overdue_notified_at', 'exit_photo_path', 'exit_check'];
 
     protected function casts(): array
     {
-        return ['answered_at' => 'datetime', 'exited_at' => 'datetime'];
+        return ['answered_at' => 'datetime', 'exited_at' => 'datetime', 'expected_until' => 'datetime', 'overdue_notified_at' => 'datetime', 'exit_check' => 'array'];
     }
 
     public function authorization(): BelongsTo
@@ -57,6 +57,9 @@ class AccessEntry extends Model
             'document' => $this->document,
             'purpose' => $this->purpose,
             'exited_at' => $this->exited_at?->toIso8601String(),
+            'expected_until' => $this->expected_until?->toIso8601String(),
+            'overdue' => ! $this->exited_at && $this->expected_until?->isPast(),
+            'left_with' => ($this->exit_check['carries_more'] ?? false) ? ($this->exit_check['description'] ?? 'algo que no tenía al entrar') : null,
             'guard' => $this->guardUser?->name,
             'photo_url' => $this->photo_path ? URL::temporarySignedRoute('access.photo', now()->addHours(12), ['accessEntry' => $this->id]) : null,
             'at' => $this->created_at->toIso8601String(),

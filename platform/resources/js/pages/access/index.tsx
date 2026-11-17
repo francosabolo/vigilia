@@ -7,8 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
-import { timeAgo } from '@/lib/vigilia';
 import { cn } from '@/lib/utils';
+import { timeAgo } from '@/lib/vigilia';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm, usePage, usePoll } from '@inertiajs/react';
 import { DoorOpen, KeyRound, ListChecks, QrCode, ScrollText, ShieldAlert, UserRoundSearch } from 'lucide-react';
@@ -23,6 +23,9 @@ interface Entry {
     document: string | null;
     purpose: string | null;
     exited_at: string | null;
+    expected_until: string | null;
+    overdue: boolean;
+    left_with: string | null;
     kind: string;
     kind_label: string;
     name: string;
@@ -164,7 +167,13 @@ export default function AccessIndex({
                                             {entry.plate && `, patente ${entry.plate}`}
                                         </span>
                                     </span>
-                                    <span className="text-muted-foreground">entró {timeAgo(entry.at)}</span>
+                                    {entry.overdue ? (
+                                        <span className="bg-pending/15 text-pending rounded-full px-2.5 py-0.5 font-medium">
+                                            Debía salir {entry.expected_until ? timeAgo(entry.expected_until) : ''}
+                                        </span>
+                                    ) : (
+                                        <span className="text-muted-foreground">entró {timeAgo(entry.at)}</span>
+                                    )}
                                     <Button
                                         size="sm"
                                         variant="outline"
@@ -651,6 +660,7 @@ function EntryLog({ entries, q, unit, units }: { entries: Entry[]; q: string; un
                                         entry.document && `DNI ${entry.document}`,
                                         entry.guard && `atendió ${entry.guard}`,
                                         entry.exited_at && `salió ${timeAgo(entry.exited_at)}`,
+                                        entry.left_with && `salió con ${entry.left_with}`,
                                     ]
                                         .filter(Boolean)
                                         .join(', ')}

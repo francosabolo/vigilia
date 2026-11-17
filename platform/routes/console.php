@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Schedule;
 
 // A security system that goes blind must say so: edge boxes and cameras are checked every minute.
 Schedule::command('vigilia:watch-equipment')->everyMinute()->withoutOverlapping();
+Schedule::command('vigilia:watch-visits')->everyFiveMinutes()->withoutOverlapping();
 
 // Images of people are personal data (Ley 25.326): delete them once they are no longer useful.
 Schedule::command('vigilia:prune-media')->dailyAt('04:30')->withoutOverlapping();

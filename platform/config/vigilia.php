@@ -38,6 +38,12 @@ return [
         'latest_version' => env('VIGILIA_EDGE_LATEST', '0.7.1'),
     ],
 
+    // D6–D8 — following visitors while they are inside.
+    'visits' => [
+        // How long a visit is expected to last when nothing says otherwise (a provider or staff use their hours).
+        'expected_hours' => (int) env('VIGILIA_VISIT_EXPECTED_HOURS', 4),
+    ],
+
     'tracking' => [
         'window_seconds' => (int) env('VIGILIA_TRACKING_WINDOW', 180),
         'max_distance_m' => (int) env('VIGILIA_TRACKING_DISTANCE', 150),
