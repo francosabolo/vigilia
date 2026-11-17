@@ -66,6 +66,40 @@ class ViewAnalyzer
     /**
      * @return array{0: array<int, float>, 1: float} grayscale pixels and mean saturation
      */
+    /**
+     * E5 — how sharp an image is: variance of the Laplacian on a 320 px wide grayscale copy. A dirty lens, a spider
+     * web or a camera out of focus drops it a lot compared with the same camera's reference view.
+     */
+    public function sharpness(string $bytes): ?float
+    {
+        $source = @imagecreatefromstring($bytes);
+        if ($source === false) {
+            return null;
+        }
+        $width = 320;
+        $height = max(1, (int) round(imagesy($source) * $width / imagesx($source)));
+        $image = imagecreatetruecolor($width, $height);
+        imagecopyresampled($image, $source, 0, 0, 0, 0, $width, $height, imagesx($source), imagesy($source));
+
+        $gray = [];
+        for ($y = 0; $y < $height; $y++) {
+            for ($x = 0; $x < $width; $x++) {
+                $rgb = imagecolorat($image, $x, $y);
+                $gray[$y][$x] = (($rgb >> 16) & 0xFF) * 0.299 + (($rgb >> 8) & 0xFF) * 0.587 + ($rgb & 0xFF) * 0.114;
+            }
+        }
+
+        $values = [];
+        for ($y = 1; $y < $height - 1; $y++) {
+            for ($x = 1; $x < $width - 1; $x++) {
+                $values[] = $gray[$y - 1][$x] + $gray[$y + 1][$x] + $gray[$y][$x - 1] + $gray[$y][$x + 1] - 4 * $gray[$y][$x];
+            }
+        }
+        $mean = array_sum($values) / count($values);
+
+        return array_sum(array_map(fn ($v) => ($v - $mean) ** 2, $values)) / count($values);
+    }
+
     private function downscale(string $bytes): array
     {
         $source = imagecreatefromstring($bytes);

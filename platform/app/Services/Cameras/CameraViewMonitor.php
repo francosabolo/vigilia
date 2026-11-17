@@ -10,6 +10,7 @@ use App\Events\IncidentChanged;
 use App\Events\IncidentOpened;
 use App\Models\Camera;
 use App\Models\Incident;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -22,6 +23,9 @@ class CameraViewMonitor
     public const CHECK_INTERVAL = 300;
 
     private const CONFIRMATIONS = 2;
+
+    /** Below this share of the reference's sharpness the image counts as blurry. */
+    private const BLUR_RATIO = 0.35;
 
     public function __construct(private readonly ViewAnalyzer $analyzer) {}
 
@@ -44,7 +48,7 @@ class CameraViewMonitor
         if ($result['status'] === 'ok') {
             $camera->forceFill(['view_anomaly_count' => 0, 'view_checked_at' => now()])->save();
 
-            return null;
+            return $this->checkSharpness($camera, $frameBytes, $disk->get($referencePath));
         }
 
         $count = $camera->view_anomaly_count + 1;
@@ -73,6 +77,56 @@ class CameraViewMonitor
         }
 
         $camera->forceFill(['view_status' => CameraViewStatus::Ok, 'view_anomaly_count' => 0, 'view_shift_deg' => null])->save();
+    }
+
+    /**
+     * E5 — the image lost most of its sharpness against the reference twice in a row: dirty lens, spider web,
+     * condensation or focus. One incident while it lasts.
+     */
+    private function checkSharpness(Camera $camera, string $frameBytes, string $referenceBytes): ?Incident
+    {
+        $now = $this->analyzer->sharpness($frameBytes);
+        $reference = $this->analyzer->sharpness($referenceBytes);
+        $key = "camera-blur:{$camera->id}";
+
+        if ($now === null || ! $reference || $now >= $reference * self::BLUR_RATIO) {
+            Cache::forget($key);
+
+            return null;
+        }
+
+        Cache::add($key, 0, now()->addHour());
+        if (Cache::increment($key) < self::CONFIRMATIONS) {
+            return null;
+        }
+
+        $open = Incident::where('camera_id', $camera->id)->where('source', IncidentSource::Equipment)
+            ->where('status', '!=', IncidentStatus::Resolved)->where('title', 'like', 'Imagen borrosa%')->first();
+        if ($open) {
+            return null;
+        }
+
+        $incident = Incident::create([
+            'site_id' => $camera->site_id,
+            'camera_id' => $camera->id,
+            'source' => IncidentSource::Equipment,
+            'sector' => $camera->sector,
+            'severity' => Severity::Medium,
+            'status' => IncidentStatus::New,
+            'title' => "Imagen borrosa ({$camera->name})",
+            'description' => sprintf('La imagen de %s perdió el %d%% de nitidez frente a su vista de referencia: puede ser el lente sucio, una telaraña, condensación o el foco. Mientras tanto la IA ve peor.', $camera->name, (int) round(100 * (1 - $now / $reference))),
+            'detected_at' => now(),
+        ]);
+        $path = "sites/{$camera->site_id}/incidents/{$incident->id}/blur-now.jpg";
+        Storage::disk(config('seguria.media_disk'))->put($path, $frameBytes);
+        $incident->forceFill(['snapshot_path' => $path])->save();
+        $incident->actions()->create(['type' => 'equipment_down', 'channel' => 'system', 'notes' => $incident->description]);
+
+        IncidentOpened::dispatch($incident);
+        IncidentChanged::dispatch($incident, 'opened');
+        Cache::forget($key);
+
+        return $incident;
     }
 
     public function referencePath(Camera $camera, string $bucket): string

@@ -109,3 +109,38 @@ it('receives health frames from the edge', function () {
 
     Storage::disk('local')->assertExists("references/{$this->camera->id}-night.jpg"); // grayscale = IR night view
 });
+
+it('warns when the image gets blurry against its reference twice in a row', function () {
+    Illuminate\Support\Facades\Storage::fake(config('seguria.media_disk'));
+    $camera = App\Models\Camera::factory()->create(['name' => 'Cochera']);
+    $sharp = function (): string {
+        $image = imagecreatetruecolor(320, 180);
+        for ($x = 0; $x < 320; $x += 8) {
+            imagefilledrectangle($image, $x, 0, $x + 3, 179, imagecolorallocate($image, 230, 230, 230));
+        }
+        ob_start();
+        imagejpeg($image, null, 95);
+
+        return ob_get_clean();
+    };
+    $blurry = function () use ($sharp): string {
+        $image = imagecreatefromstring($sharp());
+        for ($i = 0; $i < 40; $i++) {
+            imagefilter($image, IMG_FILTER_GAUSSIAN_BLUR);
+        }
+        ob_start();
+        imagejpeg($image, null, 95);
+
+        return ob_get_clean();
+    };
+    $monitor = app(App\Services\Cameras\CameraViewMonitor::class);
+    $analyzer = app(App\Services\Cameras\ViewAnalyzer::class);
+    expect($analyzer->sharpness($blurry()))->toBeLessThan($analyzer->sharpness($sharp()) * 0.35);
+
+    $reflection = new ReflectionMethod($monitor, 'checkSharpness');
+    expect($reflection->invoke($monitor, $camera, $blurry(), $sharp()))->toBeNull();
+    $incident = $reflection->invoke($monitor, $camera, $blurry(), $sharp());
+
+    expect($incident->title)->toBe('Imagen borrosa (Cochera)')
+        ->and($reflection->invoke($monitor, $camera, $blurry(), $sharp()))->toBeNull();
+});
