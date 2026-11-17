@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccessController;
+use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\CameraWallController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CurrentSiteController;
@@ -93,6 +94,9 @@ Route::middleware('auth')->group(function () {
         Route::post('team', [TeamController::class, 'store'])->name('team.store');
         Route::patch('team/{member}', [TeamController::class, 'update'])->name('team.update');
         Route::delete('team/{member}', [TeamController::class, 'destroy'])->name('team.destroy');
+        Route::get('business', [BusinessController::class, 'index'])->name('business.index');
+        Route::patch('business/settings', [BusinessController::class, 'updateSettings'])->name('business.settings');
+        Route::patch('business/clients/{client}', [BusinessController::class, 'updateClient'])->name('business.clients');
         Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
         Route::post('clients', [ClientController::class, 'store'])->name('clients.store');
         Route::patch('clients/{client}', [ClientController::class, 'update'])->name('clients.update');

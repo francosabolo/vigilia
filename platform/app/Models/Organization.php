@@ -12,7 +12,7 @@ class Organization extends Model
     /** @use HasFactory<OrganizationFactory> */
     use HasFactory;
 
-    protected $fillable = ['name', 'slug'];
+    protected $fillable = ['name', 'slug', 'currency', 'price_per_camera', 'operator_hour_cost', 'usd_rate'];
 
     public function sites(): HasMany
     {

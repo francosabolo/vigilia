@@ -16,7 +16,7 @@ class Client extends Model
     /** @use HasFactory<ClientFactory> */
     use HasFactory;
 
-    protected $fillable = ['organization_id', 'name', 'address', 'lat', 'lng', 'contact_name', 'contact_email', 'contact_phone', 'notes'];
+    protected $fillable = ['organization_id', 'name', 'address', 'lat', 'lng', 'contact_name', 'contact_email', 'contact_phone', 'notes', 'price_per_camera', 'sla_ack_seconds'];
 
     protected function casts(): array
     {
