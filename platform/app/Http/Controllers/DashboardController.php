@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\IncidentStatus;
 use App\Models\EdgeDevice;
 use App\Models\Incident;
+use App\Models\ShiftHandover;
 use App\Models\Site;
 use App\Services\Activity\ActivityFeed;
 use App\Services\Reports\SiteMetrics;
@@ -68,6 +69,9 @@ class DashboardController extends Controller
             'activity' => $activity->latest($siteIds, 30),
             'vapidPublicKey' => config('webpush.vapid.public_key'),
             'channel' => $request->user()->liveChannel(),
+            // C5 — the guard who comes in reads how the previous shift ended; one site in view = it can hand over.
+            'lastHandover' => ShiftHandover::whereIn('site_id', $siteIds)->with(['site:id,name', 'user:id,name'])->latest()->first()?->toPayload(),
+            'handoverSiteId' => count($siteIds) === 1 ? $siteIds[0] : null,
         ]);
     }
 }

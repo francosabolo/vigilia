@@ -1,5 +1,6 @@
 import { AiActivity } from '@/components/console/ai-activity';
 import { IncidentRow } from '@/components/console/incident-row';
+import { ShiftHandoverCard, type Handover } from '@/components/console/shift-handover';
 import { SectionTitle } from '@/components/icon-circle';
 import { ItemActionHint } from '@/components/item-action';
 import { PushToggle } from '@/components/push-toggle';
@@ -42,6 +43,8 @@ interface Props {
     activity: ActivityItem[];
     vapidPublicKey: string | null;
     channel: string;
+    lastHandover: Handover | null;
+    handoverSiteId: number | null;
 }
 
 function WatchStatus({
@@ -150,8 +153,10 @@ export default function Dashboard({
     activity,
     vapidPublicKey,
     channel,
+    lastHandover,
+    handoverSiteId,
 }: Props) {
-    useLiveIncidents(channel, ['metrics', 'openIncidents', 'openCount', 'escalatedCount', 'sites', 'siteContext']);
+    useLiveIncidents(channel, ['metrics', 'openIncidents', 'openCount', 'escalatedCount', 'sites', 'siteContext', 'lastHandover']);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -226,6 +231,7 @@ export default function Dashboard({
                             </div>
                             <PushToggle vapidPublicKey={vapidPublicKey} />
                         </section>
+                        <ShiftHandoverCard last={lastHandover} siteId={handoverSiteId} />
                         <Funnel metrics={metrics} />
                     </div>
 

@@ -39,7 +39,7 @@ import {
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm, usePage, usePoll } from '@inertiajs/react';
-import { BarChart3, Building2, Cctv, Cpu, Eye, Siren, VideoOff } from 'lucide-react';
+import { BarChart3, Building2, Cctv, Cpu, Eye, ShieldCheck, Siren, VideoOff } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 
 type Tab = 'resumen' | 'cobertura' | 'camaras' | 'vecinos' | 'ajustes';
@@ -68,6 +68,8 @@ interface Camera {
     name: string;
     sector: string | null;
     is_online: boolean;
+    is_guard_post: boolean;
+    is_checkpoint: boolean;
     view_status: 'ok' | 'moved' | 'covered';
     view_shift_deg: number | null;
     position: LatLng | null;
@@ -115,6 +117,9 @@ interface Props {
         guard_whatsapp: string | null;
         ack_timeout_seconds: number;
         patrol_interval_minutes: number | null;
+        guard_post_max_absence_minutes: number | null;
+        round_interval_minutes: number | null;
+        guard_monitoring_consent_at: string | null;
         open_incidents: number;
         escalated_incidents: number;
         escalated_incident_id: number | null;
@@ -406,6 +411,7 @@ function CamerasTab({ site, canManage }: Pick<Props, 'site' | 'canManage'>) {
                             </ul>
                         )}
                     </div>
+                    {canManage && <CameraRoles camera={camera} />}
                     <ItemActions>
                         <ItemActionLink kind="view" href={`/cameras/${camera.id}`}>
                             Ver en vivo
@@ -569,6 +575,121 @@ function MediaViewsSection({ views }: { views: MediaViewRow[] }) {
                 </ul>
             )}
         </section>
+    );
+}
+
+function CameraRoles({ camera }: { camera: Camera }) {
+    const toggle = (role: 'is_guard_post' | 'is_checkpoint') =>
+        router.patch(
+            `/cameras/${camera.id}/roles`,
+            { is_guard_post: camera.is_guard_post, is_checkpoint: camera.is_checkpoint, [role]: !camera[role] },
+            { preserveScroll: true },
+        );
+
+    return (
+        <div className="flex flex-col gap-1.5 text-sm sm:w-40">
+            {(
+                [
+                    ['is_guard_post', 'Es la garita'],
+                    ['is_checkpoint', 'Punto de ronda'],
+                ] as const
+            ).map(([role, label]) => (
+                <label key={role} className="flex items-center gap-2">
+                    <input type="checkbox" checked={camera[role]} onChange={() => toggle(role)} className="accent-foreground size-4" />
+                    {label}
+                </label>
+            ))}
+        </div>
+    );
+}
+
+function GuardSupervisionSection({ site }: { site: Props['site'] }) {
+    const form = useForm({
+        guard_post_max_absence_minutes: site.guard_post_max_absence_minutes ?? ('' as number | ''),
+        round_interval_minutes: site.round_interval_minutes ?? ('' as number | ''),
+        consent: false as boolean,
+    });
+    const posts = site.cameras.filter((camera) => camera.is_guard_post).length;
+    const checkpoints = site.cameras.filter((camera) => camera.is_checkpoint).length;
+    const enabling = form.data.guard_post_max_absence_minutes !== '' || form.data.round_interval_minutes !== '';
+
+    return (
+        <form
+            onSubmit={(event) => {
+                event.preventDefault();
+                form.transform((data) => ({
+                    ...data,
+                    guard_post_max_absence_minutes: data.guard_post_max_absence_minutes === '' ? null : data.guard_post_max_absence_minutes,
+                    round_interval_minutes: data.round_interval_minutes === '' ? null : data.round_interval_minutes,
+                }));
+                form.patch(`/sites/${site.id}/guard-supervision`, { preserveScroll: true });
+            }}
+            className="flex max-w-xl flex-col gap-4"
+        >
+            <SectionTitle icon={ShieldCheck}>Control de guardias</SectionTitle>
+            <p className="text-muted-foreground -mt-2 text-sm">
+                La IA confirma que la garita tiene a alguien y que las rondas pasan por cada punto. Avisa a la administración y a la central, nunca al
+                guardia. Marcá la garita y los puntos de ronda en la pestaña Cámaras ({posts} garita, {checkpoints} puntos de ronda).
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                    <Label htmlFor="post-absence">Avisar si la garita queda vacía más de</Label>
+                    <select
+                        id="post-absence"
+                        value={form.data.guard_post_max_absence_minutes}
+                        onChange={(e) => form.setData('guard_post_max_absence_minutes', e.target.value === '' ? '' : Number(e.target.value))}
+                        className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                    >
+                        <option value="">No controlar</option>
+                        {[10, 20, 30, 60].map((minutes) => (
+                            <option key={minutes} value={minutes}>
+                                {minutes} minutos
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div className="grid gap-1.5">
+                    <Label htmlFor="round-interval">Ronda física cada</Label>
+                    <select
+                        id="round-interval"
+                        value={form.data.round_interval_minutes}
+                        onChange={(e) => form.setData('round_interval_minutes', e.target.value === '' ? '' : Number(e.target.value))}
+                        className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                    >
+                        <option value="">No controlar</option>
+                        {[30, 60, 120, 240].map((minutes) => (
+                            <option key={minutes} value={minutes}>
+                                {minutes < 60 ? `${minutes} minutos` : minutes === 60 ? '1 hora' : `${minutes / 60} horas`}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+            {enabling && !site.guard_monitoring_consent_at && (
+                <label className="flex items-start gap-3 rounded-xl border p-3 text-sm">
+                    <input
+                        type="checkbox"
+                        checked={form.data.consent}
+                        onChange={(e) => form.setData('consent', e.target.checked)}
+                        className="accent-foreground mt-0.5 size-4"
+                    />
+                    <span>
+                        Los guardias fueron informados por escrito de que las cámaras controlan su presencia y sus rondas.
+                        <InputError message={form.errors.consent} />
+                    </span>
+                </label>
+            )}
+            {site.guard_monitoring_consent_at && (
+                <p className="text-muted-foreground text-sm">
+                    Consentimiento confirmado el {new Date(site.guard_monitoring_consent_at).toLocaleDateString('es-AR')}.
+                </p>
+            )}
+            <div>
+                <Button type="submit" disabled={form.processing || !form.isDirty}>
+                    Guardar control de guardias
+                </Button>
+            </div>
+        </form>
     );
 }
 
@@ -1336,6 +1457,7 @@ export default function SiteShow({
                         </ItemActionLink>
                         <SiteDetailsForm site={site} clients={clients} isAdmin={isAdmin} />
                         <SettingsTab site={site} aiUsage={aiUsage} patrolIntervals={patrolIntervals} />
+                        <GuardSupervisionSection site={site} />
                         {canManageEdges && <EdgesSection site={site} newEdge={newEdge} serverUrl={edgeServerUrl} />}
                         {mediaViews && <MediaViewsSection views={mediaViews} />}
                         {isAdmin && <ArchiveSite site={site} />}

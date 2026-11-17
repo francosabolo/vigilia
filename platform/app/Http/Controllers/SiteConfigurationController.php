@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Site settings, camera labels, zones and arming schedules.
@@ -85,6 +86,48 @@ class SiteConfigurationController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'sector' => ['nullable', 'string', 'max:100'],
         ]));
+
+        return back();
+    }
+
+    /**
+     * C2/C3 — guard post and round checkpoints are cameras with a role.
+     */
+    public function updateCameraRoles(Request $request, Camera $camera): RedirectResponse
+    {
+        Gate::authorize('manage', $camera->site);
+
+        $camera->update($request->validate([
+            'is_guard_post' => ['required', 'boolean'],
+            'is_checkpoint' => ['required', 'boolean'],
+        ]));
+
+        return back();
+    }
+
+    /**
+     * C2/C3 — supervising workers needs the company to confirm the guards were informed in writing.
+     */
+    public function updateGuardSupervision(Request $request, Site $site): RedirectResponse
+    {
+        Gate::authorize('manage', $site);
+
+        $data = $request->validate([
+            'guard_post_max_absence_minutes' => ['nullable', 'integer', Rule::in([10, 20, 30, 60])],
+            'round_interval_minutes' => ['nullable', 'integer', Rule::in([30, 60, 120, 240])],
+            'consent' => ['boolean'],
+        ]);
+        $enabling = $data['guard_post_max_absence_minutes'] !== null || $data['round_interval_minutes'] !== null;
+
+        if ($enabling && ! $site->guard_monitoring_consent_at && ! ($data['consent'] ?? false)) {
+            throw ValidationException::withMessages(['consent' => 'Confirmá que los guardias fueron informados por escrito antes de activarlo.']);
+        }
+
+        $site->update([
+            'guard_post_max_absence_minutes' => $data['guard_post_max_absence_minutes'],
+            'round_interval_minutes' => $data['round_interval_minutes'],
+            'guard_monitoring_consent_at' => $enabling ? ($site->guard_monitoring_consent_at ?? now()) : $site->guard_monitoring_consent_at,
+        ]);
 
         return back();
     }

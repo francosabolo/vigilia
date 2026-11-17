@@ -20,7 +20,7 @@ class Site extends Model
      */
     protected $attributes = ['kind' => 'building'];
 
-    protected $fillable = ['organization_id', 'client_id', 'name', 'kind', 'address', 'perimeter', 'lat', 'lng', 'is_simulated', 'timezone', 'guard_whatsapp', 'ack_timeout_seconds', 'patrol_interval_minutes', 'test_mode_until'];
+    protected $fillable = ['organization_id', 'client_id', 'name', 'kind', 'address', 'perimeter', 'lat', 'lng', 'is_simulated', 'timezone', 'guard_whatsapp', 'ack_timeout_seconds', 'patrol_interval_minutes', 'test_mode_until', 'guard_post_max_absence_minutes', 'round_interval_minutes', 'guard_monitoring_consent_at'];
 
     protected function casts(): array
     {
@@ -31,6 +31,7 @@ class Site extends Model
             'lng' => 'float',
             'is_simulated' => 'boolean',
             'test_mode_until' => 'datetime',
+            'guard_monitoring_consent_at' => 'datetime',
         ];
     }
 

@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Briefcase, Building2, Cctv, FlaskConical, LayoutGrid, Siren, Users } from 'lucide-react';
+import { Briefcase, Building2, Cctv, FlaskConical, LayoutGrid, ShieldCheck, Siren, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -26,6 +26,14 @@ const mainNavItems: NavItem[] = [
         title: 'Propiedades',
         url: '/sites',
         icon: Building2,
+    },
+];
+
+const supervisionNavItems: NavItem[] = [
+    {
+        title: 'Guardias',
+        url: '/guards',
+        icon: ShieldCheck,
     },
 ];
 
@@ -53,7 +61,12 @@ const adminNavItems: NavItem[] = [
 export function AppSidebar() {
     const { auth } = usePage<{ auth: { user: { role?: string } } }>().props;
     const role = auth.user.role;
-    const items = [...mainNavItems, ...(role === 'admin' || role === 'operator' ? centralNavItems : []), ...(role === 'admin' ? adminNavItems : [])];
+    const items = [
+        ...mainNavItems,
+        ...(role !== 'guard' ? supervisionNavItems : []),
+        ...(role === 'admin' || role === 'operator' ? centralNavItems : []),
+        ...(role === 'admin' ? adminNavItems : []),
+    ];
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

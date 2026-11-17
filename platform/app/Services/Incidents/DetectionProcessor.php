@@ -17,6 +17,7 @@ use App\Models\Incident;
 use App\Models\Zone;
 use App\Services\Activity\ActivityFeed;
 use App\Services\Autonomy\AutonomyPolicy;
+use App\Services\Guards\GuardWatch;
 use App\Services\Rules\ArmingEvaluator;
 use App\Services\Shadow\ShadowMode;
 use App\Services\Verification\DetectionVerifier;
@@ -113,6 +114,7 @@ class DetectionProcessor
             $event->status = DetectionStatus::Dismissed;
             $event->trace = $this->trace;
             $event->save();
+            app(GuardWatch::class)->recordFromDetection($event);
             $this->broadcast($event);
             app(ShadowMode::class)->consider($event);
 

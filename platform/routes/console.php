@@ -13,3 +13,6 @@ Schedule::command('seguria:patrol')->everyMinute()->withoutOverlapping();
 
 // G1: last month's service report for every client, on the 1st in the morning.
 Schedule::command('seguria:monthly-reports')->monthlyOn(1, '08:00')->withoutOverlapping();
+
+// C2/C3: guard posts and round checkpoints, where the company turned supervision on.
+Schedule::command('seguria:watch-guards')->everyFiveMinutes()->withoutOverlapping();

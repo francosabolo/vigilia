@@ -5,6 +5,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CurrentSiteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EdgeDeviceController;
+use App\Http\Controllers\GuardController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IncidentMediaController;
 use App\Http\Controllers\NotificationController;
@@ -87,6 +88,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('sites/{site}/client', [ClientController::class, 'assignSite'])->name('sites.client');
         Route::get('sites/{site}', [SiteController::class, 'show'])->name('sites.show');
         Route::patch('sites/{site}', [SiteConfigurationController::class, 'updateSite'])->name('sites.update');
+        Route::get('guards', [GuardController::class, 'index'])->name('guards.index');
+        Route::post('sites/{site}/handover', [GuardController::class, 'handOver'])->name('sites.handover');
         Route::get('sites/{site}/setup', [SiteSetupController::class, 'show'])->name('sites.setup');
         Route::post('sites/{site}/test-mode', [SiteSetupController::class, 'startTest'])->name('sites.test-mode');
         Route::delete('sites/{site}/test-mode', [SiteSetupController::class, 'stopTest'])->name('sites.test-mode.stop');
@@ -99,6 +102,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('sites/{site}/perimeter', [SiteConfigurationController::class, 'updatePerimeter'])->name('sites.perimeter');
         Route::patch('cameras/{camera}', [SiteConfigurationController::class, 'updateCamera'])->name('cameras.update');
         Route::delete('cameras/{camera}', [SiteConfigurationController::class, 'destroyCamera'])->name('cameras.destroy');
+        Route::patch('cameras/{camera}/roles', [SiteConfigurationController::class, 'updateCameraRoles'])->name('cameras.roles');
+        Route::patch('sites/{site}/guard-supervision', [SiteConfigurationController::class, 'updateGuardSupervision'])->name('sites.guard-supervision');
         Route::patch('cameras/{camera}/placement', [SiteConfigurationController::class, 'updatePlacement'])->name('cameras.placement');
         Route::post('cameras/{camera}/zones', [SiteConfigurationController::class, 'storeZone'])->name('zones.store');
         Route::patch('zones/{zone}', [SiteConfigurationController::class, 'updateZone'])->name('zones.update');
