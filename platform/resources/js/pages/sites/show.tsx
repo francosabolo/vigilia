@@ -72,6 +72,7 @@ interface Camera {
     is_guard_post: boolean;
     is_checkpoint: boolean;
     is_access: boolean;
+    ai_notes: string | null;
     view_status: 'ok' | 'moved' | 'covered';
     view_shift_deg: number | null;
     position: LatLng | null;
@@ -581,6 +582,56 @@ function MediaViewsSection({ views }: { views: MediaViewRow[] }) {
     );
 }
 
+function CameraNotes({ camera }: { camera: Camera }) {
+    const [open, setOpen] = useState(false);
+    const form = useForm({ ai_notes: camera.ai_notes ?? '' });
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <button type="button" className="text-muted-foreground hover:text-foreground text-left text-sm underline underline-offset-2">
+                    {camera.ai_notes ? 'Notas para la IA' : 'Agregar notas para la IA'}
+                </button>
+            </DialogTrigger>
+            <DialogContent>
+                <form
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        form.patch(`/cameras/${camera.id}/notes`, { preserveScroll: true, onSuccess: () => setOpen(false) });
+                    }}
+                    className="flex flex-col gap-4"
+                >
+                    <DialogHeader>
+                        <DialogTitle>Lo que la IA tiene que saber de {camera.name}</DialogTitle>
+                        <DialogDescription>
+                            Lo lee en cada análisis de esta cámara. También se suma lo que las guardias anotan al cerrar una falsa alarma.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <textarea
+                        aria-label="Notas para la IA"
+                        rows={6}
+                        maxLength={1200}
+                        placeholder="Ej: el perro del lote 12 pasa todas las noches. El jardinero viene los martes de 8 a 12."
+                        value={form.data.ai_notes}
+                        onChange={(e) => form.setData('ai_notes', e.target.value)}
+                        className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+                    />
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="ghost">
+                                Cancelar
+                            </Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={form.processing || !form.isDirty}>
+                            Guardar notas
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function CameraRoles({ camera }: { camera: Camera }) {
     const toggle = (role: 'is_guard_post' | 'is_checkpoint' | 'is_access') =>
         router.patch(
@@ -603,6 +654,7 @@ function CameraRoles({ camera }: { camera: Camera }) {
                     {label}
                 </label>
             ))}
+            <CameraNotes camera={camera} />
         </div>
     );
 }

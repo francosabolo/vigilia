@@ -34,6 +34,8 @@ class DetectionProcessor
 {
     private const VEHICLE_LABELS = ['car', 'motorcycle', 'truck', 'bicycle'];
 
+    private ?int $stoppedMinutes = null;
+
     public function __construct(
         private readonly ArmingEvaluator $arming,
         private readonly DetectionVerifier $verifier,
@@ -109,7 +111,13 @@ class DetectionProcessor
             return null;
         }
 
-        if (! $this->isThreat($verdict)) {
+        // A6 — a vehicle parked by the perimeter for a long time is worth a look even with nobody in sight.
+        $this->stoppedMinutes = $this->stoppedVehicleMinutes($event);
+        if (! $this->isThreat($verdict) && $this->stoppedMinutes !== null) {
+            $this->step('ai', $agent, 'doubt', "No ve una amenaza, pero el vehículo lleva {$this->stoppedMinutes} minutos detenido ahí: {$verdict->description}");
+        }
+
+        if (! $this->isThreat($verdict) && $this->stoppedMinutes === null) {
             $this->step('ai', $agent, 'stop', "Descartó: {$verdict->description}{$confidence}");
             $event->status = DetectionStatus::Dismissed;
             $event->trace = $this->trace;
@@ -121,7 +129,12 @@ class DetectionProcessor
             return null;
         }
 
-        $this->step('ai', $agent, 'alert', "Es una amenaza: {$verdict->description}{$confidence}");
+        if ($this->isThreat($verdict)) {
+            $this->step('ai', $agent, 'alert', "Es una amenaza: {$verdict->description}{$confidence}");
+        }
+        if (self::isRiskyAction($verdict->description)) {
+            $this->step('decision', 'Vigilia', 'alert', 'La IA describe que alguien trepa, corta o fuerza el acceso: alerta crítica.');
+        }
 
         if ($zone?->autonomy === ZoneAutonomy::Calibration) {
             $this->step('decision', 'Vigilia', 'stop', "La zona {$zone->name} está en calibración: quedó registrado y no se avisó a nadie.");
@@ -276,6 +289,9 @@ class DetectionProcessor
     {
         $label = ucfirst(LabelTranslator::translate($event->label));
         $place = $zone ? "{$zone->name} ({$event->camera->name})" : $event->camera->name;
+        if ($this->stoppedMinutes !== null) {
+            $label .= " detenido {$this->stoppedMinutes} min";
+        }
 
         $incident = Incident::create([
             'site_id' => $event->camera->site_id,
@@ -344,6 +360,11 @@ class DetectionProcessor
 
     private function severity(DetectionEvent $event, VerificationResult $verdict, ?Zone $zone = null): Severity
     {
+        // A5 — climbing the wall, cutting the fence or forcing a gate is an intrusion in progress.
+        if (self::isRiskyAction($verdict->description)) {
+            return Severity::Critical;
+        }
+
         if ($event->label === 'person' && $zone?->kind?->isAccessPoint()) {
             return Severity::Critical;
         }
@@ -353,6 +374,27 @@ class DetectionProcessor
         }
 
         return in_array($event->label, self::VEHICLE_LABELS, true) ? Severity::Medium : Severity::Low;
+    }
+
+    /**
+     * A5 — what the AI described: someone climbing, cutting or forcing their way in.
+     */
+    public static function isRiskyAction(?string $description): bool
+    {
+        return $description !== null && (bool) preg_match('/\b(trep\w*|escal\w*|salt\w* (el|la|por) (muro|cerco|alambrado|reja|pared|tapial)|cort\w* (el|la) (alambrado|cerco|reja|candado)|forz\w*|rompi\w*|romp\w* (el|la))/iu', $description);
+    }
+
+    /**
+     * A6 — minutes a vehicle stayed still in a watched zone, when it is long enough to matter.
+     */
+    private function stoppedVehicleMinutes(DetectionEvent $event): ?int
+    {
+        if (! in_array($event->label, ['car', 'truck', 'motorcycle'], true) || ! $event->ended_at || ! $event->started_at) {
+            return null;
+        }
+        $minutes = (int) floor($event->started_at->diffInSeconds($event->ended_at, absolute: true) / 60);
+
+        return $minutes >= (int) config('seguria.tracking.stopped_vehicle_minutes', 5) ? $minutes : null;
     }
 
     private function rank(Severity $severity): int

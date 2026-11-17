@@ -107,6 +107,17 @@ class SiteConfigurationController extends Controller
     }
 
     /**
+     * I6 — what the AI should know about this camera.
+     */
+    public function updateCameraNotes(Request $request, Camera $camera): RedirectResponse
+    {
+        Gate::authorize('manage', $camera->site);
+        $camera->update($request->validate(['ai_notes' => ['nullable', 'string', 'max:1200']]));
+
+        return back();
+    }
+
+    /**
      * C2/C3 — supervising workers needs the company to confirm the guards were informed in writing.
      */
     public function updateGuardSupervision(Request $request, Site $site): RedirectResponse

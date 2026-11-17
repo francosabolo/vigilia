@@ -175,6 +175,7 @@ class SiteController extends Controller
                         'is_guard_post' => $camera->is_guard_post,
                         'is_checkpoint' => $camera->is_checkpoint,
                         'is_access' => $camera->is_access,
+                        'ai_notes' => $canManage ? $camera->ai_notes : null,
                         'view_shift_deg' => $camera->view_shift_deg,
                         'position' => $camera->lat !== null ? [$camera->lat, $camera->lng] : null,
                         'heading' => $camera->heading,

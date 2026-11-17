@@ -124,6 +124,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('sites/{site}/perimeter', [SiteConfigurationController::class, 'updatePerimeter'])->name('sites.perimeter');
         Route::patch('cameras/{camera}', [SiteConfigurationController::class, 'updateCamera'])->name('cameras.update');
         Route::delete('cameras/{camera}', [SiteConfigurationController::class, 'destroyCamera'])->name('cameras.destroy');
+        Route::patch('cameras/{camera}/notes', [SiteConfigurationController::class, 'updateCameraNotes'])->name('cameras.notes');
         Route::patch('cameras/{camera}/roles', [SiteConfigurationController::class, 'updateCameraRoles'])->name('cameras.roles');
         Route::patch('sites/{site}/guard-supervision', [SiteConfigurationController::class, 'updateGuardSupervision'])->name('sites.guard-supervision');
         Route::patch('cameras/{camera}/placement', [SiteConfigurationController::class, 'updatePlacement'])->name('cameras.placement');

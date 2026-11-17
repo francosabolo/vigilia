@@ -36,6 +36,7 @@ return [
     'tracking' => [
         'window_seconds' => (int) env('SEGURIA_TRACKING_WINDOW', 180),
         'max_distance_m' => (int) env('SEGURIA_TRACKING_DISTANCE', 150),
+        'stopped_vehicle_minutes' => (int) env('SEGURIA_STOPPED_VEHICLE_MINUTES', 5),
     ],
 
     /*

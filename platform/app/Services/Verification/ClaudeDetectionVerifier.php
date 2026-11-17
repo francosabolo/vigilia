@@ -158,7 +158,10 @@ class ClaudeDetectionVerifier implements DetectionVerifier
 
     private function cameraContext(Camera $camera, string $context): string
     {
-        return sprintf('Cámara: %s%s. %s', $camera->name, $camera->sector ? " ({$camera->sector})" : '', $context);
+        // I6 — what the guards taught the AI about this camera. Only cameras with notes change their cache key.
+        $notes = $camera->ai_notes ? ' Lo que hay que saber de esta cámara: '.str_replace("\n", ' ', $camera->ai_notes) : '';
+
+        return sprintf('Cámara: %s%s. %s%s', $camera->name, $camera->sector ? " ({$camera->sector})" : '', $context, $notes);
     }
 
     public function verify(DetectionEvent $event): VerificationResult

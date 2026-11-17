@@ -121,9 +121,15 @@ class IncidentController extends Controller
                 ? [IncidentResolution::Recovered]
                 : [IncidentResolution::Confirmed, IncidentResolution::FalseAlarm])],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'lesson' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $workflow->resolve($incident, IncidentResolution::from($data['resolution']), $request->user(), 'web', $data['notes'] ?? null);
+        $resolved = $workflow->resolve($incident, IncidentResolution::from($data['resolution']), $request->user(), 'web', $data['notes'] ?? $data['lesson'] ?? null);
+
+        // I6 — what the guard says it was becomes context for the AI on that camera.
+        if ($resolved && ! empty($data['lesson']) && $data['resolution'] === IncidentResolution::FalseAlarm->value && $incident->camera) {
+            $incident->camera->learn($data['lesson']);
+        }
 
         return back();
     }

@@ -28,7 +28,7 @@ function fakeVerdict(bool $isThreat = true, ?float $confidence = 0.9, int $objec
 
         public function verify(DetectionEvent $event): VerificationResult
         {
-            return new VerificationResult($this->isThreat, $this->confidence, 'Una persona trepando el alambrado.', $this->objects);
+            return new VerificationResult($this->isThreat, $this->confidence, 'Una persona caminando pegada al alambrado.', $this->objects);
         }
 
         public function verifySnapshot(string $path, Camera $camera, string $context): VerificationResult
@@ -65,7 +65,7 @@ it('opens an incident for a verified detection in an armed zone', function () {
         ->and($incident->status)->toBe(IncidentStatus::New)
         ->and($incident->severity)->toBe(Severity::High)
         ->and($incident->title)->toBe('Persona en Alambrado (Perímetro Norte)')
-        ->and($incident->description)->toBe('Una persona trepando el alambrado.')
+        ->and($incident->description)->toBe('Una persona caminando pegada al alambrado.')
         ->and($event->fresh()->status)->toBe(DetectionStatus::Threat)
         ->and($incident->actions()->where('type', 'detected')->exists())->toBeTrue();
 

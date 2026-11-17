@@ -3,6 +3,7 @@ import { SeverityText, StatusSignal } from '@/components/incident-badges';
 import { IncidentRoute } from '@/components/incident-route';
 import { ItemActionLink } from '@/components/item-action';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useLiveIncidents } from '@/hooks/use-live-incidents';
 import AppLayout from '@/layouts/app-layout';
 import { actionLabel, formatDateTime, timeAgo, type IncidentDetail } from '@/lib/seguria';
@@ -80,6 +81,7 @@ function TamperComparison({ incident }: { incident: IncidentDetail }) {
 
 function ResponsePanel({ incident }: { incident: IncidentDetail }) {
     const [confirming, setConfirming] = useState<'confirmed' | 'false_alarm' | 'recovered' | null>(null);
+    const [lesson, setLesson] = useState('');
     const post = (url: string, data = {}) => router.post(url, data, { preserveScroll: true, onFinish: () => setConfirming(null) });
 
     if (incident.status === 'resolved') {
@@ -121,10 +123,27 @@ function ResponsePanel({ incident }: { incident: IncidentDetail }) {
                               ? '¿Cerrar? Confirmá que el equipo ya funciona.'
                               : '¿Cerrar como falsa alarma?'}
                     </p>
+                    {confirming === 'false_alarm' && incident.source === 'detection' && (
+                        <Input
+                            aria-label="Qué era, para que la IA lo tenga en cuenta"
+                            placeholder="¿Qué era? Ej: el perro del lote 12 (opcional)"
+                            value={lesson}
+                            onChange={(e) => setLesson(e.target.value)}
+                            maxLength={200}
+                        />
+                    )}
+                    {confirming === 'false_alarm' && lesson.trim() && (
+                        <p className="text-muted-foreground text-xs">La IA lo va a tener en cuenta la próxima vez en esta cámara.</p>
+                    )}
                     <div className="flex gap-2">
                         <Button
                             variant={confirming === 'confirmed' ? 'destructive' : 'secondary'}
-                            onClick={() => post(`/incidents/${incident.id}/resolve`, { resolution: confirming })}
+                            onClick={() =>
+                                post(`/incidents/${incident.id}/resolve`, {
+                                    resolution: confirming,
+                                    lesson: confirming === 'false_alarm' ? lesson : null,
+                                })
+                            }
                         >
                             Sí, cerrar
                         </Button>

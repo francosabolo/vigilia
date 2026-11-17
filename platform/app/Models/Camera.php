@@ -20,7 +20,7 @@ class Camera extends Model
      */
     protected $attributes = ['view_status' => 'ok', 'view_anomaly_count' => 0, 'heading' => 0, 'fov' => 90, 'range_m' => 40];
 
-    protected $fillable = ['site_id', 'edge_device_id', 'name', 'frigate_name', 'sector', 'lat', 'lng', 'heading', 'fov', 'range_m', 'view_status', 'view_shift_deg', 'view_anomaly_count', 'view_checked_at', 'is_online', 'last_seen_at', 'offline_since', 'is_guard_post', 'is_checkpoint', 'is_access'];
+    protected $fillable = ['site_id', 'edge_device_id', 'name', 'frigate_name', 'sector', 'lat', 'lng', 'heading', 'fov', 'range_m', 'view_status', 'view_shift_deg', 'view_anomaly_count', 'view_checked_at', 'is_online', 'last_seen_at', 'offline_since', 'is_guard_post', 'is_checkpoint', 'is_access', 'ai_notes'];
 
     protected function casts(): array
     {
@@ -55,5 +55,14 @@ class Camera extends Model
     public function zones(): HasMany
     {
         return $this->hasMany(Zone::class);
+    }
+
+    /**
+     * I6 — adds a lesson from a closed false alarm, keeping the newest when the notes get long.
+     */
+    public function learn(string $lesson): void
+    {
+        $notes = trim(($this->ai_notes ? $this->ai_notes."\n" : '').'- '.trim($lesson));
+        $this->update(['ai_notes' => mb_strlen($notes) > 1200 ? mb_substr($notes, -1200) : $notes]);
     }
 }
