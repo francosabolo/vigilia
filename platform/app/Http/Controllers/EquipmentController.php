@@ -78,8 +78,7 @@ class EquipmentController extends Controller
      */
     public function requestUpdate(Request $request, EdgeDevice $edge): RedirectResponse
     {
-        abort_unless($request->user()->isCentral(), 403);
-        Gate::authorize('view', $edge->site);
+        Gate::authorize('manage', $edge->site);
         $edge->update(['update_requested_at' => now()]);
 
         return back()->with('notice', "Actualización pedida a {$edge->name}. Se aplica en el próximo contacto del equipo.");

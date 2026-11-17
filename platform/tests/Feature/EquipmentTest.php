@@ -54,3 +54,13 @@ it('lets the company set its own brand', function () {
 
     $this->actingAs($this->admin)->get('/dashboard')->assertInertia(fn ($page) => $page->where('brand.name', 'Seguridad del Norte')->where('brand.color', '#0055aa'));
 });
+
+it('lets the site administrator ask for the update but not a guard', function () {
+    $siteAdmin = User::factory()->create(['role' => UserRole::SiteAdmin, 'organization_id' => $this->site->organization_id, 'site_id' => $this->site->id]);
+    $guard = User::factory()->create(['role' => UserRole::Guard, 'organization_id' => $this->site->organization_id, 'site_id' => $this->site->id]);
+
+    $this->actingAs($guard)->post("/edges/{$this->edge->id}/update")->assertForbidden();
+    $this->actingAs($siteAdmin)->post("/edges/{$this->edge->id}/update")->assertRedirect();
+
+    expect($this->edge->fresh()->update_requested_at)->not->toBeNull();
+});
