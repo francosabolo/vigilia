@@ -37,7 +37,7 @@ export default function TwoFactor({ enabled, required, setup, recoveryCodes, rec
                         <div className="border-alarm/40 bg-alarm/10 rounded-2xl border p-4 text-sm">
                             <p className="font-semibold">Tu rol la exige para usar la consola</p>
                             <p className="text-muted-foreground mt-1">
-                                Desde la consola se ven las cámaras de todos los edificios y countries. Activala para seguir.
+                                Desde la consola se ven las cámaras de todas las propiedades. Activala para seguir.
                             </p>
                         </div>
                     )}

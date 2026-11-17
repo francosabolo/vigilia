@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\NotificationPreferencesController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorController;
@@ -14,6 +15,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');
     Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
+
+    Route::get('settings/notifications', [NotificationPreferencesController::class, 'edit'])->name('notifications.preferences');
+    Route::patch('settings/notifications', [NotificationPreferencesController::class, 'update'])->name('notifications.preferences.update');
 
     Route::get('settings/two-factor', [TwoFactorController::class, 'edit'])->name('two-factor.edit');
     Route::post('settings/two-factor', [TwoFactorController::class, 'store'])->name('two-factor.store');

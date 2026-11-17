@@ -1,4 +1,4 @@
-/* Seguria service worker: Web Push alerts for guards and operators. */
+/* Vigilia service worker: Web Push alerts for guards and operators. */
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
@@ -6,7 +6,7 @@ self.addEventListener('push', (event) => {
     if (!event.data) return;
     const payload = event.data.json();
     const { title, ...options } = payload;
-    event.waitUntil(self.registration.showNotification(title || 'Seguria', options));
+    event.waitUntil(self.registration.showNotification(title || 'Vigilia', options));
 });
 
 self.addEventListener('notificationclick', (event) => {

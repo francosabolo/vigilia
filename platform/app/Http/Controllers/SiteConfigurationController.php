@@ -9,6 +9,7 @@ use App\Models\Camera;
 use App\Models\Site;
 use App\Models\Zone;
 use App\Services\Autonomy\AutonomyPolicy;
+use App\Services\Patrol\VirtualPatrol;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -27,6 +28,7 @@ class SiteConfigurationController extends Controller
         $site->update($request->validate([
             'guard_whatsapp' => ['nullable', 'string', 'regex:/^\+?\d{8,15}$/'],
             'ack_timeout_seconds' => ['required', 'integer', 'between:30,1800'],
+            'patrol_interval_minutes' => ['nullable', 'integer', Rule::in(VirtualPatrol::INTERVALS)],
         ]));
 
         return back();
@@ -83,6 +85,19 @@ class SiteConfigurationController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'sector' => ['nullable', 'string', 'max:100'],
         ]));
+
+        return back();
+    }
+
+    /**
+     * K6 — the camera stops being analyzed and disappears from the console; its incidents stay as evidence.
+     */
+    public function destroyCamera(Camera $camera): RedirectResponse
+    {
+        Gate::authorize('manage', $camera->site);
+
+        $camera->zones()->delete();
+        $camera->delete();
 
         return back();
     }

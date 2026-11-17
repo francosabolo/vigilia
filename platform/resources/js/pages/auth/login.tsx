@@ -36,7 +36,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     };
 
     return (
-        <AuthLayout title="Ingresá a Seguria" description="Usá el email y la contraseña de tu cuenta">
+        <AuthLayout title="Ingresá a Vigilia" description="Usá el email y la contraseña de tu cuenta">
             <Head title="Ingresar" />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>

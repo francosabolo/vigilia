@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Models\Client;
 use App\Models\EdgeDevice;
 use App\Models\Organization;
 use App\Models\Site;
@@ -72,4 +73,29 @@ it('registers an edge box showing the token once and only storing its hash', fun
 
     $this->actingAs($this->admin)->delete("/sites/{$this->site->id}/edges/{$edge->id}")->assertRedirect();
     expect(EdgeDevice::count())->toBe(0);
+});
+
+it('lists every account with search and role filter, residents included but edited from their site', function () {
+    User::factory()->create(['role' => UserRole::Resident, 'organization_id' => $this->organization->id, 'site_id' => $this->site->id, 'name' => 'Marta Ruiz', 'lot' => '4B']);
+    User::factory()->create(['role' => UserRole::Guard, 'organization_id' => $this->organization->id, 'site_id' => $this->site->id, 'name' => 'Juan Guardia']);
+    User::factory()->create(['role' => UserRole::Guard, 'organization_id' => Organization::factory()->create()->id, 'name' => 'Ajeno']);
+
+    $this->actingAs($this->admin)->get('/team')->assertInertia(fn ($page) => $page->where('members.total', 3)->where('counts.resident', 1));
+    $this->actingAs($this->admin)->get('/team?q=Marta')->assertInertia(fn ($page) => $page->where('members.total', 1)->where('members.data.0.role', 'resident'));
+    $this->actingAs($this->admin)->get('/team?q=4B')->assertInertia(fn ($page) => $page->where('members.total', 1));
+    $this->actingAs($this->admin)->get('/team?role=guard')->assertInertia(fn ($page) => $page->where('members.total', 1)->where('members.data.0.name', 'Juan Guardia'));
+
+    $resident = User::where('name', 'Marta Ruiz')->sole();
+    $this->actingAs($this->admin)->delete("/team/{$resident->id}")->assertNotFound();
+});
+
+it("invites a client's administration from the users page", function () {
+    Notification::fake();
+    $client = Client::factory()->create(['organization_id' => $this->organization->id]);
+
+    $this->actingAs($this->admin)->post('/team', ['name' => 'Laura', 'email' => 'laura@example.com', 'role' => 'client_admin'])->assertSessionHasErrors('client_id');
+    $this->actingAs($this->admin)->post('/team', ['name' => 'Laura', 'email' => 'laura@example.com', 'role' => 'client_admin', 'client_id' => $client->id, 'site_id' => $this->site->id])->assertSessionHasNoErrors();
+
+    $laura = User::where('email', 'laura@example.com')->sole();
+    expect($laura->client_id)->toBe($client->id)->and($laura->site_id)->toBeNull();
 });

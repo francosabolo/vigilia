@@ -3,7 +3,7 @@ export type IncidentStatus = 'new' | 'notified' | 'acknowledged' | 'escalated' |
 
 export interface IncidentSummary {
     id: number;
-    source: 'detection' | 'resident_report' | 'panic' | 'tamper' | 'equipment';
+    source: 'detection' | 'resident_report' | 'panic' | 'tamper' | 'equipment' | 'patrol';
     title: string;
     status: IncidentStatus;
     severity: Severity;
@@ -94,11 +94,22 @@ export interface ActivityItem {
     trace: TraceStep[];
 }
 
-export type SiteKind = 'building' | 'country';
+export type SiteKind = 'building' | 'condominium' | 'country';
 
-/** Seguria works with buildings (consorcios) and countries: the interface uses each one's own words. */
+/** Buildings, condominios and countries: the interface uses each one's own words. */
 export function siteNoun(kind: SiteKind | null | undefined): string {
-    return kind === 'country' ? 'country' : 'edificio';
+    return kind === 'country' ? 'country' : kind === 'condominium' ? 'condominio' : 'edificio';
+}
+
+export const siteKinds: { id: SiteKind; label: string; help: string; placeholder: string }[] = [
+    { id: 'building', label: 'Edificio', help: 'Unidades por piso, hall y cocheras', placeholder: 'Edificio Arenales 2150' },
+    { id: 'condominium', label: 'Condominio', help: 'Casas o dúplex en un mismo predio', placeholder: 'Condominio Las Glorias' },
+    { id: 'country', label: 'Country', help: 'Lotes y perímetro', placeholder: 'Country Los Álamos' },
+];
+
+/** Houses on their own plot (country, condominio) are placed on the map; flats in a tower are not. */
+export function hasHousesOnMap(kind: SiteKind | null | undefined): boolean {
+    return kind === 'country' || kind === 'condominium';
 }
 
 /** "el edificio" / "el country" */
@@ -178,6 +189,7 @@ export const actionLabel: Record<string, string> = {
     deterrence_failed: 'La disuasión no se pudo reproducir',
     autonomy_demoted: 'La zona volvió a Asistida',
     equipment_down: 'Equipo sin señal',
+    patrol: 'Novedad de la ronda virtual',
     note: 'Nota',
     panic: 'Botón de pánico activado por un vecino',
     resident_report: 'Reporte de un vecino',
@@ -213,5 +225,6 @@ export function formatDateTime(iso: string | null): string {
 export function formatDuration(seconds: number | null): string {
     if (seconds === null) return '—';
     if (seconds < 60) return `${seconds} s`;
+    if (seconds >= 3600) return `${Math.floor(seconds / 3600)} h ${Math.round((seconds % 3600) / 60)} min`;
     return `${Math.floor(seconds / 60)} min ${seconds % 60} s`;
 }

@@ -8,6 +8,7 @@ use App\Enums\IncidentStatus;
 use App\Events\IncidentChanged;
 use App\Models\Incident;
 use App\Models\IncidentAction;
+use App\Models\Patrol;
 use App\Services\Activity\ActivityFeed;
 use App\Services\Cameras\CameraViewMonitor;
 use App\Services\Incidents\IncidentWorkflow;
@@ -31,6 +32,7 @@ class IncidentController extends Controller
             ->whereIn('site_id', $scope->siteIds($request))
             ->when($filter === 'open', fn ($query) => $query->where('status', '!=', IncidentStatus::Resolved))
             ->orderByRaw("case when status = 'escalated' then 0 when status in ('new', 'notified') then 1 else 2 end")
+            ->orderByRaw("case severity when 'critical' then 0 when 'high' then 1 when 'medium' then 2 else 3 end")
             ->latest('detected_at')
             ->limit(100)
             ->get()
@@ -47,45 +49,58 @@ class IncidentController extends Controller
     {
         Gate::authorize('view', $incident);
 
+        return Inertia::render('incidents/show', [
+            'incident' => $this->detail($incident),
+            'channel' => $request->user()->liveChannel(),
+        ]);
+    }
+
+    /**
+     * Everything the incident page shows; also used by the incident report (B9).
+     *
+     * @return array<string, mixed>
+     */
+    public function detail(Incident $incident): array
+    {
         $incident->load(['site:id,name,organization_id', 'camera:id,name,sector,view_status', 'zone:id,name', 'reporter:id,name,lot,phone', 'acknowledgedBy:id,name', 'actions.user:id,name', 'snapshotRequests.camera:id,name']);
 
-        return Inertia::render('incidents/show', [
-            'incident' => $this->summary($incident) + [
-                'description' => $incident->description,
-                'ai_confidence' => $incident->ai_confidence,
-                'zone' => $incident->zone?->name,
-                'sector' => $incident->sector ?? $incident->camera?->sector,
-                'tamper' => $incident->source === IncidentSource::Tamper && $incident->camera ? [
-                    'camera_id' => $incident->camera->id,
-                    'before_url' => $incident->mediaUrl('before'),
-                    'shift_deg' => $incident->actions->firstWhere('type', 'tamper')?->meta['shift_deg'] ?? null,
-                    'view_status' => $incident->camera->view_status->value,
-                    'can_fix' => Gate::allows('manage', $incident->site),
-                ] : null,
-                'route' => $this->route($incident),
-                'decisions' => $incident->detectionEvents()->with('camera.site:id,name')->orderBy('started_at')->get()->map(fn ($event) => app(ActivityFeed::class)->item($event)),
-                'reporter' => $incident->reporter ? ['name' => $incident->reporter->name, 'lot' => $incident->reporter->lot, 'phone' => $incident->reporter->phone] : null,
-                'live_frames' => $incident->snapshotRequests->whereNotNull('snapshot_path')->values()->map(fn ($snapshot): array => [
+        return $this->summary($incident) + [
+            'description' => $incident->description,
+            'ai_confidence' => $incident->ai_confidence,
+            'zone' => $incident->zone?->name,
+            'sector' => $incident->sector ?? $incident->camera?->sector,
+            'tamper' => $incident->source === IncidentSource::Tamper && $incident->camera ? [
+                'camera_id' => $incident->camera->id,
+                'before_url' => $incident->mediaUrl('before'),
+                'shift_deg' => $incident->actions->firstWhere('type', 'tamper')?->meta['shift_deg'] ?? null,
+                'view_status' => $incident->camera->view_status->value,
+                'can_fix' => Gate::allows('manage', $incident->site),
+            ] : null,
+            'route' => $this->route($incident),
+            'decisions' => $incident->detectionEvents()->with('camera.site:id,name')->orderBy('started_at')->get()->map(fn ($event) => app(ActivityFeed::class)->item($event)),
+            'reporter' => $incident->reporter ? ['name' => $incident->reporter->name, 'lot' => $incident->reporter->lot, 'phone' => $incident->reporter->phone] : null,
+            'live_frames' => $incident->source === IncidentSource::Patrol
+                ? collect(Patrol::where('incident_id', $incident->id)->latest('id')->first()?->toPayload()['findings'] ?? [])
+                    ->map(fn (array $finding): array => ['camera' => "{$finding['camera']}: {$finding['kind']}", 'url' => $finding['frame_url']])
+                : $incident->snapshotRequests->whereNotNull('snapshot_path')->values()->map(fn ($snapshot): array => [
                     'camera' => $snapshot->camera->name,
                     'url' => URL::temporarySignedRoute('snapshots.media', now()->addHours(12), ['snapshotRequest' => $snapshot->id]),
                 ]),
-                'snapshot_url' => $incident->mediaUrl('snapshot'),
-                'clip_url' => $incident->mediaUrl('clip'),
-                'acknowledged_at' => $incident->acknowledged_at?->toIso8601String(),
-                'acknowledged_by' => $incident->acknowledgedBy?->name,
-                'resolved_at' => $incident->resolved_at?->toIso8601String(),
-                'resolution' => $incident->resolution?->value,
-                'actions' => $incident->actions->sortByDesc('id')->values()->map(fn (IncidentAction $action): array => [
-                    'id' => $action->id,
-                    'type' => $action->type,
-                    'channel' => $action->channel,
-                    'notes' => $action->notes,
-                    'user' => $action->user?->name,
-                    'created_at' => $action->created_at?->toIso8601String(),
-                ]),
-            ],
-            'channel' => $request->user()->liveChannel(),
-        ]);
+            'snapshot_url' => $incident->mediaUrl('snapshot'),
+            'clip_url' => $incident->mediaUrl('clip'),
+            'acknowledged_at' => $incident->acknowledged_at?->toIso8601String(),
+            'acknowledged_by' => $incident->acknowledgedBy?->name,
+            'resolved_at' => $incident->resolved_at?->toIso8601String(),
+            'resolution' => $incident->resolution?->value,
+            'actions' => $incident->actions->sortByDesc('id')->values()->map(fn (IncidentAction $action): array => [
+                'id' => $action->id,
+                'type' => $action->type,
+                'channel' => $action->channel,
+                'notes' => $action->notes,
+                'user' => $action->user?->name,
+                'created_at' => $action->created_at?->toIso8601String(),
+            ]),
+        ];
     }
 
     public function acknowledge(Request $request, Incident $incident, IncidentWorkflow $workflow): RedirectResponse

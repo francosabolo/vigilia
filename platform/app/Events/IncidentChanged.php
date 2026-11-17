@@ -10,7 +10,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Broadcast to the operators console and to the site's guards whenever an incident is created or changes state.
+ * Broadcast to the operators console, the client's administration and the site's guards whenever an incident is created or changes state.
  */
 class IncidentChanged implements ShouldBroadcast
 {
@@ -23,10 +23,13 @@ class IncidentChanged implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel('operators.'.$this->incident->site->organization_id),
+        $site = $this->incident->site;
+
+        return array_values(array_filter([
+            new PrivateChannel('operators.'.$site->organization_id),
             new PrivateChannel('sites.'.$this->incident->site_id),
-        ];
+            $site->client_id ? new PrivateChannel('clients.'.$site->client_id) : null,
+        ]));
     }
 
     public function broadcastAs(): string

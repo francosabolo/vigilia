@@ -17,3 +17,7 @@ Broadcast::channel('sites.{siteId}', function (User $user, int $siteId) {
 
     return $site !== null && $user->canAccessSite($site);
 });
+
+Broadcast::channel('clients.{clientId}', function (User $user, int $clientId) {
+    return $user->isClientAdmin() && $user->client_id === $clientId;
+});

@@ -35,7 +35,7 @@ class SimulatedWorld
     {
         $names = collect(self::NAMES)->shuffle()->take($count)->values();
 
-        // Alternate countries and buildings: Seguria sells to both kinds of consorcio.
+        // Alternate countries and buildings: Vigilia sells to both kinds of consorcio.
         return $names->map(fn (string $name, int $index) => DB::transaction(fn () => $index % 2 === 0
             ? $this->site($organization, "Country {$name}", $index, random_int($minCameras, $maxCameras))
             : $this->building($organization, $index, random_int(6, 12))))->all();

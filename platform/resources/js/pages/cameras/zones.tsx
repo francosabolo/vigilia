@@ -205,7 +205,7 @@ export default function ZoneEditor({ camera, zones, synced, interval }: Props) {
     });
 
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Edificios y countries', href: '/sites' },
+        { title: 'Propiedades', href: '/sites' },
         { title: camera.site.name, href: `/sites/${camera.site.id}` },
         { title: `Zonas de ${camera.name}`, href: `/cameras/${camera.id}/zones` },
     ];

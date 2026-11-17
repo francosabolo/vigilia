@@ -25,6 +25,7 @@ class DashboardController extends Controller
             ->whereIn('site_id', $siteIds)
             ->where('status', '!=', IncidentStatus::Resolved)
             ->orderByRaw("case when status = 'escalated' then 0 when status in ('new', 'notified') then 1 else 2 end")
+            ->orderByRaw("case severity when 'critical' then 0 when 'high' then 1 when 'medium' then 2 else 3 end")
             ->latest('detected_at')
             ->get();
 

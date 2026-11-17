@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\Site;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -25,7 +26,13 @@ class DetectionActivity implements ShouldBroadcastNow
      */
     public function broadcastOn(): array
     {
-        return [new PrivateChannel("operators.{$this->organizationId}"), new PrivateChannel("sites.{$this->siteId}")];
+        $clientId = Site::whereKey($this->siteId)->value('client_id');
+
+        return array_values(array_filter([
+            new PrivateChannel("operators.{$this->organizationId}"),
+            new PrivateChannel("sites.{$this->siteId}"),
+            $clientId ? new PrivateChannel("clients.{$clientId}") : null,
+        ]));
     }
 
     public function broadcastAs(): string

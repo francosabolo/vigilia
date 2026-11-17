@@ -7,14 +7,21 @@ use App\Enums\SiteKind;
 use App\Enums\UserRole;
 use App\Models\ArmingSchedule;
 use App\Models\Camera;
+use App\Models\Client;
 use App\Models\EdgeDevice;
+use App\Models\MediaView;
+use App\Models\Patrol;
+use App\Models\ResidentMessage;
 use App\Models\Site;
 use App\Models\User;
 use App\Models\Zone;
 use App\Services\Autonomy\AutonomyPolicy;
 use App\Services\Cameras\CameraWall;
+use App\Services\Patrol\VirtualPatrol;
+use App\Services\Privacy\MediaAccessLog;
 use App\Services\Reports\SiteMetrics;
 use App\Services\Residents\ResidentDevices;
+use App\Services\Sites\SiteArchive;
 use App\Services\Sites\SiteScope;
 use App\Services\Verification\AiBudget;
 use Illuminate\Http\RedirectResponse;
@@ -32,7 +39,7 @@ class SiteController extends Controller
     {
         $sites = Site::query()
             ->whereIn('id', $scope->siteIds($request))
-            ->with(['edgeDevices:id,site_id,name,last_seen_at,version', 'cameras:id,site_id,name,is_online,last_seen_at'])
+            ->with(['client:id,name', 'edgeDevices:id,site_id,name,last_seen_at,version', 'cameras:id,site_id,name,is_online,last_seen_at'])
             ->withCount(['incidents as open_incidents_count' => fn ($query) => $query->where('status', '!=', IncidentStatus::Resolved)])
             ->orderBy('name')
             ->get()
@@ -40,13 +47,20 @@ class SiteController extends Controller
                 'id' => $site->id,
                 'name' => $site->name,
                 'kind' => $site->kind->value,
+                'client' => $site->client?->name,
                 'open_incidents' => $site->open_incidents_count,
                 'cameras_total' => $site->cameras->count(),
                 'cameras_online' => $site->cameras->where('is_online', true)->count(),
                 'edges' => $site->edgeDevices->map(fn (EdgeDevice $edge): array => $this->edge($edge)),
             ]);
 
-        return Inertia::render('sites/index', ['sites' => $sites, 'canCreate' => $request->user()->role === UserRole::Admin]);
+        $canCreate = $request->user()->role === UserRole::Admin;
+
+        return Inertia::render('sites/index', [
+            'sites' => $sites,
+            'canCreate' => $canCreate,
+            'clients' => $canCreate ? Client::where('organization_id', $request->user()->organization_id)->orderBy('name')->get(['id', 'name']) : [],
+        ]);
     }
 
     /**
@@ -60,11 +74,51 @@ class SiteController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'kind' => ['required', Rule::enum(SiteKind::class)],
             'address' => ['required', 'string', 'max:200'],
+            'client_id' => ['nullable', Rule::exists('clients', 'id')->where('organization_id', $request->user()->organization_id)],
         ]);
 
         $site = Site::create($data + ['organization_id' => $request->user()->organization_id]);
 
         return to_route('sites.show', ['site' => $site, 'tab' => 'cobertura']);
+    }
+
+    /**
+     * Name, address and kind: the site's managers. Which client it belongs to: the central admin only.
+     */
+    public function updateDetails(Request $request, Site $site): RedirectResponse
+    {
+        Gate::authorize('manage', $site);
+        $isAdmin = $request->user()->role === UserRole::Admin;
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'address' => ['required', 'string', 'max:200'],
+            'kind' => ['required', Rule::enum(SiteKind::class)],
+            'client_id' => ['nullable', Rule::exists('clients', 'id')->where('organization_id', $site->organization_id)],
+        ]);
+        if (! $isAdmin) {
+            unset($data['client_id']);
+        }
+
+        $site->update($data);
+
+        return back();
+    }
+
+    /**
+     * K14 — the site leaves the service. The admin confirms by typing its name.
+     */
+    public function destroy(Request $request, Site $site, SiteArchive $archive): RedirectResponse
+    {
+        abort_unless($request->user()->role === UserRole::Admin && $site->organization_id === $request->user()->organization_id, 403);
+
+        $request->validate(['confirm' => ['required', 'string', Rule::in([$site->name])]], [
+            'confirm.in' => 'Escribí el nombre exacto del lugar para confirmar.',
+        ]);
+
+        $archive->archive($site);
+
+        return to_route('sites.index');
     }
 
     public function show(Request $request, Site $site, SiteMetrics $metrics, CameraWall $wall, ResidentDevices $devices, AiBudget $budget, AutonomyPolicy $autonomy): Response
@@ -83,6 +137,8 @@ class SiteController extends Controller
         return Inertia::render('sites/show', [
             'tab' => $tab,
             'canManage' => $canManage,
+            'isAdmin' => $request->user()->role === UserRole::Admin,
+            'clients' => $canManage && $request->user()->role === UserRole::Admin ? Client::where('organization_id', $site->organization_id)->orderBy('name')->get(['id', 'name']) : [],
             'canManageEdges' => $request->user()->isCentral(),
             'newEdge' => $request->session()->get('new_edge'),
             'edgeServerUrl' => url('/'),
@@ -93,10 +149,12 @@ class SiteController extends Controller
                 'kind' => $site->kind->value,
                 'is_simulated' => $site->is_simulated,
                 'address' => $site->address,
+                'client_id' => $site->client_id,
                 'perimeter' => $site->perimeter ?? [],
                 'center' => $site->lat !== null ? [$site->lat, $site->lng] : null,
                 'guard_whatsapp' => $site->guard_whatsapp,
                 'ack_timeout_seconds' => $site->ack_timeout_seconds,
+                'patrol_interval_minutes' => $site->patrol_interval_minutes,
                 'open_incidents' => $site->incidents()->where('status', '!=', IncidentStatus::Resolved)->count(),
                 'escalated_incidents' => $site->incidents()->where('status', IncidentStatus::Escalated)->count(),
                 'escalated_incident_id' => $site->incidents()->where('status', IncidentStatus::Escalated)->latest('detected_at')->value('id'),
@@ -137,8 +195,29 @@ class SiteController extends Controller
                 ? $this->residents($site, $devices)
                 : null,
             'residentsCount' => $site->residents()->count(),
+            'residentMessages' => $tab === 'vecinos'
+                ? ResidentMessage::where('site_id', $site->id)->with('sender:id,name')->latest()->limit(5)->get()->map(fn (ResidentMessage $message): array => [
+                    'id' => $message->id,
+                    'body' => $message->body,
+                    'recipients' => $message->recipients,
+                    'urgent' => $message->urgent,
+                    'sender' => $message->sender?->name,
+                    'at' => $message->created_at->toIso8601String(),
+                ])
+                : [],
             'sectors' => $site->cameras->pluck('sector')->filter()->unique()->sort()->values(),
             'metrics' => $metrics->forSites([$site->id], now()->subDays(7), now()),
+            'mediaViews' => $tab === 'ajustes' && $canManage
+                ? MediaView::where('site_id', $site->id)->with('user:id,name,role')->latest('viewed_at')->limit(50)->get()->map(fn (MediaView $view): array => [
+                    'id' => $view->id,
+                    'who' => $view->user?->name ?? "Enlace sin sesión ({$view->ip})",
+                    'kind' => MediaAccessLog::KINDS[$view->kind] ?? $view->kind,
+                    'subject' => $view->subject,
+                    'at' => $view->viewed_at->toIso8601String(),
+                ])
+                : null,
+            'patrols' => $site->patrols()->with('requester:id,name')->latest('started_at')->limit(6)->get()->map(fn (Patrol $patrol): array => $patrol->toPayload()),
+            'patrolIntervals' => VirtualPatrol::INTERVALS,
         ]);
     }
 
@@ -157,6 +236,7 @@ class SiteController extends Controller
             'phone' => $resident->phone,
             'lot' => $resident->lot,
             'sector' => $resident->sector,
+            'home' => $resident->home_lat !== null ? [(float) $resident->home_lat, (float) $resident->home_lng] : null,
             'away_until' => $resident->isAway() ? $resident->away_until->toDateString() : null,
             'last_login_at' => $resident->last_login_at?->toIso8601String(),
             ...$usage[$resident->id],

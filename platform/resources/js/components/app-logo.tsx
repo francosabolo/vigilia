@@ -6,7 +6,7 @@ export default function AppLogo() {
             <div className="text-brand flex aspect-square size-8 items-center justify-center">
                 <AppLogoIcon className="size-7" />
             </div>
-            <span className="font-display ml-1 truncate text-xl leading-none font-semibold tracking-tight">seguria</span>
+            <span className="font-display ml-1 truncate text-xl leading-none font-semibold tracking-tight">vigilia</span>
         </>
     );
 }

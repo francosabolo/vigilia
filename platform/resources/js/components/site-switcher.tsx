@@ -6,6 +6,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { siteNoun } from '@/lib/seguria';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
@@ -19,7 +20,7 @@ export function SiteSwitcher() {
 
     if (!siteContext) return null;
 
-    const label = siteContext.current?.name ?? 'Todos los edificios y countries';
+    const label = siteContext.current?.name ?? 'Todas las propiedades';
     const Icon = siteContext.current ? Building2 : Layers;
 
     if (!siteContext.canSwitch) {
@@ -43,7 +44,7 @@ export function SiteSwitcher() {
             <DropdownMenuContent align="end" className="w-64">
                 <DropdownMenuLabel>En pantalla</DropdownMenuLabel>
                 <DropdownMenuItem onSelect={() => select(null)}>
-                    <Layers className="mr-2 size-4" /> Todos los edificios y countries
+                    <Layers className="mr-2 size-4" /> Todas las propiedades
                     {!siteContext.current && <Check className="ml-auto size-4" />}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -55,7 +56,7 @@ export function SiteSwitcher() {
                     >
                         <Building2 className="mr-2 size-4" /> {site.name}
                         <span className="text-muted-foreground ml-1 text-xs">
-                            {site.kind === 'country' ? 'country' : 'edificio'}
+                            {siteNoun(site.kind)}
                             {site.is_simulated ? ', simulado' : ''}
                         </span>
                         {siteContext.current?.id === site.id && <Check className="ml-auto size-4" />}

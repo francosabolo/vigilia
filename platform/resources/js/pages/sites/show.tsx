@@ -1,3 +1,4 @@
+import { PatrolCard, type PatrolRound } from '@/components/console/patrol-card';
 import { SectionTitle } from '@/components/icon-circle';
 import InputError from '@/components/input-error';
 import { ItemActionButton, ItemActionLink, ItemActions } from '@/components/item-action';
@@ -18,8 +19,10 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { type LatLng } from '@/lib/geo';
 import {
+    formatDateTime,
     formatDuration,
     plural,
+    siteKinds,
     theSite,
     timeAgo,
     unitNoun,
@@ -32,7 +35,7 @@ import {
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm, usePage, usePoll } from '@inertiajs/react';
-import { BarChart3, Cctv, Cpu, Siren, VideoOff } from 'lucide-react';
+import { BarChart3, Building2, Cctv, Cpu, Eye, Siren, VideoOff } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 
 type Tab = 'resumen' | 'cobertura' | 'camaras' | 'vecinos' | 'ajustes';
@@ -89,6 +92,8 @@ interface Resident {
 interface Props {
     tab: Tab;
     canManage: boolean;
+    isAdmin: boolean;
+    clients: { id: number; name: string }[];
     canManageEdges: boolean;
     newEdge: { id: number; name: string; token: string } | null;
     edgeServerUrl: string;
@@ -99,10 +104,12 @@ interface Props {
         kind: SiteKind;
         is_simulated: boolean;
         address: string | null;
+        client_id: number | null;
         perimeter: LatLng[];
         center: LatLng | null;
         guard_whatsapp: string | null;
         ack_timeout_seconds: number;
+        patrol_interval_minutes: number | null;
         open_incidents: number;
         escalated_incidents: number;
         escalated_incident_id: number | null;
@@ -113,6 +120,17 @@ interface Props {
     residentsCount: number;
     sectors: string[];
     metrics: Metrics;
+    patrols: PatrolRound[];
+    patrolIntervals: number[];
+    mediaViews: MediaViewRow[] | null;
+}
+
+interface MediaViewRow {
+    id: number;
+    who: string;
+    kind: string;
+    subject: string;
+    at: string;
 }
 
 const DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
@@ -151,7 +169,7 @@ function WatchHeader({ site }: { site: Props['site'] }) {
                 <h1 className="font-display flex items-center gap-3 text-4xl leading-tight font-semibold">
                     {site.name}
                     <span className="bg-surface-2 text-muted-foreground rounded-full px-2.5 py-0.5 font-sans text-sm font-medium">
-                        {site.kind === 'country' ? 'Country' : 'Edificio'}
+                        {siteKinds.find((kind) => kind.id === site.kind)?.label}
                     </span>
                     {site.is_simulated && (
                         <span className="bg-surface-2 text-muted-foreground rounded px-2 py-0.5 font-sans text-sm font-medium">Simulado</span>
@@ -265,8 +283,8 @@ function NoCameras({ siteId }: { siteId: number }) {
     );
 }
 
-function Summary({ site, metrics, canManage }: Pick<Props, 'site' | 'metrics' | 'canManage'>) {
-    usePoll(10000, { only: ['site'] }, { keepAlive: true });
+function Summary({ site, metrics, canManage, patrols }: Pick<Props, 'site' | 'metrics' | 'canManage' | 'patrols'>) {
+    usePoll(10000, { only: ['site', 'patrols'] }, { keepAlive: true });
 
     return (
         <div className="flex flex-col gap-8">
@@ -274,11 +292,18 @@ function Summary({ site, metrics, canManage }: Pick<Props, 'site' | 'metrics' | 
 
             {site.cameras.length === 0 && <NoCameras siteId={site.id} />}
 
+            {site.cameras.length > 0 && (
+                <PatrolCard siteId={site.id} patrols={patrols} intervalMinutes={site.patrol_interval_minutes} canManage={canManage} />
+            )}
+
             <div className="grid gap-8 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
                 <section>
-                    <SectionTitle icon={BarChart3} className="mb-3">
-                        Últimos 7 días
-                    </SectionTitle>
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <SectionTitle icon={BarChart3}>Últimos 7 días</SectionTitle>
+                        <ItemActionLink kind="view" href={`/sites/${site.id}/report`}>
+                            Informe del mes
+                        </ItemActionLink>
+                    </div>
                     <dl className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-4">
                         {[
                             [metrics.detections, 'movimientos analizados'],
@@ -379,10 +404,189 @@ function CamerasTab({ site, canManage }: Pick<Props, 'site' | 'canManage'>) {
                                 Editar zonas
                             </ItemActionLink>
                         )}
+                        {canManage && <RemoveCamera camera={camera} />}
                     </ItemActions>
                 </div>
             ))}
         </div>
+    );
+}
+
+function SiteDetailsForm({ site, clients, isAdmin }: Pick<Props, 'site' | 'clients' | 'isAdmin'>) {
+    const form = useForm({ name: site.name, address: site.address ?? '', kind: site.kind, client_id: site.client_id ? String(site.client_id) : '' });
+
+    function submit(event: FormEvent) {
+        event.preventDefault();
+        form.patch(`/sites/${site.id}/details`, { preserveScroll: true });
+    }
+
+    return (
+        <form onSubmit={submit} className="flex max-w-xl flex-col gap-4">
+            <SectionTitle icon={Building2}>Datos del lugar</SectionTitle>
+            <div className="grid gap-1.5">
+                <Label htmlFor="site-name">Nombre</Label>
+                <Input id="site-name" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} />
+                <InputError message={form.errors.name} />
+            </div>
+            <div className="grid gap-1.5">
+                <Label htmlFor="site-address">Dirección</Label>
+                <Input id="site-address" value={form.data.address} onChange={(e) => form.setData('address', e.target.value)} />
+                <InputError message={form.errors.address} />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                    <Label htmlFor="site-kind">Tipo</Label>
+                    <select
+                        id="site-kind"
+                        value={form.data.kind}
+                        onChange={(e) => form.setData('kind', e.target.value as SiteKind)}
+                        className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                    >
+                        {siteKinds.map((kind) => (
+                            <option key={kind.id} value={kind.id}>
+                                {kind.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                {isAdmin && (
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="site-client">Cliente</Label>
+                        <select
+                            id="site-client"
+                            value={form.data.client_id}
+                            onChange={(e) => form.setData('client_id', e.target.value)}
+                            className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                        >
+                            <option value="">Sin cliente</option>
+                            {clients.map((client) => (
+                                <option key={client.id} value={client.id}>
+                                    {client.name}
+                                </option>
+                            ))}
+                        </select>
+                        <InputError message={form.errors.client_id} />
+                    </div>
+                )}
+            </div>
+            <div>
+                <Button type="submit" disabled={form.processing || !form.isDirty}>
+                    Guardar datos
+                </Button>
+            </div>
+        </form>
+    );
+}
+
+function ArchiveSite({ site }: { site: Props['site'] }) {
+    const form = useForm({ confirm: '' });
+
+    return (
+        <section className="border-alarm/40 flex max-w-xl flex-col gap-3 rounded-2xl border p-4">
+            <h2 className="font-semibold">Dar de baja {theSite(site.kind)}</h2>
+            <p className="text-muted-foreground text-sm">
+                Para cuando el lugar deja el servicio. Se borran sus imágenes, los vecinos pierden la cuenta, los equipos edge dejan de conectarse y
+                deja de verse en la consola. El historial de incidentes queda guardado.
+            </p>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="outline" className="border-alarm/60 text-alarm hover:bg-alarm/10 hover:text-alarm self-start">
+                        Dar de baja
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <form
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            form.delete(`/sites/${site.id}`);
+                        }}
+                        className="flex flex-col gap-4"
+                    >
+                        <DialogHeader>
+                            <DialogTitle>¿Dar de baja {site.name}?</DialogTitle>
+                            <DialogDescription>No se puede deshacer: las imágenes se borran y los vecinos pierden el acceso.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-1.5">
+                            <Label htmlFor="archive-confirm">Escribí «{site.name}» para confirmar</Label>
+                            <Input
+                                id="archive-confirm"
+                                value={form.data.confirm}
+                                onChange={(e) => form.setData('confirm', e.target.value)}
+                                autoFocus
+                            />
+                            <InputError message={form.errors.confirm} />
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button type="button" variant="ghost">
+                                    Cancelar
+                                </Button>
+                            </DialogClose>
+                            <Button type="submit" variant="destructive" disabled={form.processing || form.data.confirm !== site.name}>
+                                Dar de baja
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </section>
+    );
+}
+
+function MediaViewsSection({ views }: { views: MediaViewRow[] }) {
+    return (
+        <section className="flex max-w-3xl flex-col gap-3">
+            <SectionTitle icon={Eye}>Quién vio imágenes</SectionTitle>
+            <p className="text-muted-foreground text-sm">
+                Las imágenes de personas son datos personales: cada vez que alguien abre una foto, un clip o una cámara en vivo queda registrado acá.
+            </p>
+            {views.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Nadie abrió imágenes de este lugar todavía.</p>
+            ) : (
+                <ul className="bg-card divide-y rounded-xl border text-sm">
+                    {views.map((view) => (
+                        <li key={view.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 px-4 py-2.5">
+                            <span>
+                                <span className="font-semibold">{view.who}</span> <span className="text-muted-foreground">abrió</span> {view.subject}
+                                <span className="text-muted-foreground"> ({view.kind.toLowerCase()})</span>
+                            </span>
+                            <time className="text-muted-foreground" dateTime={view.at}>
+                                {formatDateTime(view.at)}
+                            </time>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </section>
+    );
+}
+
+function RemoveCamera({ camera }: { camera: Camera }) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <ItemActionButton kind="delete" aria-label={`Quitar la cámara ${camera.name}`}>
+                    Quitar
+                </ItemActionButton>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>¿Quitar la cámara {camera.name}?</DialogTitle>
+                    <DialogDescription>
+                        Se deja de analizar y desaparece del mapa y de la ronda. Sus incidentes y detecciones se conservan como evidencia. Sacala
+                        también de la configuración del equipo edge para que deje de grabar.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="ghost">Cancelar</Button>
+                    </DialogClose>
+                    <Button variant="destructive" onClick={() => router.delete(`/cameras/${camera.id}`, { preserveScroll: true })}>
+                        Quitar cámara
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -677,10 +881,14 @@ function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site
 
 /* ---------- Ajustes ---------- */
 
-function SettingsTab({ site, aiUsage }: Pick<Props, 'site' | 'aiUsage'>) {
+function SettingsTab({ site, aiUsage, patrolIntervals }: Pick<Props, 'site' | 'aiUsage' | 'patrolIntervals'>) {
     const alarmActive = !!site.escalated_incident_id;
     const { retentionDays } = usePage<{ retentionDays: number }>().props;
-    const form = useForm({ guard_whatsapp: site.guard_whatsapp ?? '', ack_timeout_seconds: Math.round(site.ack_timeout_seconds / 60) * 60 });
+    const form = useForm({
+        guard_whatsapp: site.guard_whatsapp ?? '',
+        ack_timeout_seconds: Math.round(site.ack_timeout_seconds / 60) * 60,
+        patrol_interval_minutes: site.patrol_interval_minutes ?? ('' as number | ''),
+    });
 
     function submit(event: FormEvent) {
         event.preventDefault();
@@ -718,6 +926,28 @@ function SettingsTab({ site, aiUsage }: Pick<Props, 'site' | 'aiUsage'>) {
                     ))}
                 </select>
                 <InputError message={form.errors.ack_timeout_seconds} />
+            </div>
+
+            <div className="grid gap-1.5">
+                <Label htmlFor="patrol_interval_minutes">Ronda virtual automática</Label>
+                <select
+                    id="patrol_interval_minutes"
+                    value={form.data.patrol_interval_minutes}
+                    onChange={(e) => form.setData('patrol_interval_minutes', e.target.value === '' ? '' : Number(e.target.value))}
+                    className="border-input bg-background h-9 max-w-48 rounded-md border px-3 text-sm"
+                >
+                    <option value="">Apagada</option>
+                    {patrolIntervals.map((minutes) => (
+                        <option key={minutes} value={minutes}>
+                            Cada {minutes < 60 ? `${minutes} minutos` : minutes === 60 ? 'hora' : `${minutes / 60} horas`}
+                        </option>
+                    ))}
+                </select>
+                <p className="text-muted-foreground text-sm">
+                    La IA revisa cada cámara en cada ronda: {site.cameras.length} cámaras cada hora suman {site.cameras.length * 24} revisiones por
+                    día del tope diario de IA.
+                </p>
+                <InputError message={form.errors.patrol_interval_minutes} />
             </div>
 
             {aiUsage && aiUsage.cap > 0 && (
@@ -1000,6 +1230,8 @@ function RemoveEdge({ siteId, edge }: { siteId: number; edge: EdgeStatus }) {
 export default function SiteShow({
     tab,
     canManage,
+    isAdmin,
+    clients,
     canManageEdges,
     newEdge,
     edgeServerUrl,
@@ -1009,9 +1241,12 @@ export default function SiteShow({
     residentsCount,
     sectors,
     metrics,
+    patrols,
+    patrolIntervals,
+    mediaViews,
 }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Edificios y countries', href: '/sites' },
+        { title: 'Propiedades', href: '/sites' },
         { title: site.name, href: `/sites/${site.id}` },
     ];
 
@@ -1022,7 +1257,7 @@ export default function SiteShow({
                 <WatchHeader site={site} />
                 <Tabs siteId={site.id} tab={tab} canManage={canManage} residentsCount={residentsCount} camerasCount={site.cameras.length} />
 
-                {tab === 'resumen' && <Summary site={site} metrics={metrics} canManage={canManage} />}
+                {tab === 'resumen' && <Summary site={site} metrics={metrics} canManage={canManage} patrols={patrols} />}
                 {tab === 'cobertura' && (
                     <SiteMap
                         siteId={site.id}
@@ -1037,8 +1272,11 @@ export default function SiteShow({
                 {tab === 'vecinos' && residents && <ResidentsTab site={site} residents={residents} sectors={sectors} canManage={canManage} />}
                 {tab === 'ajustes' && canManage && (
                     <div className="flex flex-col gap-10">
-                        <SettingsTab site={site} aiUsage={aiUsage} />
+                        <SiteDetailsForm site={site} clients={clients} isAdmin={isAdmin} />
+                        <SettingsTab site={site} aiUsage={aiUsage} patrolIntervals={patrolIntervals} />
                         {canManageEdges && <EdgesSection site={site} newEdge={newEdge} serverUrl={edgeServerUrl} />}
+                        {mediaViews && <MediaViewsSection views={mediaViews} />}
+                        {isAdmin && <ArchiveSite site={site} />}
                     </div>
                 )}
             </div>

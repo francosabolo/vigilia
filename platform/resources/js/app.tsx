@@ -1,10 +1,10 @@
 import '../css/app.css';
 
 import { createInertiaApp } from '@inertiajs/react';
+import { configureEcho } from '@laravel/echo-react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { route as routeFn } from 'ziggy-js';
-import { configureEcho } from '@laravel/echo-react';
 
 configureEcho({
     broadcaster: 'reverb',
@@ -14,7 +14,7 @@ declare global {
     const route: typeof routeFn;
 }
 
-const appName = import.meta.env.VITE_APP_NAME || 'Seguria';
+const appName = import.meta.env.VITE_APP_NAME || 'Vigilia';
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -28,7 +28,6 @@ createInertiaApp({
         color: '#4B5563',
     },
 });
-
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

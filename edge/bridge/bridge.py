@@ -1,4 +1,4 @@
-"""seguria-bridge: forwards Frigate events (MQTT) to the Seguria cloud platform.
+"""seguria-bridge: forwards Frigate events (MQTT) to the Vigilia cloud platform.
 
 - Listens to `frigate/events`; on each finished event, downloads snapshot + clip
   from the local Frigate API and POSTs them to /api/edge/events.

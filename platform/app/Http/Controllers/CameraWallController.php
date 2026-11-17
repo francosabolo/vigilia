@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Camera;
 use App\Models\Site;
 use App\Services\Cameras\CameraWall;
+use App\Services\Privacy\MediaAccessLog;
 use App\Services\Sites\SiteScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -21,7 +22,7 @@ class CameraWallController extends Controller
      */
     public function index(Request $request, SiteScope $scope, CameraWall $wall): Response
     {
-        if ($request->integer('site') && $request->user()->isCentral()) {
+        if ($request->integer('site') && $request->user()->canSwitchSites()) {
             $scope->set($request, $request->integer('site'));
         }
 
@@ -87,12 +88,14 @@ class CameraWallController extends Controller
         ]);
     }
 
-    public function preview(Camera $camera, CameraWall $wall): StreamedResponse
+    public function preview(Request $request, Camera $camera, CameraWall $wall, MediaAccessLog $log): StreamedResponse
     {
         Gate::authorize('view', $camera->site);
 
         $disk = Storage::disk(config('seguria.media_disk'));
         abort_unless($disk->exists($wall->previewPath($camera)), 404);
+
+        $log->record($request, $camera->site_id, 'live', "Cámara {$camera->name}", "camera:{$camera->id}");
 
         return $disk->response($wall->previewPath($camera), headers: ['Cache-Control' => 'private, no-store']);
     }

@@ -43,12 +43,12 @@ class ActivityFeed
         [$outcome, $headline] = match ($event->status) {
             DetectionStatus::Ignored => ['ignored', match ($verdict['skipped'] ?? null) {
                 'zone_disarmed' => "No la analizó: {$where} no está armada a esta hora.",
-                'outside_watched_zone' => "No la analizó: la {$label} estaba fuera de la zona vigilada.",
+                'outside_watched_zone' => 'No la analizó: '.LabelTranslator::withArticle($event->label).' estaba fuera de la zona vigilada.',
                 default => 'No la analizó por las reglas del barrio.',
             }],
             DetectionStatus::Dismissed => ['dismissed', 'Descartada: '.$this->sentence($verdict['description'] ?? 'sin amenaza visible')],
             DetectionStatus::Threat => ['alert', 'Alerta: '.$this->sentence($verdict['description'] ?? "{$label} en {$where}")],
-            default => ['analyzing', "Mirando una {$label} en {$where}…"],
+            default => ['analyzing', 'Mirando '.LabelTranslator::withArticle($event->label, true)." en {$where}…"],
         };
 
         return [
@@ -77,7 +77,7 @@ class ActivityFeed
      */
     public function analyzing(DetectionEvent $event): array
     {
-        return ['outcome' => 'analyzing', 'headline' => sprintf('Mirando una %s en %s…', LabelTranslator::translate($event->label), $event->camera->name), 'agent' => 'Analista IA'] + $this->item($event);
+        return ['outcome' => 'analyzing', 'headline' => sprintf('Mirando %s en %s…', LabelTranslator::withArticle($event->label, true), $event->camera->name), 'agent' => 'Analista IA'] + $this->item($event);
     }
 
     public function agentName(?string $model, string $outcome = 'alert'): string

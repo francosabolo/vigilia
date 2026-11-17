@@ -48,6 +48,8 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'siteContext' => fn () => app(SiteScope::class)->share($request),
+            'unreadNotifications' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,
+            'flash' => fn () => ['notice' => $request->session()->get('notice')],
         ]);
     }
 }

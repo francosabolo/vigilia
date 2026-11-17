@@ -38,7 +38,7 @@ class SnapshotRequest extends Model
 
     public function camera(): BelongsTo
     {
-        return $this->belongsTo(Camera::class);
+        return $this->belongsTo(Camera::class)->withTrashed();
     }
 
     public function incident(): BelongsTo

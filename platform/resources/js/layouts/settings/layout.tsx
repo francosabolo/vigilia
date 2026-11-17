@@ -17,6 +17,11 @@ const sidebarNavItems: NavItem[] = [
         icon: null,
     },
     {
+        title: 'Notificaciones',
+        url: '/settings/notifications',
+        icon: null,
+    },
+    {
         title: 'Verificación en dos pasos',
         url: '/settings/two-factor',
         icon: null,

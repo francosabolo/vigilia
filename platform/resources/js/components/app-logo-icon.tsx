@@ -1,7 +1,7 @@
 import { SVGAttributes } from 'react';
 
 /**
- * Seguria mark: a camera lens with a watch sweep.
+ * Vigilia mark: a camera lens with a watch sweep.
  */
 export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
     return (

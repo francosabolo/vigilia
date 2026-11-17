@@ -18,6 +18,6 @@ class SitePolicy
      */
     public function manage(User $user, Site $site): bool
     {
-        return $user->canAccessSite($site) && ($user->isCentral() || $user->role === UserRole::SiteAdmin);
+        return $user->canAccessSite($site) && ($user->isCentral() || in_array($user->role, [UserRole::SiteAdmin, UserRole::ClientAdmin], true));
     }
 }

@@ -1,5 +1,6 @@
 import AppLogoIcon from '@/components/app-logo-icon';
 import { IconCircle } from '@/components/icon-circle';
+import { NotificationBell } from '@/components/notification-bell';
 import { PushToggle } from '@/components/push-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -193,6 +194,7 @@ export default function ResidentHome({ resident, sectors, notices, metrics, vapi
                         {resident.lot && `, ${unitNoun(resident.site_kind)} ${resident.lot}`}
                     </div>
                 </div>
+                <NotificationBell showAll={false} />
                 <Link href="/logout" method="post" as="button" className="text-muted-foreground" aria-label="Salir">
                     <LogOut className="size-5" />
                 </Link>

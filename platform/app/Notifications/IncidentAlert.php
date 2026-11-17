@@ -11,7 +11,7 @@ use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 
-class IncidentAlert extends Notification implements ShouldQueue
+class IncidentAlert extends InboxNotification implements ShouldQueue
 {
     use Queueable;
 
@@ -26,10 +26,10 @@ class IncidentAlert extends Notification implements ShouldQueue
             return [WhatsAppChannel::class];
         }
 
-        return array_values(array_filter([
-            $notifiable->phone ? WhatsAppChannel::class : null,
-            $notifiable->pushSubscriptions()->exists() ? WebPushChannel::class : null,
-        ]));
+        return $this->channels($notifiable, [
+            'whatsapp' => $notifiable->phone ? WhatsAppChannel::class : null,
+            'push' => $notifiable->pushSubscriptions()->exists() ? WebPushChannel::class : null,
+        ]);
     }
 
     /**
@@ -76,5 +76,18 @@ class IncidentAlert extends Notification implements ShouldQueue
             ->vibrate([300, 100, 300, 100, 300])
             ->data(['url' => route('incidents.show', $incident)])
             ->action('Abrir', 'open');
+    }
+
+    public function inbox(object $notifiable): array
+    {
+        $incident = $this->incident->loadMissing('site');
+
+        return [
+            'title' => ($this->escalated ? 'Escalado a la central: ' : 'Alerta: ').$incident->title,
+            'body' => $incident->site->name.($incident->description ? ". {$incident->description}" : ''),
+            'url' => route('incidents.show', $incident, absolute: false),
+            'level' => $this->escalated || in_array($incident->severity->value, ['high', 'critical'], true) ? 'alarm' : 'warning',
+            'kind' => 'incident',
+        ];
     }
 }

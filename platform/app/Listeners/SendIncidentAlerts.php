@@ -7,6 +7,7 @@ use App\Events\IncidentOpened;
 use App\Jobs\EscalateIncident;
 use App\Models\User;
 use App\Notifications\IncidentAlert;
+use App\Notifications\IncidentNotice;
 use App\Services\Incidents\IncidentWorkflow;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Notification;
@@ -38,6 +39,14 @@ class SendIncidentAlerts implements ShouldQueue
         if ($site->guard_whatsapp) {
             Notification::route('whatsapp', $site->guard_whatsapp)->notify(new IncidentAlert($incident));
             $channels[] = 'guard_whatsapp';
+        }
+
+        // The client's administration follows its properties: informed, not asked to respond.
+        if ($site->client_id) {
+            Notification::send(
+                User::where('role', UserRole::ClientAdmin)->where('client_id', $site->client_id)->get(),
+                new IncidentNotice($incident),
+            );
         }
 
         $this->workflow->markNotified($incident, $channels);

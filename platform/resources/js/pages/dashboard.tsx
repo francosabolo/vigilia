@@ -192,7 +192,7 @@ export default function Dashboard({
                             )}
                         </section>
                         <section className="flex flex-col gap-3">
-                            <SectionTitle icon={Building2}>Edificios y countries</SectionTitle>
+                            <SectionTitle icon={Building2}>Propiedades</SectionTitle>
                             <div className="bg-card divide-y rounded-lg border">
                                 {sites.map((site) => {
                                     const healthy = site.edges_offline === 0 && site.cameras_online === site.cameras;

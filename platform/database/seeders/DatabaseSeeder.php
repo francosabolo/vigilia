@@ -10,6 +10,7 @@ use App\Enums\SiteKind;
 use App\Enums\UserRole;
 use App\Enums\ZoneKind;
 use App\Models\Camera;
+use App\Models\Client;
 use App\Models\DetectionEvent;
 use App\Models\EdgeDevice;
 use App\Models\Incident;
@@ -33,7 +34,7 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
-        $organization = Organization::firstOrCreate(['slug' => 'seguria'], ['name' => 'Seguria Central']);
+        $organization = Organization::firstOrCreate(['slug' => 'seguria'], ['name' => 'Vigilia Central']);
 
         $site = Site::firstOrCreate(['name' => 'Country Los Álamos'], [
             'organization_id' => $organization->id,
@@ -48,7 +49,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $users = [
-            ['admin@seguria.test', 'Admin Seguria', UserRole::Admin, null],
+            ['admin@seguria.test', 'Admin Vigilia', UserRole::Admin, null],
             ['central@seguria.test', 'Operador Central', UserRole::Operator, null],
             ['guardia@seguria.test', 'Guardia Los Álamos', UserRole::Guard, $site->id],
             ['admin.alamos@seguria.test', 'Administración Los Álamos', UserRole::SiteAdmin, $site->id],
@@ -169,6 +170,36 @@ class DatabaseSeeder extends Seeder
             'name' => 'Marta Ruiz', 'password' => 'password', 'email_verified_at' => now(),
             'role' => UserRole::Resident, 'organization_id' => $organization->id, 'site_id' => $building->id,
             'lot' => '4B', 'sector' => 'Planta baja',
+        ]);
+
+        $this->clients($organization);
+    }
+
+    /**
+     * Who hires the service: each country is its own client; the building is run by an administration firm.
+     */
+    private function clients(Organization $organization): void
+    {
+        $clients = [
+            'Country Los Álamos' => ['Administración Los Álamos', 'Gabriela Sosa', null],
+            'Country El Remanso' => ['Administración El Remanso', 'Martín Ibarra', null],
+            'Edificio Arenales 2150' => ['Administración Fernández & Asoc.', 'Silvia Fernández', ['Av. Callao 1050, piso 4, CABA', -34.5958, -58.3930]],
+        ];
+
+        foreach ($clients as $siteName => [$clientName, $contact, $office]) {
+            $site = Site::where('organization_id', $organization->id)->where('name', $siteName)->first();
+            // A country's administration usually works at the country's own entrance.
+            [$address, $lat, $lng] = $office ?? ["Administración en {$siteName}", $site?->lat, $site?->lng];
+            $client = Client::firstOrCreate(['organization_id' => $organization->id, 'name' => $clientName], [
+                'contact_name' => $contact, 'address' => $address, 'lat' => $lat, 'lng' => $lng,
+            ]);
+            Site::where('organization_id', $organization->id)->where('name', $siteName)->update(['client_id' => $client->id]);
+        }
+
+        $arenales = Client::where('name', 'Administración Fernández & Asoc.')->first();
+        User::updateOrCreate(['email' => 'administracion@seguria.test'], [
+            'name' => 'Silvia Fernández', 'password' => 'password', 'email_verified_at' => now(),
+            'role' => UserRole::ClientAdmin, 'organization_id' => $organization->id, 'client_id' => $arenales->id,
         ]);
     }
 

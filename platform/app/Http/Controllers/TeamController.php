@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use App\Models\Client;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -15,36 +16,53 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The organization's staff: central (admins, operators), guards and site administrators. Admins only.
- * Residents are managed per site, in the "Vecinos" tab.
+ * Usuarios: every account of the organization. Staff and client administrations are managed here; residents are
+ * listed too but edited in their site's "Vecinos" tab. Central admins only.
  */
 class TeamController extends Controller
 {
-    private const STAFF_ROLES = [UserRole::Admin, UserRole::Operator, UserRole::Guard, UserRole::SiteAdmin];
+    private const STAFF_ROLES = [UserRole::Admin, UserRole::Operator, UserRole::Guard, UserRole::SiteAdmin, UserRole::ClientAdmin];
 
+    /**
+     * Every account of the organization, residents included (those are edited from their site's "Vecinos" tab,
+     * where their unit and sector live). Searchable by name or e-mail, filterable by role.
+     */
     public function index(Request $request): Response
     {
         $admin = $this->admin($request);
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'role' => ['nullable', Rule::enum(UserRole::class)],
+        ]);
+
+        $base = User::query()->where('organization_id', $admin->organization_id);
+        $members = (clone $base)
+            ->when($filters['role'] ?? null, fn ($query, $role) => $query->where('role', $role))
+            ->when($filters['q'] ?? null, fn ($query, $q) => $query->where(fn ($query) => $query->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%")->orWhere('lot', $q)))
+            ->with(['site:id,name', 'client:id,name'])
+            ->orderBy('name')
+            ->paginate(40)
+            ->withQueryString()
+            ->through(fn (User $user): array => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role->value,
+                'site' => $user->site ? ['id' => $user->site->id, 'name' => $user->site->name] : null,
+                'client' => $user->client ? ['id' => $user->client->id, 'name' => $user->client->name] : null,
+                'lot' => $user->lot,
+                'two_factor' => $user->hasTwoFactor(),
+                'last_login_at' => $user->last_login_at?->toIso8601String(),
+                'is_me' => $user->is($admin),
+            ]);
 
         return Inertia::render('team/index', [
-            'members' => User::query()
-                ->where('organization_id', $admin->organization_id)
-                ->whereIn('role', self::STAFF_ROLES)
-                ->with('site:id,name')
-                ->orderBy('name')
-                ->get()
-                ->map(fn (User $user): array => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'role' => $user->role->value,
-                    'site' => $user->site ? ['id' => $user->site->id, 'name' => $user->site->name] : null,
-                    'two_factor' => $user->hasTwoFactor(),
-                    'last_login_at' => $user->last_login_at?->toIso8601String(),
-                    'is_me' => $user->is($admin),
-                ]),
+            'members' => $members,
+            'filters' => ['q' => $filters['q'] ?? '', 'role' => $filters['role'] ?? ''],
+            'counts' => (clone $base)->selectRaw('role, count(*) as total')->groupBy('role')->pluck('total', 'role'),
             'sites' => Site::where('organization_id', $admin->organization_id)->orderBy('name')->get(['id', 'name']),
+            'clients' => Client::where('organization_id', $admin->organization_id)->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -106,13 +124,20 @@ class TeamController extends Controller
                 'nullable',
                 Rule::exists('sites', 'id')->where('organization_id', $admin->organization_id),
             ],
+            'client_id' => [
+                Rule::requiredIf(fn () => $request->input('role') === UserRole::ClientAdmin->value),
+                'nullable',
+                Rule::exists('clients', 'id')->where('organization_id', $admin->organization_id),
+            ],
         ], [
-            'site_id.required' => 'Elegí el edificio o country donde trabaja.',
+            'site_id.required' => 'Elegí la propiedad donde trabaja.',
+            'client_id.required' => 'Elegí el cliente al que pertenece.',
         ]);
 
-        if (in_array($data['role'], [UserRole::Admin->value, UserRole::Operator->value], true)) {
+        if (! in_array($data['role'], [UserRole::Guard->value, UserRole::SiteAdmin->value], true)) {
             $data['site_id'] = null;
         }
+        $data['client_id'] = $data['role'] === UserRole::ClientAdmin->value ? ($data['client_id'] ?? null) : null;
 
         return $data;
     }

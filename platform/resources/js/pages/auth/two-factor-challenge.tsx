@@ -33,7 +33,7 @@ export default function TwoFactorChallenge() {
             description={
                 usingRecovery
                     ? 'Escribí uno de los códigos de recuperación que guardaste al activarla. Cada código sirve una sola vez.'
-                    : 'Abrí tu app de autenticación y escribí el código de 6 dígitos de Seguria.'
+                    : 'Abrí tu app de autenticación y escribí el código de 6 dígitos de Vigilia.'
             }
         >
             <Head title="Verificación en dos pasos" />

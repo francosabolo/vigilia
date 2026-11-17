@@ -7,3 +7,9 @@ Schedule::command('seguria:watch-equipment')->everyMinute()->withoutOverlapping(
 
 // Images of people are personal data (Ley 25.326): delete them once they are no longer useful.
 Schedule::command('seguria:prune-media')->dailyAt('04:30')->withoutOverlapping();
+
+// Virtual patrol: the AI goes over every camera of the sites that have it turned on.
+Schedule::command('seguria:patrol')->everyMinute()->withoutOverlapping();
+
+// G1: last month's service report for every client, on the 1st in the morning.
+Schedule::command('seguria:monthly-reports')->monthlyOn(1, '08:00')->withoutOverlapping();

@@ -20,7 +20,7 @@ class SiteScope
         $user = $request->user();
         $accessible = $user->accessibleSiteIds();
 
-        if (! $user->isCentral()) {
+        if (! $user->canSwitchSites()) {
             return $user->site;
         }
 
@@ -66,7 +66,7 @@ class SiteScope
         return [
             'sites' => Site::whereIn('id', $user->accessibleSiteIds())->orderBy('is_simulated')->orderBy('name')->get(['id', 'name', 'kind', 'is_simulated'])->toArray(),
             'current' => $current ? ['id' => $current->id, 'name' => $current->name, 'kind' => $current->kind->value] : null,
-            'canSwitch' => $user->isCentral(),
+            'canSwitch' => $user->canSwitchSites(),
             'alerts' => [
                 'open' => (clone $open)->count(),
                 'escalated' => (clone $open)->where('status', IncidentStatus::Escalated)->count(),

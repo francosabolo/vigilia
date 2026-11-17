@@ -22,10 +22,14 @@ class HeartbeatController extends Controller
         ]));
 
         foreach ($data['cameras'] ?? [] as $cam) {
-            $camera = Camera::firstOrNew(
+            $camera = Camera::withTrashed()->firstOrNew(
                 ['edge_device_id' => $device->id, 'frigate_name' => $cam['name']],
                 ['site_id' => $device->site_id, 'name' => $cam['name']],
             );
+            // Removed from the console on purpose: the edge still sees it until the technician takes it out of Frigate.
+            if ($camera->trashed()) {
+                continue;
+            }
             $camera->is_online = $cam['online'];
             if ($cam['online']) {
                 $camera->last_seen_at = now();

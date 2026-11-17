@@ -1,4 +1,4 @@
-# Seguria
+# Vigilia
 
 Monitoreo perimetral con IA para barrios cerrados. La IA mira todas las cámaras y solo escala lo que importa.
 
@@ -49,7 +49,7 @@ Edge nuevo: `php artisan seguria:edge-create {site_id} edge-norte` imprime el `S
 | `resident` | solo la app de vecinos (`/vecinos`), sin cámaras ni imágenes | botón de pánico, "Vi algo raro", modo vacaciones y avisos de su sector |
 
 ### Evaluar la IA sin pagar dos veces
-- **Set:** `platform/storage/app/eval/{positivos,negativos}`. No se versiona en git porque son imágenes. Las de hoy salieron de Magnific (proyecto "Seguria - Set de evaluación IA"); `seguria:eval-degrade` genera los niveles difíciles.
+- **Set:** `platform/storage/app/eval/{positivos,negativos}`. No se versiona en git porque son imágenes. Las de hoy salieron de Magnific (proyecto "Vigilia - Set de evaluación IA"); `seguria:eval-degrade` genera los niveles difíciles.
 - **Caché de veredictos** (`storage/app/eval-cache`): se indexa por imagen, modelo y versión del prompt. Repetir una evaluación no se paga; cambiar el prompt invalida solo lo afectado; las imágenes nuevas son lo único que se cobra.
 - **`--batch`:** manda lo que no está en caché a la Batch API, que cuesta la mitad y tarda minutos en lugar de segundos.
 - **Con la consola de Claude, sin API:**

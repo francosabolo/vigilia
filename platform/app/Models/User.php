@@ -28,11 +28,15 @@ class User extends Authenticatable
         'role',
         'organization_id',
         'site_id',
+        'client_id',
         'phone',
         'lot',
         'sector',
         'away_until',
         'last_login_at',
+        'home_lat',
+        'home_lng',
+        'notification_prefs',
     ];
 
     /**
@@ -57,6 +61,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'notification_prefs' => 'array',
             'role' => UserRole::class,
             'away_until' => 'datetime',
             'last_login_at' => 'datetime',
@@ -87,6 +92,29 @@ class User extends Authenticatable
         return in_array($this->role, [UserRole::Admin, UserRole::Operator], true);
     }
 
+    public const NOTIFICATION_CHANNELS = ['email', 'whatsapp', 'push'];
+
+    /**
+     * Extra channels on top of the in-app inbox. Everything is on until the person turns it off.
+     */
+    public function wantsNotificationsBy(string $channel): bool
+    {
+        return (bool) (($this->notification_prefs ?? [])[$channel] ?? true);
+    }
+
+    public function isClientAdmin(): bool
+    {
+        return $this->role === UserRole::ClientAdmin;
+    }
+
+    /**
+     * Central staff and client administrations look at several sites, so they get the site switcher.
+     */
+    public function canSwitchSites(): bool
+    {
+        return $this->isCentral() || $this->isClientAdmin();
+    }
+
     /**
      * Residents use their own app: they never see the console, cameras or images.
      */
@@ -103,14 +131,18 @@ class User extends Authenticatable
     /**
      * Staff access to a site's console (incidents, images, configuration).
      */
-    public function canAccessSite(Site $site): bool
+    public function canAccessSite(?Site $site): bool
     {
-        if ($this->isResident()) {
+        if ($site === null || $site->trashed() || $this->isResident()) {
             return false;
         }
 
         if ($this->isCentral()) {
             return $this->organization_id === $site->organization_id;
+        }
+
+        if ($this->isClientAdmin()) {
+            return $this->client_id !== null && $this->client_id === $site->client_id;
         }
 
         return $this->site_id === $site->id;
@@ -129,6 +161,10 @@ class User extends Authenticatable
             return Site::where('organization_id', $this->organization_id)->pluck('id')->all();
         }
 
+        if ($this->isClientAdmin()) {
+            return $this->client_id ? Site::where('client_id', $this->client_id)->pluck('id')->all() : [];
+        }
+
         return array_filter([$this->site_id]);
     }
 
@@ -137,12 +173,21 @@ class User extends Authenticatable
      */
     public function liveChannel(): string
     {
-        return $this->isCentral() ? "operators.{$this->organization_id}" : "sites.{$this->site_id}";
+        return match (true) {
+            $this->isCentral() => "operators.{$this->organization_id}",
+            $this->isClientAdmin() => "clients.{$this->client_id}",
+            default => "sites.{$this->site_id}",
+        };
     }
 
     public function routeNotificationForWhatsapp(): ?string
     {
         return $this->phone;
+    }
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class);
     }
 
     public function organization(): BelongsTo

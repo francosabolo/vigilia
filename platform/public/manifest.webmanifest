@@ -1,6 +1,6 @@
 {
-    "name": "Seguria",
-    "short_name": "Seguria",
+    "name": "Vigilia",
+    "short_name": "Vigilia",
     "description": "Alertas de seguridad perimetral con IA",
     "start_url": "/incidents",
     "scope": "/",

@@ -42,17 +42,18 @@ class Incident extends Model
             'acknowledged_at' => 'datetime',
             'escalated_at' => 'datetime',
             'resolved_at' => 'datetime',
+            'report_generated_at' => 'datetime',
         ];
     }
 
     public function site(): BelongsTo
     {
-        return $this->belongsTo(Site::class);
+        return $this->belongsTo(Site::class)->withTrashed();
     }
 
     public function camera(): BelongsTo
     {
-        return $this->belongsTo(Camera::class);
+        return $this->belongsTo(Camera::class)->withTrashed();
     }
 
     public function zone(): BelongsTo

@@ -55,6 +55,10 @@ class DetectionProcessor
         $this->step('detector', 'Detector del edge', 'ok', sprintf('Vio una %s en %s%s.', $label, $camera->name, $event->score !== null ? ' (seguridad '.round($event->score * 100).'%)' : ''));
 
         $zones = $this->matchingZones($event);
+        $testing = $site->inTestMode();
+        if ($testing) {
+            $event->is_test = true;
+        }
 
         if ($zones === false) {
             $this->step('zone', 'Reglas del barrio', 'stop', $event->zones ? 'Estaba fuera de las zonas vigiladas de esta cámara, o no es un tipo de objeto que se vigile ahí.' : 'No entró en ninguna zona vigilada.');
@@ -64,9 +68,12 @@ class DetectionProcessor
 
         $this->step('zone', 'Reglas del barrio', 'ok', $zones === null ? 'La cámara no tiene zonas: se vigila la imagen completa.' : 'Entró en '.collect($zones)->map(fn (Zone $zone) => "{$zone->name} ({$zone->kind->label()})")->implode(', ').'.');
 
-        $zone = $zones === null
-            ? null
-            : collect($zones)->first(fn (Zone $zone): bool => $this->arming->isArmed($zone, $event->started_at, $site->timezone));
+        $zone = match (true) {
+            $zones === null => null,
+            // Installation test: the technician walks by at any hour, so the schedule does not apply.
+            $testing => collect($zones)->first(),
+            default => collect($zones)->first(fn (Zone $zone): bool => $this->arming->isArmed($zone, $event->started_at, $site->timezone)),
+        };
 
         if ($zones !== null && $zone === null) {
             $this->step('schedule', 'Reglas del barrio', 'stop', 'La zona no está armada a esta hora: no hace falta mirarla.');
@@ -74,7 +81,11 @@ class DetectionProcessor
             return $this->skip($event, 'zone_disarmed');
         }
 
-        $this->step('schedule', 'Reglas del barrio', 'ok', $zone && $zone->armingSchedules->isNotEmpty() ? 'La zona está armada a esta hora.' : 'La zona está armada las 24 h.');
+        $this->step('schedule', 'Reglas del barrio', 'ok', match (true) {
+            $testing => 'Prueba de instalación: se ignora el horario.',
+            $zone && $zone->armingSchedules->isNotEmpty() => 'La zona está armada a esta hora.',
+            default => 'La zona está armada las 24 h.',
+        });
 
         $this->broadcast($event, analyzing: true);
         $verdict = $this->verifier->verify($event);
@@ -85,6 +96,15 @@ class DetectionProcessor
 
         if ($verdict->model && $verdict->model === config('seguria.ai.review_model')) {
             $this->step('ai', app(ActivityFeed::class)->agentName(config('seguria.ai.model')), 'doubt', 'No estaba segura: le pidió una segunda opinión a la revisora.');
+        }
+
+        if ($testing) {
+            $this->step('ai', $agent, $this->isThreat($verdict) ? 'alert' : 'stop', "{$verdict->description}{$confidence}");
+            $this->step('decision', 'Vigilia', 'stop', 'Prueba de instalación: quedó registrado y no se avisó a nadie.');
+            $event->forceFill(['status' => DetectionStatus::Observed, 'trace' => $this->trace])->save();
+            $this->broadcast($event);
+
+            return null;
         }
 
         if (! $this->isThreat($verdict)) {
@@ -101,7 +121,7 @@ class DetectionProcessor
         $this->step('ai', $agent, 'alert', "Es una amenaza: {$verdict->description}{$confidence}");
 
         if ($zone?->autonomy === ZoneAutonomy::Calibration) {
-            $this->step('decision', 'Seguria', 'stop', "La zona {$zone->name} está en calibración: quedó registrado y no se avisó a nadie.");
+            $this->step('decision', 'Vigilia', 'stop', "La zona {$zone->name} está en calibración: quedó registrado y no se avisó a nadie.");
             $event->forceFill(['status' => DetectionStatus::Observed, 'trace' => $this->trace])->save();
             $this->broadcast($event);
             app(ShadowMode::class)->consider($event);
@@ -113,7 +133,7 @@ class DetectionProcessor
             $incident = $this->findOpenIncident($event, $zone);
 
             if ($incident) {
-                $this->step('decision', 'Seguria', 'alert', "Lo sumó al incidente #{$incident->id}, abierto hace minutos en la misma zona.");
+                $this->step('decision', 'Vigilia', 'alert', "Lo sumó al incidente #{$incident->id}, abierto hace minutos en la misma zona.");
                 $this->attach($incident, $event, $verdict);
                 IncidentChanged::dispatch($incident, 'detection_added');
 
@@ -124,7 +144,7 @@ class DetectionProcessor
             if ($tracked) {
                 [$incident, $from, $meters, $seconds] = $tracked;
                 $distance = $meters !== null ? "a {$meters} m" : 'en el mismo sector';
-                $this->step('decision', 'Seguria', 'alert', "Probablemente es la misma persona del incidente #{$incident->id}: la vio {$from->name} hace {$seconds} s, {$distance}. Lo sumó al recorrido.");
+                $this->step('decision', 'Vigilia', 'alert', "Probablemente es la misma persona del incidente #{$incident->id}: la vio {$from->name} hace {$seconds} s, {$distance}. Lo sumó al recorrido.");
                 $this->attach($incident, $event, $verdict, tracked: [$from, $meters, $seconds]);
                 IncidentChanged::dispatch($incident, 'detection_added');
 
@@ -132,9 +152,9 @@ class DetectionProcessor
             }
 
             $incident = $this->open($event, $zone, $verdict);
-            $this->step('decision', 'Seguria', 'alert', "Abrió el incidente #{$incident->id} con severidad {$incident->severity->value} y avisó a la guardia.");
+            $this->step('decision', 'Vigilia', 'alert', "Abrió el incidente #{$incident->id} con severidad {$incident->severity->value} y avisó a la guardia.");
             if (app(AutonomyPolicy::class)->deterIfEnabled($incident, $event, $verdict, $zone)) {
-                $this->step('decision', 'Seguria', 'alert', "Disuasión automática: activó el altavoz de {$event->camera->name} sin esperar a la guardia.");
+                $this->step('decision', 'Vigilia', 'alert', "Disuasión automática: activó el altavoz de {$event->camera->name} sin esperar a la guardia.");
             }
             IncidentOpened::dispatch($incident);
             IncidentChanged::dispatch($incident, 'opened');

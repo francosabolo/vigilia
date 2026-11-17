@@ -1,6 +1,7 @@
 import { DecisionTrail } from '@/components/console/decision-trail';
 import { SeverityText, StatusSignal } from '@/components/incident-badges';
 import { IncidentRoute } from '@/components/incident-route';
+import { ItemActionLink } from '@/components/item-action';
 import { Button } from '@/components/ui/button';
 import { useLiveIncidents } from '@/hooks/use-live-incidents';
 import AppLayout from '@/layouts/app-layout';
@@ -182,8 +183,11 @@ export default function IncidentShow({ incident, channel }: Props) {
                         </div>
                         <h1 className="font-display mt-1 text-3xl leading-tight font-semibold md:text-4xl">{incident.title}</h1>
                         <p className="text-muted-foreground mt-1">
-                            {place}. Detectado el {formatDateTime(incident.detected_at)}.
+                            {place}. Detectado el {formatDateTime(incident.detected_at)}
                         </p>
+                        <ItemActionLink kind="view" href={`/incidents/${incident.id}/report`} className="mt-1 -ml-3">
+                            Informe para denuncia o seguro
+                        </ItemActionLink>
                     </header>
 
                     {incident.tamper ? (
@@ -217,7 +221,9 @@ export default function IncidentShow({ incident, channel }: Props) {
 
                     {incident.source !== 'detection' && incident.live_frames.length > 0 && (
                         <section>
-                            <h2 className="mb-2 font-semibold">Cámaras del sector al momento del aviso</h2>
+                            <h2 className="mb-2 font-semibold">
+                                {incident.source === 'patrol' ? 'Lo que vio la ronda virtual' : 'Cámaras del sector al momento del aviso'}
+                            </h2>
                             <div className={cn('grid gap-2', incident.live_frames.length > 1 && 'sm:grid-cols-2')}>
                                 {incident.live_frames.map((frame) => (
                                     <figure key={frame.url} className="overflow-hidden rounded-lg border bg-black">

@@ -1,4 +1,4 @@
-# DESIGN.md: Seguria
+# DESIGN.md: Vigilia
 
 > Criterio de diseño de este proyecto. Lo aplica cualquier persona o agente que diseñe o construya pantallas.
 > Cada regla tiene su motivo. Las reglas nuevas se agregan solo con la confirmación del responsable de UX (Franco).
@@ -7,13 +7,13 @@
 
 ### Logo
 La lente de cámara con un barrido de vigilancia (`platform/resources/js/components/app-logo-icon.tsx`): un anillo, el barrido y un punto central. El wordmark es `seguria` en minúscula, en Barlow Condensed Semibold.
-- El logo va en rojo Seguria sobre grafito o blanco, o en blanco sobre rojo. Nunca en otro color — porque es lo único que identifica la marca en una pantalla llena de cámaras. (origen: aprobado por Franco, 16/11/2026)
+- El logo va en rojo Vigilia sobre grafito o blanco, o en blanco sobre rojo. Nunca en otro color — porque es lo único que identifica la marca en una pantalla llena de cámaras. (origen: aprobado por Franco, 16/11/2026)
 - Los íconos de la app (PWA) son la lente roja sobre fondo blanco (`platform/public/icons/`).
 
 ### Colores de marca
 | Nombre | Hex | Uso |
 |---|---|---|
-| Rojo Seguria | `#E5252E` | logo, alarmas, botón de pánico |
+| Rojo Vigilia | `#E5252E` | logo, alarmas, botón de pánico |
 | Blanco | `#FFFFFF` | texto en la consola, acción principal, fondo de los íconos |
 | Grafito | `#1B1D22` | superficies de la consola, texto en la app de vecinos |
 
@@ -37,7 +37,7 @@ La lente de cámara con un barrido de vigilancia (`platform/resources/js/compone
 - Sin MAYÚSCULAS en las etiquetas y sin separadores "·" en los textos — porque son recursos genéricos y cuestan más de leer. (origen: confirmado por Franco, 16/11/2026)
 
 ## Clientes y vocabulario
-- Seguria le vende a **consorcios**, no al cliente final. Hay dos tipos: **edificios** y **countries**. Cada lugar vigilado tiene su tipo (`kind`) y la interfaz usa sus propias palabras — porque un administrador de edificio no habla de "barrios" ni de "lotes". (origen: Franco, 16/11/2026)
+- Vigilia le vende a **consorcios**, no al cliente final. Hay dos tipos: **edificios** y **countries**. Cada lugar vigilado tiene su tipo (`kind`) y la interfaz usa sus propias palabras — porque un administrador de edificio no habla de "barrios" ni de "lotes". (origen: Franco, 16/11/2026)
 - **Edificio:** "el edificio"; el hogar de un vecino es una **unidad** (4B). Lo que se vigila son accesos y puntos sensibles: hall, cochera, puerta de servicio y terraza.
 - **Country:** "el country"; el hogar es un **lote** (42). Lo que se vigila es sobre todo el perímetro (alambrado, muro).
 - Cuando se habla de los dos a la vez: "Edificios y countries". Nunca "barrio" en la interfaz.

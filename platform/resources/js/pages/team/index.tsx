@@ -1,6 +1,5 @@
-import { SectionTitle } from '@/components/icon-circle';
 import InputError from '@/components/input-error';
-import { ItemActionButton, ItemActions } from '@/components/item-action';
+import { ItemActionButton, ItemActionLink, ItemActions } from '@/components/item-action';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -16,22 +15,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { timeAgo } from '@/lib/seguria';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router, useForm } from '@inertiajs/react';
-import { Headset, ShieldAlert, ShieldCheck, Users } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Search, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { type FormEvent, useEffect, useState } from 'react';
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Equipo', href: '/team' }];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Usuarios', href: '/team' }];
 
-type Role = 'admin' | 'operator' | 'guard' | 'site_admin';
+type Role = 'admin' | 'operator' | 'guard' | 'site_admin' | 'client_admin' | 'resident';
+type StaffRole = Exclude<Role, 'resident'>;
 
-const ROLES: { value: Role; label: string; help: string }[] = [
-    { value: 'operator', label: 'Operador de la central', help: 'Ve todos los edificios y countries y atiende las alertas escaladas.' },
-    { value: 'guard', label: 'Guardia', help: 'Recibe las alertas de su edificio o country y responde.' },
-    { value: 'site_admin', label: 'Administración del lugar', help: 'Gestiona vecinos, zonas y horarios de su edificio o country.' },
-    { value: 'admin', label: 'Administrador de la central', help: 'Todo lo anterior, más el equipo y el alta de lugares y equipos.' },
+const ROLES: { value: StaffRole; label: string; help: string }[] = [
+    { value: 'operator', label: 'Operador de la central', help: 'Ve todas las propiedades y atiende las alertas escaladas.' },
+    { value: 'guard', label: 'Guardia', help: 'Recibe las alertas de su propiedad y responde.' },
+    { value: 'site_admin', label: 'Administración del lugar', help: 'Gestiona vecinos, zonas y horarios de una propiedad.' },
+    { value: 'client_admin', label: 'Administración del cliente', help: 'Ve todos los lugares de su cliente: incidentes, cámaras e informes.' },
+    { value: 'admin', label: 'Administrador de la central', help: 'Todo lo anterior, más usuarios, clientes y el alta de lugares y equipos.' },
 ];
-const roleLabel = (role: Role) => ROLES.find((item) => item.value === role)?.label ?? role;
+const ROLE_LABELS: Record<Role, string> = {
+    ...(Object.fromEntries(ROLES.map((role) => [role.value, role.label])) as Record<StaffRole, string>),
+    resident: 'Vecino',
+};
+const FILTERS: Role[] = ['admin', 'operator', 'guard', 'site_admin', 'client_admin', 'resident'];
 const needsSite = (role: Role) => role === 'guard' || role === 'site_admin';
 
 interface Member {
@@ -41,113 +47,187 @@ interface Member {
     phone: string | null;
     role: Role;
     site: { id: number; name: string } | null;
+    client: { id: number; name: string } | null;
+    lot: string | null;
     two_factor: boolean;
     last_login_at: string | null;
     is_me: boolean;
 }
 
-interface SiteOption {
+interface Option {
     id: number;
     name: string;
 }
 
-export default function TeamIndex({ members, sites }: { members: Member[]; sites: SiteOption[] }) {
-    const central = members.filter((member) => !needsSite(member.role));
-    const onSite = members.filter((member) => needsSite(member.role));
+interface Paginated<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    total: number;
+    links: { url: string | null; label: string; active: boolean }[];
+}
+
+interface Props {
+    members: Paginated<Member>;
+    filters: { q: string; role: Role | '' };
+    counts: Partial<Record<Role, number>>;
+    sites: Option[];
+    clients: Option[];
+}
+
+export default function UsersIndex({ members, filters, counts, sites, clients }: Props) {
+    const [query, setQuery] = useState(filters.q);
+    const total = Object.values(counts).reduce((sum, count) => sum + (count ?? 0), 0);
+
+    useEffect(() => {
+        if (query === filters.q) return;
+        const timer = setTimeout(
+            () => router.get('/team', { q: query || undefined, role: filters.role || undefined }, { preserveState: true, replace: true }),
+            300,
+        );
+        return () => clearTimeout(timer);
+    }, [query, filters.q, filters.role]);
+
+    const filterBy = (role: Role | '') => router.get('/team', { q: filters.q || undefined, role: role || undefined }, { preserveState: true });
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Equipo" />
-            <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 p-4 md:p-6">
+            <Head title="Usuarios" />
+            <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <div>
-                        <h1 className="font-display text-3xl font-semibold">Equipo</h1>
-                        <p className="text-muted-foreground">Quién atiende las alertas y quién configura cada lugar.</p>
+                        <h1 className="font-display text-3xl font-semibold">Usuarios</h1>
+                        <p className="text-muted-foreground">Quién entra a Vigilia: la central, las guardias, las administraciones y los vecinos.</p>
                     </div>
-                    <MemberDialog sites={sites} />
+                    <MemberDialog sites={sites} clients={clients} />
                 </div>
 
-                <MemberList title="Central" icon={Headset} members={central} sites={sites} empty="Todavía no hay nadie en la central." />
-                <MemberList
-                    title="En los edificios y countries"
-                    icon={Users}
-                    members={onSite}
-                    sites={sites}
-                    empty="Invitá a las guardias para que reciban las alertas de su lugar."
-                />
+                <div className="flex flex-col gap-3">
+                    <div className="relative max-w-md">
+                        <Search className="text-muted-foreground absolute top-2.5 left-3 size-4" />
+                        <Input
+                            aria-label="Buscar usuarios"
+                            placeholder="Buscar por nombre, email o lote"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            className="pl-9"
+                        />
+                    </div>
+                    <nav className="flex flex-wrap gap-2 text-sm" aria-label="Filtrar por rol">
+                        {(['', ...FILTERS] as (Role | '')[]).map((role) => (
+                            <button
+                                key={role || 'all'}
+                                type="button"
+                                onClick={() => filterBy(role)}
+                                aria-pressed={filters.role === role}
+                                className={cn(
+                                    'rounded-full border px-3 py-1',
+                                    filters.role === role
+                                        ? 'bg-primary text-primary-foreground border-primary'
+                                        : 'hover:bg-accent text-muted-foreground',
+                                )}
+                            >
+                                {role ? ROLE_LABELS[role] : 'Todos'}{' '}
+                                <span className="tabular-nums opacity-70">{role ? (counts[role] ?? 0) : total}</span>
+                            </button>
+                        ))}
+                    </nav>
+                </div>
+
+                {members.data.length === 0 ? (
+                    <p className="text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
+                        {filters.q ? `Nadie coincide con «${filters.q}».` : 'No hay usuarios con este rol.'}
+                    </p>
+                ) : (
+                    <ul className="bg-card divide-y rounded-2xl border">
+                        {members.data.map((member) => (
+                            <MemberRow key={member.id} member={member} sites={sites} clients={clients} />
+                        ))}
+                    </ul>
+                )}
+
+                {members.last_page > 1 && (
+                    <nav className="flex flex-wrap items-center gap-1 text-sm" aria-label="Páginas">
+                        {members.links.map((link, index) =>
+                            link.url ? (
+                                <Link
+                                    key={index}
+                                    href={link.url}
+                                    preserveState
+                                    className={cn('rounded-md px-3 py-1.5', link.active ? 'bg-primary text-primary-foreground' : 'hover:bg-accent')}
+                                    dangerouslySetInnerHTML={{
+                                        __html: link.label.replace('&laquo; Previous', '‹ Anterior').replace('Next &raquo;', 'Siguiente ›'),
+                                    }}
+                                />
+                            ) : null,
+                        )}
+                    </nav>
+                )}
             </div>
         </AppLayout>
     );
 }
 
-function MemberList({
-    title,
-    icon,
-    members,
-    sites,
-    empty,
-}: {
-    title: string;
-    icon: typeof Users;
-    members: Member[];
-    sites: SiteOption[];
-    empty: string;
-}) {
+function MemberRow({ member, sites, clients }: { member: Member; sites: Option[]; clients: Option[] }) {
+    const where =
+        member.client?.name ?? member.site?.name ?? (member.role === 'admin' || member.role === 'operator' ? 'Todos los lugares' : 'Sin asignar');
+
     return (
-        <section className="flex flex-col gap-3">
-            <SectionTitle icon={icon}>{title}</SectionTitle>
-            {members.length === 0 ? (
-                <p className="text-muted-foreground text-sm">{empty}</p>
-            ) : (
-                <ul className="bg-card divide-y rounded-2xl border">
-                    {members.map((member) => (
-                        <li key={member.id} className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-                            <div className="min-w-48 flex-1">
-                                <p className="font-semibold">
-                                    {member.name}
-                                    {member.is_me && <span className="text-muted-foreground font-normal"> (vos)</span>}
-                                </p>
-                                <p className="text-muted-foreground text-sm">{member.email}</p>
-                            </div>
-                            <div className="min-w-44 text-sm">
-                                <p>{roleLabel(member.role)}</p>
-                                {member.site && <p className="text-muted-foreground">{member.site.name}</p>}
-                            </div>
-                            <div className="min-w-40 text-sm">
-                                {member.two_factor ? (
-                                    <span className="text-ok flex items-center gap-1.5">
-                                        <ShieldCheck className="size-4" /> Dos pasos activada
-                                    </span>
-                                ) : (
-                                    <span className="text-pending flex items-center gap-1.5">
-                                        <ShieldAlert className="size-4" /> Sin dos pasos
-                                    </span>
-                                )}
-                                <p className="text-muted-foreground">
-                                    {member.last_login_at ? `Entró ${timeAgo(member.last_login_at)}` : 'Nunca entró'}
-                                </p>
-                            </div>
-                            <ItemActions>
-                                <MemberDialog sites={sites} member={member} />
-                                {!member.is_me && <RemoveMember member={member} />}
-                            </ItemActions>
-                        </li>
+        <li className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+            <div className="min-w-48 flex-1">
+                <p className="font-semibold">
+                    {member.name}
+                    {member.is_me && <span className="text-muted-foreground font-normal"> (vos)</span>}
+                </p>
+                <p className="text-muted-foreground text-sm">{member.email}</p>
+            </div>
+            <div className="min-w-44 text-sm">
+                <p>{ROLE_LABELS[member.role]}</p>
+                <p className="text-muted-foreground">
+                    {where}
+                    {member.role === 'resident' && member.lot && `, ${member.lot}`}
+                </p>
+            </div>
+            <div className="min-w-40 text-sm">
+                {member.role !== 'resident' &&
+                    (member.two_factor ? (
+                        <span className="text-ok flex items-center gap-1.5">
+                            <ShieldCheck className="size-4" /> Dos pasos activada
+                        </span>
+                    ) : (
+                        <span className="text-pending flex items-center gap-1.5">
+                            <ShieldAlert className="size-4" /> Sin dos pasos
+                        </span>
                     ))}
-                </ul>
-            )}
-        </section>
+                <p className="text-muted-foreground">{member.last_login_at ? `Entró ${timeAgo(member.last_login_at)}` : 'Nunca entró'}</p>
+            </div>
+            <ItemActions>
+                {member.role === 'resident' ? (
+                    member.site && (
+                        <ItemActionLink kind="edit" href={`/sites/${member.site.id}?tab=vecinos`}>
+                            Editar en Vecinos
+                        </ItemActionLink>
+                    )
+                ) : (
+                    <>
+                        <MemberDialog sites={sites} clients={clients} member={member} />
+                        {!member.is_me && <RemoveMember member={member} />}
+                    </>
+                )}
+            </ItemActions>
+        </li>
     );
 }
 
-/** Invite (no member) or edit (member) — same fields, the e-mail only on invite. */
-function MemberDialog({ sites, member }: { sites: SiteOption[]; member?: Member }) {
+function MemberDialog({ sites, clients, member }: { sites: Option[]; clients: Option[]; member?: Member }) {
     const [open, setOpen] = useState(false);
     const form = useForm({
         name: member?.name ?? '',
         email: member?.email ?? '',
         phone: member?.phone ?? '',
-        role: (member?.role ?? 'guard') as Role,
+        role: (member?.role ?? 'guard') as StaffRole,
         site_id: member?.site?.id ? String(member.site.id) : '',
+        client_id: member?.client?.id ? String(member.client.id) : '',
     });
 
     function submit(event: FormEvent) {
@@ -168,14 +248,16 @@ function MemberDialog({ sites, member }: { sites: SiteOption[]; member?: Member 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                {member ? <ItemActionButton kind="edit" aria-label={`Editar a ${member.name}`} /> : <Button>Invitar al equipo</Button>}
+                {member ? <ItemActionButton kind="edit" aria-label={`Editar a ${member.name}`} /> : <Button>Invitar usuario</Button>}
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <form onSubmit={submit} className="flex flex-col gap-4">
                     <DialogHeader>
-                        <DialogTitle>{member ? `Editar a ${member.name}` : 'Invitar al equipo'}</DialogTitle>
+                        <DialogTitle>{member ? `Editar a ${member.name}` : 'Invitar usuario'}</DialogTitle>
                         <DialogDescription>
-                            {member ? 'El email no se cambia acá: es con el que entra.' : 'Le llega un mail para crear su contraseña.'}
+                            {member
+                                ? 'El email no se cambia acá: es con el que entra.'
+                                : 'Le llega un mail para crear su contraseña. A los vecinos se los invita desde la pestaña Vecinos de su lugar.'}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -223,7 +305,7 @@ function MemberDialog({ sites, member }: { sites: SiteOption[]; member?: Member 
 
                     {needsSite(form.data.role) && (
                         <div className="grid gap-1.5">
-                            <Label htmlFor={`${prefix}-site`}>Edificio o country</Label>
+                            <Label htmlFor={`${prefix}-site`}>Propiedad</Label>
                             <select
                                 id={`${prefix}-site`}
                                 value={form.data.site_id}
@@ -238,6 +320,26 @@ function MemberDialog({ sites, member }: { sites: SiteOption[]; member?: Member 
                                 ))}
                             </select>
                             <InputError message={form.errors.site_id} />
+                        </div>
+                    )}
+
+                    {form.data.role === 'client_admin' && (
+                        <div className="grid gap-1.5">
+                            <Label htmlFor={`${prefix}-client`}>Cliente</Label>
+                            <select
+                                id={`${prefix}-client`}
+                                value={form.data.client_id}
+                                onChange={(e) => form.setData('client_id', e.target.value)}
+                                className="border-input bg-background h-9 rounded-md border px-3 text-sm"
+                            >
+                                <option value="">Elegí el cliente</option>
+                                {clients.map((client) => (
+                                    <option key={client.id} value={client.id}>
+                                        {client.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <InputError message={form.errors.client_id} />
                         </div>
                     )}
 
@@ -280,7 +382,7 @@ function RemoveMember({ member }: { member: Member }) {
                 <DialogHeader>
                     <DialogTitle>¿Quitar a {member.name}?</DialogTitle>
                     <DialogDescription>
-                        Pierde el acceso a Seguria y deja de recibir alertas. Las acciones que registró en los incidentes se conservan.
+                        Pierde el acceso a Vigilia y deja de recibir alertas. Las acciones que registró en los incidentes se conservan.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
@@ -288,7 +390,7 @@ function RemoveMember({ member }: { member: Member }) {
                         <Button variant="ghost">Cancelar</Button>
                     </DialogClose>
                     <Button variant="destructive" onClick={() => router.delete(`/team/${member.id}`, { preserveScroll: true })}>
-                        Quitar del equipo
+                        Quitar usuario
                     </Button>
                 </DialogFooter>
             </DialogContent>

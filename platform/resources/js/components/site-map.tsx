@@ -354,8 +354,8 @@ export function SiteMap({ siteId, perimeter, center, cameras, canManage, variant
                             <li className="flex gap-3">
                                 <span className="font-display bg-surface-2 flex size-6 shrink-0 items-center justify-center rounded-full">1</span>
                                 <span>
-                                    <span className="font-medium">Marcá las esquinas</span> del edificio o country con un click, en cualquier orden.
-                                    La figura se cierra sola.
+                                    <span className="font-medium">Marcá las esquinas</span> de la propiedad con un click, en cualquier orden. La
+                                    figura se cierra sola.
                                 </span>
                             </li>
                             <li className="flex gap-3">

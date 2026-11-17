@@ -71,7 +71,7 @@ export default function CamerasIndex({ sites, interval }: Props) {
                     <h1 className="font-display text-3xl font-semibold">Cámaras</h1>
                     <p className="text-muted-foreground text-sm">
                         {total} cámaras. La imagen se actualiza cada {interval} segundos mientras esta pantalla está abierta; el video completo se ve
-                        desde la red del edificio o country.
+                        desde la red de la propiedad.
                     </p>
                 </div>
 

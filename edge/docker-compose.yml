@@ -1,4 +1,4 @@
-# Seguria edge box: Frigate (detection) + Mosquitto (events) + seguria-bridge (cloud sync).
+# Vigilia edge box: Frigate (detection) + Mosquitto (events) + seguria-bridge (cloud sync).
 # Demo mode: mediamtx re-streams the videos in ./demo-videos as RTSP cameras.
 #   docker compose --profile demo up -d
 services:

@@ -20,10 +20,13 @@ class DetectionEventController extends Controller
         $device = $request->attributes->get('edgeDevice');
         $data = $request->validated();
 
-        $camera = Camera::firstOrCreate(
+        $camera = Camera::withTrashed()->firstOrCreate(
             ['edge_device_id' => $device->id, 'frigate_name' => $data['camera']],
             ['site_id' => $device->site_id, 'name' => $data['camera']],
         );
+        if ($camera->trashed()) {
+            return response()->json(['ok' => true, 'ignored' => 'camera_removed']);
+        }
 
         // The bridge retries on network failures: the Frigate event id makes ingest idempotent.
         $event = DetectionEvent::firstOrNew([

@@ -1,4 +1,5 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { NotificationBell } from '@/components/notification-bell';
 import { SiteSwitcher } from '@/components/site-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -12,6 +13,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
             <div className="ml-auto flex items-center gap-2">
+                <NotificationBell />
                 <ThemeToggle />
                 <SiteSwitcher />
             </div>
