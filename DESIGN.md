@@ -113,6 +113,7 @@ Todo elemento que se ve en pantalla (fila, tarjeta, cámara, zona, vecino, edifi
 ## Estados (vacío, carga, error, éxito, permisos)
 - Todo listado tiene un estado vacío que explica qué va a pasar ("Cuando la IA confirme una intrusión, aparece acá"). *(principio base de Tónica)*
 - Los vecinos nunca ven cámaras, imágenes ni datos de otras personas. Si intentan entrar a la consola, los lleva a su app — porque es una decisión de privacidad del producto. (origen: decisión de producto, 16/11/2026)
+- Los avisos en vivo (alertas, notificaciones y estados como "la IA no responde") son toasts abajo a la derecha, con tarjeta, ícono en círculo y botón píldora (`components/alert-toasts.tsx`); nunca franjas de borde a borde. Cada sonido de alerta va con su toast. Porque una franja de color rompe la forma de la app y el rojo a todo el ancho gasta la señal de alarma. (origen: corrección de Franco, 17/11/2026)
 
 ## Textos y tono
 - Castellano rioplatense, con voseo y verbos concretos en los botones ("Atender ahora", "Enviar aviso a la guardia", "Recibido, voy en camino"). *(principio base de Tónica)*

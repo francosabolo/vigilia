@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Console\Commands\Concerns\RefusesInProduction;
+use App\Enums\IncidentResolution;
 use App\Enums\IncidentStatus;
 use App\Enums\UserRole;
 use App\Events\DetectionActivity;
@@ -129,6 +130,9 @@ class SimulateOperation extends Command
         $tick = 5;
         /** @var array<int, int> $pendingAcks incident id → unix time the simulated guard answers */
         $pendingAcks = [];
+        /** @var array<int, int> $pendingCloses incident id → unix time the incident is closed, like a guard would */
+        $pendingCloses = [];
+        $lastSweep = 0;
 
         $this->info("Live simulation: {$sites->count()} sites, ×{$speed} speed. Open the console to watch. Ctrl+C to stop.");
 
@@ -151,11 +155,48 @@ class SimulateOperation extends Command
                 if ($incident && $incident->status !== IncidentStatus::Resolved) {
                     $guard = User::where('site_id', $incident->site_id)->where('role', UserRole::Guard)->first();
                     $workflow->acknowledge($incident, $guard, 'whatsapp');
+                    $pendingCloses[$incidentId] = time() + random_int(90, 300);
                 }
                 unset($pendingAcks[$incidentId]);
             }
 
+            foreach ($pendingCloses as $incidentId => $at) {
+                if ($at <= time()) {
+                    $this->closeLikeAGuard($workflow, Incident::find($incidentId));
+                    unset($pendingCloses[$incidentId]);
+                }
+            }
+
+            // Nobody is really watching the simulated properties: whatever stayed open (the ~15% nobody answered,
+            // or a previous run) is closed after a while, so the console shows a believable amount of open work.
+            if (time() - $lastSweep >= 60) {
+                $lastSweep = time();
+                Incident::whereIn('site_id', $sites->pluck('id'))->where('status', '!=', IncidentStatus::Resolved)
+                    ->where('detected_at', '<', now()->subMinutes(15))->whereNotIn('id', array_keys($pendingCloses))
+                    ->get()->each(fn (Incident $incident) => $this->closeLikeAGuard($workflow, $incident));
+            }
+
             sleep($tick);
         }
+    }
+
+    /**
+     * Closes a simulated incident the way the guard would: confirmed when the simulation knows it was real, false
+     * alarm otherwise. Unanswered ones are taken by the central first.
+     */
+    private function closeLikeAGuard(IncidentWorkflow $workflow, ?Incident $incident): void
+    {
+        if (! $incident || ! $incident->status->isOpen()) {
+            return;
+        }
+        $guard = User::where('site_id', $incident->site_id)->where('role', UserRole::Guard)->first();
+        $operator = User::where('organization_id', $incident->site->organization_id)->whereIn('role', [UserRole::Operator, UserRole::Admin])->first();
+        $closer = $incident->acknowledged_at ? $guard : $operator;
+        if (! $incident->acknowledged_at) {
+            $workflow->acknowledge($incident, $operator, 'web');
+        }
+
+        $real = $incident->detectionEvents()->where('ground_truth', true)->exists();
+        $workflow->resolve($incident, $real ? IncidentResolution::Confirmed : IncidentResolution::FalseAlarm, $closer, 'web', $real ? 'Se dio aviso al 911.' : null);
     }
 }
