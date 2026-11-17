@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DetectionEvent;
+use App\Models\ShadowVerdict;
 use App\Services\Shadow\ShadowMode;
 use App\Services\Shadow\ShadowReport;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +32,10 @@ class ShadowController extends Controller
             'production' => config('seguria.ai.model').' con revisión de '.config('seguria.ai.review_model'),
             'challengers' => $challengers,
             'report' => $report->for($selected, $siteIds),
+            // In the demo, "production" on simulated sites is the simulator, which errs on purpose.
+            'fromSimulation' => ShadowVerdict::query()
+                ->whereHas('detectionEvent.camera.site', fn ($query) => $query->whereIn('id', $siteIds)->where('is_simulated', true))
+                ->exists(),
         ]);
     }
 

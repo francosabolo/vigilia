@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\ImpersonationController;
 use App\Services\Sites\SiteScope;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
@@ -48,6 +49,9 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'siteContext' => fn () => app(SiteScope::class)->share($request),
+            'impersonating' => fn () => $request->session()->has(ImpersonationController::SESSION_KEY) && $request->user()
+                ? ['name' => $request->user()->name, 'role' => $request->user()->role->value]
+                : null,
             'unreadNotifications' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,
             'flash' => fn () => ['notice' => $request->session()->get('notice')],
         ]);

@@ -52,7 +52,7 @@ interface Props {
 
 const percent = (value: number | null) => (value === null ? '—' : `${(value * 100).toFixed(1).replace('.', ',')}%`);
 
-export default function Shadow({ enabled, current, production, challengers, report }: Props) {
+export default function Shadow({ enabled, current, production, challengers, report, fromSimulation }: Props & { fromSimulation: boolean }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Pruebas de IA" />
@@ -64,6 +64,14 @@ export default function Shadow({ enabled, current, production, challengers, repo
                         si conviene cambiarlo antes de que afecte a una sola guardia.
                     </p>
                 </div>
+
+                {fromSimulation && (
+                    <p className="border-pending bg-pending/10 max-w-3xl rounded-lg border px-4 py-3 text-sm">
+                        <strong>Estos números salen de la simulación de demo.</strong> En las propiedades simuladas, «producción» no es Claude sino un
+                        verificador simulado que se equivoca a propósito, así que la comparación no sirve para decidir. Con cámaras reales, acá se
+                        compara el modelo real contra el retador sobre las mismas detecciones.
+                    </p>
+                )}
 
                 {report.compared === 0 ? (
                     <Empty enabled={enabled} current={current} />

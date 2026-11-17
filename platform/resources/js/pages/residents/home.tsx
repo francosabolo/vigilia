@@ -1,6 +1,7 @@
 import AppLogoIcon from '@/components/app-logo-icon';
 import { EmergencyContacts, type EmergencyContact } from '@/components/emergency-contacts';
 import { IconCircle } from '@/components/icon-circle';
+import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { NotificationBell } from '@/components/notification-bell';
 import { PushToggle } from '@/components/push-toggle';
 import { ResidentVisits, type GateEntry, type ResidentVisit } from '@/components/resident-visits';
@@ -193,6 +194,7 @@ export default function ResidentHome({ resident, sectors, notices, metrics, vapi
     return (
         <div className="theme-vecinos min-h-screen text-[15px]">
             <Head title="Vecinos" />
+            <ImpersonationBanner />
             <header className="bg-card flex items-center gap-3 border-b px-4 py-3">
                 <AppLogoIcon className="text-brand size-7" />
                 <div className="min-w-0 flex-1">

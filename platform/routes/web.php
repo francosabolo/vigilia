@@ -8,6 +8,7 @@ use App\Http\Controllers\CurrentSiteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EdgeDeviceController;
 use App\Http\Controllers\GuardController;
+use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IncidentMediaController;
 use App\Http\Controllers\NotificationController;
@@ -45,6 +46,8 @@ Route::middleware('signed')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::post('impersonation/leave', [ImpersonationController::class, 'leave'])->name('impersonation.leave');
+
     // In-app inbox: staff and residents alike.
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('notifications/latest', [NotificationController::class, 'latest'])->name('notifications.latest');
@@ -104,6 +107,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('team/{member}', [TeamController::class, 'destroy'])->name('team.destroy');
         Route::get('business', [BusinessController::class, 'index'])->name('business.index');
         Route::get('search', SearchController::class)->name('search');
+        Route::post('team/{user}/impersonate', [ImpersonationController::class, 'start'])->name('impersonation.start');
         Route::get('team/{user}/data', [PersonalDataController::class, 'export'])->name('team.data.export');
         Route::delete('team/{user}/data', [PersonalDataController::class, 'erase'])->name('team.data.erase');
         Route::patch('business/settings', [BusinessController::class, 'updateSettings'])->name('business.settings');

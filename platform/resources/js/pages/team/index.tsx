@@ -173,7 +173,7 @@ function MemberRow({ member, sites, clients }: { member: Member; sites: Option[]
         member.client?.name ?? member.site?.name ?? (member.role === 'admin' || member.role === 'operator' ? 'Todos los lugares' : 'Sin asignar');
 
     return (
-        <li className="grid items-center gap-x-6 gap-y-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_14rem_10rem_19rem]">
+        <li className="grid items-center gap-x-6 gap-y-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_13rem_10rem_24rem]">
             <div className="min-w-0">
                 <p className="truncate font-semibold">
                     {member.name}
@@ -202,6 +202,15 @@ function MemberRow({ member, sites, clients }: { member: Member; sites: Option[]
                 <p className="text-muted-foreground">{member.last_login_at ? `Entró ${timeAgo(member.last_login_at)}` : 'Nunca entró'}</p>
             </div>
             <ItemActions className="md:justify-end">
+                {member.role !== 'admin' && (
+                    <ItemActionButton
+                        kind="view"
+                        aria-label={`Ver Vigilia como ${member.name}`}
+                        onClick={() => router.post(`/team/${member.id}/impersonate`)}
+                    >
+                        Ver como
+                    </ItemActionButton>
+                )}
                 <PersonalData member={member} />
                 {member.role === 'resident' ? (
                     member.site && (
