@@ -94,17 +94,21 @@ export interface ActivityItem {
     trace: TraceStep[];
 }
 
-export type SiteKind = 'building' | 'condominium' | 'country';
+export type SiteKind = 'building' | 'condominium' | 'country' | 'house' | 'apartment' | 'store' | 'warehouse';
 
 /** Buildings, condominios and countries: the interface uses each one's own words. */
 export function siteNoun(kind: SiteKind | null | undefined): string {
-    return kind === 'country' ? 'country' : kind === 'condominium' ? 'condominio' : 'edificio';
+    return siteKinds.find((item) => item.id === kind)?.noun ?? 'propiedad';
 }
 
-export const siteKinds: { id: SiteKind; label: string; help: string; placeholder: string }[] = [
-    { id: 'building', label: 'Edificio', help: 'Unidades por piso, hall y cocheras', placeholder: 'Edificio Arenales 2150' },
-    { id: 'condominium', label: 'Condominio', help: 'Casas o dúplex en un mismo predio', placeholder: 'Condominio Las Glorias' },
-    { id: 'country', label: 'Country', help: 'Lotes y perímetro', placeholder: 'Country Los Álamos' },
+export const siteKinds: { id: SiteKind; label: string; noun: string; help: string; placeholder: string }[] = [
+    { id: 'building', label: 'Edificio', noun: 'edificio', help: 'Unidades por piso, hall y cocheras', placeholder: 'Edificio Arenales 2150' },
+    { id: 'condominium', label: 'Condominio', noun: 'condominio', help: 'Casas o dúplex en un mismo predio', placeholder: 'Condominio Las Glorias' },
+    { id: 'country', label: 'Country', noun: 'country', help: 'Lotes y perímetro', placeholder: 'Country Los Álamos' },
+    { id: 'house', label: 'Casa', noun: 'casa', help: 'Una vivienda con su terreno', placeholder: 'Casa Pérez' },
+    { id: 'apartment', label: 'Departamento', noun: 'departamento', help: 'Una unidad dentro de un edificio', placeholder: 'Departamento Juncal 4B' },
+    { id: 'store', label: 'Local', noun: 'local', help: 'Comercio u oficina a la calle', placeholder: 'Local Av. Cabildo 1500' },
+    { id: 'warehouse', label: 'Nave', noun: 'nave', help: 'Depósito, galpón o planta', placeholder: 'Nave Parque Industrial Pilar' },
 ];
 
 /** Houses on their own plot (country, condominio) are placed on the map; flats in a tower are not. */
@@ -112,9 +116,15 @@ export function hasHousesOnMap(kind: SiteKind | null | undefined): boolean {
     return kind === 'country' || kind === 'condominium';
 }
 
-/** "el edificio" / "el country" */
+/** "el edificio" / "la casa" / "la nave" */
 export function theSite(kind: SiteKind | null | undefined): string {
-    return `el ${siteNoun(kind)}`;
+    const noun = siteNoun(kind);
+    return `${['casa', 'nave', 'propiedad'].includes(noun) ? 'la' : 'el'} ${noun}`;
+}
+
+/** Several homes with their own residents (edificio, condominio, country); a house, a flat, a shop or a warehouse is one. */
+export function hasUnits(kind: SiteKind | null | undefined): boolean {
+    return kind === 'building' || kind === 'condominium' || kind === 'country';
 }
 
 /** What a resident's home is called: unidad (4B) in a building, lote (42) in a country. */
@@ -131,13 +141,14 @@ export const objectLabels: Record<string, string> = {
     dog: 'Perros',
 };
 
-export type ZoneKind = 'perimeter' | 'door' | 'window' | 'sensitive';
+export type ZoneKind = 'perimeter' | 'door' | 'window' | 'sensitive' | 'privacy';
 
 export const zoneKinds: { id: ZoneKind; label: string; example: string; labels: string[] }[] = [
     { id: 'perimeter', label: 'Perímetro', example: 'Ej: alambrado norte', labels: ['person', 'car', 'motorcycle'] },
     { id: 'door', label: 'Puerta o portón', example: 'Ej: puerta de servicio', labels: ['person'] },
     { id: 'window', label: 'Ventana', example: 'Ej: ventanal del SUM', labels: ['person'] },
     { id: 'sensitive', label: 'Punto sensible', example: 'Ej: tablero eléctrico', labels: ['person'] },
+    { id: 'privacy', label: 'Privacidad', example: 'Ej: la calle o la ventana del vecino', labels: [] },
 ];
 
 export const zoneKindLabel: Record<ZoneKind, string> = Object.fromEntries(zoneKinds.map((kind) => [kind.id, kind.label])) as Record<ZoneKind, string>;

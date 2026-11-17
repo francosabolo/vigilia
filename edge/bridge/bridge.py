@@ -207,6 +207,15 @@ def apply_zones(payload: dict) -> None:
         }
         changed = True
 
+    # Privacy areas (the street, a neighbour's window): Frigate ignores motion and objects there.
+    for camera, masks in payload.get("masks", {}).items():
+        if camera not in config.get("cameras", {}):
+            continue
+        cam = config["cameras"][camera]
+        cam.setdefault("motion", {})["mask"] = list(masks)
+        cam.setdefault("objects", {})["mask"] = list(masks)
+        changed = True
+
     if changed:
         backup = FRIGATE_CONFIG.with_suffix(".yml.bak")
         backup.write_text(FRIGATE_CONFIG.read_text())

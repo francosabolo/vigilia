@@ -8,6 +8,8 @@ enum ZoneKind: string
     case Door = 'door';
     case Window = 'window';
     case Sensitive = 'sensitive';
+    /** J2 — never analyzed, blacked out in every image and masked in Frigate (a street, a neighbour's window). */
+    case Privacy = 'privacy';
 
     public function label(): string
     {
@@ -16,6 +18,7 @@ enum ZoneKind: string
             self::Door => 'puerta o portón',
             self::Window => 'ventana',
             self::Sensitive => 'punto sensible',
+            self::Privacy => 'privacidad',
         };
     }
 
@@ -24,7 +27,7 @@ enum ZoneKind: string
      */
     public function isAccessPoint(): bool
     {
-        return $this !== self::Perimeter;
+        return ! in_array($this, [self::Perimeter, self::Privacy], true);
     }
 
     /**
@@ -32,6 +35,10 @@ enum ZoneKind: string
      */
     public function defaultLabels(): array
     {
-        return $this->isAccessPoint() ? ['person'] : ['person', 'car', 'motorcycle'];
+        return match (true) {
+            $this === self::Privacy => [],
+            $this->isAccessPoint() => ['person'],
+            default => ['person', 'car', 'motorcycle'],
+        };
     }
 }

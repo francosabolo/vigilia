@@ -11,9 +11,11 @@ use App\Models\EdgeDevice;
 use App\Models\SnapshotRequest;
 use App\Services\Cameras\CameraViewMonitor;
 use App\Services\Cameras\CameraWall;
+use App\Services\Privacy\PrivacyMask;
 use App\Services\Zones\ZoneSync;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Pull-based command channel: edge boxes sit behind NAT, so they poll for work instead of being called.
@@ -94,11 +96,8 @@ class CommandController extends Controller
 
         $request->validate(['image' => ['required', 'file', 'mimes:jpg,jpeg,png', 'max:5120']]);
 
-        $path = $request->file('image')->storeAs(
-            "sites/{$device->site_id}/incidents/{$snapshotRequest->incident_id}",
-            "live-{$snapshotRequest->camera_id}.".$request->file('image')->extension(),
-            ['disk' => config('seguria.media_disk')],
-        );
+        $path = "sites/{$device->site_id}/incidents/{$snapshotRequest->incident_id}/live-{$snapshotRequest->camera_id}.jpg";
+        Storage::disk(config('seguria.media_disk'))->put($path, app(PrivacyMask::class)->apply($snapshotRequest->camera, $request->file('image')->get()));
 
         $snapshotRequest->update(['status' => 'fulfilled', 'snapshot_path' => $path, 'fulfilled_at' => now()]);
 
@@ -121,7 +120,7 @@ class CommandController extends Controller
         ]);
 
         $camera = Camera::where('edge_device_id', $device->id)->where('frigate_name', $data['camera'])->firstOrFail();
-        $incident = $monitor->check($camera, $request->file('image')->get());
+        $incident = $monitor->check($camera, app(PrivacyMask::class)->apply($camera, $request->file('image')->get()));
 
         return response()->json(['ok' => true, 'view_status' => $camera->fresh()->view_status->value, 'incident_id' => $incident?->id]);
     }

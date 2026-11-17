@@ -18,7 +18,21 @@ import { objectLabels, plural, zoneKindLabel, zoneKinds, type ZoneKind } from '@
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm, usePoll } from '@inertiajs/react';
-import { AppWindow, CheckCircle2, DoorOpen, Fence, Loader2, RotateCcw, Target, Trash2, Undo2, VideoOff, X, type LucideIcon } from 'lucide-react';
+import {
+    AppWindow,
+    CheckCircle2,
+    DoorOpen,
+    EyeOff,
+    Fence,
+    Loader2,
+    RotateCcw,
+    Target,
+    Trash2,
+    Undo2,
+    VideoOff,
+    X,
+    type LucideIcon,
+} from 'lucide-react';
 import { useRef, useState, type FormEvent, type MouseEvent, type PointerEvent } from 'react';
 
 type Point = [number, number];
@@ -107,7 +121,7 @@ function DeleteZone({ zone }: { zone: ZoneData }) {
     );
 }
 
-const KIND_ICONS: Record<ZoneKind, LucideIcon> = { perimeter: Fence, door: DoorOpen, window: AppWindow, sensitive: Target };
+const KIND_ICONS: Record<ZoneKind, LucideIcon> = { perimeter: Fence, door: DoorOpen, window: AppWindow, sensitive: Target, privacy: EyeOff };
 
 const COLORS = ['#7aa2ff', '#34c77b', '#c084fc', '#f472b6', '#38bdf8', '#a3e635'];
 const DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
@@ -217,7 +231,7 @@ export default function ZoneEditor({ camera, zones, synced, interval }: Props) {
             name: zone?.name ?? '',
             kind: zone?.kind ?? 'perimeter',
             lot: zone?.lot ?? '',
-            watched_labels: zone?.watched_labels.length ? zone.watched_labels : ['person', 'car', 'motorcycle'],
+            watched_labels: zone?.kind === 'privacy' ? [] : zone?.watched_labels.length ? zone.watched_labels : ['person', 'car', 'motorcycle'],
             coordinates: zone?.coordinates ?? [],
         });
     }
@@ -427,10 +441,17 @@ export default function ZoneEditor({ camera, zones, synced, interval }: Props) {
                                             );
                                         })}
                                     </div>
-                                    {form.data.kind !== 'perimeter' && (
+                                    {form.data.kind === 'privacy' ? (
                                         <p className="text-muted-foreground mt-1.5 text-xs">
-                                            Una persona en esta zona genera una alerta crítica, a cualquier hora en que esté armada.
+                                            Esta parte se tapa en negro en todas las imágenes y nunca se analiza (Ley 25.326). Usala para la calle,
+                                            ventanas o patios de vecinos.
                                         </p>
+                                    ) : (
+                                        form.data.kind !== 'perimeter' && (
+                                            <p className="text-muted-foreground mt-1.5 text-xs">
+                                                Una persona en esta zona genera una alerta crítica, a cualquier hora en que esté armada.
+                                            </p>
+                                        )
                                     )}
                                 </fieldset>
                                 <Input
@@ -439,29 +460,33 @@ export default function ZoneEditor({ camera, zones, synced, interval }: Props) {
                                     onChange={(e) => form.setData('name', e.target.value)}
                                 />
                                 <InputError message={form.errors.name} />
-                                <Input
-                                    placeholder="Lote que cubre (opcional, para modo vacaciones)"
-                                    value={form.data.lot}
-                                    onChange={(e) => form.setData('lot', e.target.value)}
-                                />
-                                <div>
-                                    <div className="mb-1 text-sm font-medium">Qué vigilar</div>
-                                    <div className="flex flex-wrap gap-1">
-                                        {Object.entries(objectLabels).map(([value, label]) => (
-                                            <button
-                                                type="button"
-                                                key={value}
-                                                onClick={() => toggleLabel(value)}
-                                                className={cn(
-                                                    'rounded-full border px-2 py-0.5 text-xs',
-                                                    form.data.watched_labels.includes(value) && 'bg-primary text-primary-foreground',
-                                                )}
-                                            >
-                                                {label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
+                                {form.data.kind !== 'privacy' && (
+                                    <>
+                                        <Input
+                                            placeholder="Lote que cubre (opcional, para modo vacaciones)"
+                                            value={form.data.lot}
+                                            onChange={(e) => form.setData('lot', e.target.value)}
+                                        />
+                                        <div>
+                                            <div className="mb-1 text-sm font-medium">Qué vigilar</div>
+                                            <div className="flex flex-wrap gap-1">
+                                                {Object.entries(objectLabels).map(([value, label]) => (
+                                                    <button
+                                                        type="button"
+                                                        key={value}
+                                                        onClick={() => toggleLabel(value)}
+                                                        className={cn(
+                                                            'rounded-full border px-2 py-0.5 text-xs',
+                                                            form.data.watched_labels.includes(value) && 'bg-primary text-primary-foreground',
+                                                        )}
+                                                    >
+                                                        {label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                                 <InputError message={form.errors.coordinates} />
                                 <div className="flex flex-wrap gap-2">
                                     <Button

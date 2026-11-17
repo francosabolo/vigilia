@@ -1,4 +1,6 @@
+import { LocationPicker } from '@/components/clients-map';
 import { PatrolCard, type PatrolRound } from '@/components/console/patrol-card';
+import { ResidentsPanel, type SentMessage } from '@/components/console/residents-panel';
 import { SectionTitle } from '@/components/icon-circle';
 import InputError from '@/components/input-error';
 import { ItemActionButton, ItemActionLink, ItemActions } from '@/components/item-action';
@@ -21,6 +23,8 @@ import { type LatLng } from '@/lib/geo';
 import {
     formatDateTime,
     formatDuration,
+    hasHousesOnMap,
+    hasUnits,
     plural,
     siteKinds,
     theSite,
@@ -87,6 +91,7 @@ interface Resident {
     active_sessions: number;
     devices: string[];
     push_devices: number;
+    home: LatLng | null;
 }
 
 interface Props {
@@ -123,6 +128,9 @@ interface Props {
     patrols: PatrolRound[];
     patrolIntervals: number[];
     mediaViews: MediaViewRow[] | null;
+    residentMessages: SentMessage[];
+    setup: { done: number; total: number } | null;
+    testModeUntil: string | null;
 }
 
 interface MediaViewRow {
@@ -233,18 +241,21 @@ function Tabs({
     canManage,
     residentsCount,
     camerasCount,
+    kind,
 }: {
     siteId: number;
     tab: Tab;
     canManage: boolean;
     residentsCount: number;
     camerasCount: number;
+    kind: SiteKind;
 }) {
     const tabs: { id: Tab; label: string; count?: number }[] = [
         { id: 'resumen', label: 'Resumen' },
         { id: 'cobertura', label: 'Cobertura' },
         { id: 'camaras', label: 'Cámaras y zonas', count: camerasCount },
-        { id: 'vecinos', label: 'Vecinos', count: residentsCount },
+        // A house, a shop or a warehouse has no neighbours: the people who get the notices.
+        { id: 'vecinos', label: hasUnits(kind) ? 'Vecinos' : 'Personas', count: residentsCount },
         ...(canManage ? [{ id: 'ajustes' as Tab, label: 'Ajustes' }] : []),
     ];
 
@@ -686,9 +697,30 @@ function InviteResident({ siteId, sectors, alarmActive, kind }: { siteId: number
     );
 }
 
-function EditResident({ siteId, resident, sectors, kind }: { siteId: number; resident: Resident; sectors: string[]; kind: SiteKind }) {
+function EditResident({
+    siteId,
+    resident,
+    sectors,
+    kind,
+    center,
+    trigger,
+}: {
+    siteId: number;
+    resident: Resident;
+    sectors: string[];
+    kind: SiteKind;
+    center?: LatLng | null;
+    trigger?: React.ReactNode;
+}) {
     const [open, setOpen] = useState(false);
-    const form = useForm({ name: resident.name, lot: resident.lot ?? '', sector: resident.sector ?? '', phone: resident.phone ?? '' });
+    const form = useForm({
+        name: resident.name,
+        lot: resident.lot ?? '',
+        sector: resident.sector ?? '',
+        phone: resident.phone ?? '',
+        home_lat: resident.home?.[0] ?? (null as number | null),
+        home_lng: resident.home?.[1] ?? (null as number | null),
+    });
 
     function submit(event: FormEvent) {
         event.preventDefault();
@@ -697,10 +729,8 @@ function EditResident({ siteId, resident, sectors, kind }: { siteId: number; res
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <ItemActionButton kind="edit" aria-label={`Editar a ${resident.name}`} />
-            </DialogTrigger>
-            <DialogContent>
+            <DialogTrigger asChild>{trigger ?? <ItemActionButton kind="edit" aria-label={`Editar a ${resident.name}`} />}</DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <form onSubmit={submit} className="flex flex-col gap-4">
                     <DialogHeader>
                         <DialogTitle>Editar a {resident.name}</DialogTitle>
@@ -739,6 +769,19 @@ function EditResident({ siteId, resident, sectors, kind }: { siteId: number; res
                         <Input id={`phone-${resident.id}`} value={form.data.phone} onChange={(e) => form.setData('phone', e.target.value)} />
                         <InputError message={form.errors.phone} />
                     </div>
+                    {hasHousesOnMap(kind) && open && (
+                        <div className="grid gap-1.5">
+                            <Label>Casa en el mapa</Label>
+                            <LocationPicker
+                                value={form.data.home_lat !== null && form.data.home_lng !== null ? [form.data.home_lat, form.data.home_lng] : null}
+                                fallback={center ?? null}
+                                onChange={(point) =>
+                                    form.setData((data) => ({ ...data, home_lat: point?.[0] ?? null, home_lng: point?.[1] ?? null }))
+                                }
+                            />
+                            <InputError message={form.errors.home_lat} />
+                        </div>
+                    )}
                     <DialogFooter>
                         <DialogClose asChild>
                             <Button type="button" variant="ghost">
@@ -810,7 +853,13 @@ function AppUsage({ resident }: { resident: Resident }) {
     );
 }
 
-function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site' | 'sectors' | 'canManage'> & { residents: Resident[] }) {
+function ResidentsTab({
+    site,
+    residents,
+    sectors,
+    canManage,
+    messages,
+}: Pick<Props, 'site' | 'sectors' | 'canManage'> & { residents: Resident[]; messages: SentMessage[] }) {
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -828,52 +877,31 @@ function ResidentsTab({ site, residents, sectors, canManage }: Pick<Props, 'site
                     </p>
                 </div>
             ) : (
-                <div className="bg-card overflow-x-auto rounded-xl border">
-                    <table className="w-full text-left text-[15px]">
-                        <thead className="text-muted-foreground border-b text-sm">
-                            <tr>
-                                <th className="px-4 py-2.5 font-medium">{capitalize(unitNoun(site.kind))}</th>
-                                <th className="px-4 py-2.5 font-medium">Vecino</th>
-                                <th className="hidden px-4 py-2.5 font-medium md:table-cell">Sector</th>
-                                <th className="hidden px-4 py-2.5 font-medium md:table-cell">Celular</th>
-                                <th className="px-4 py-2.5 font-medium">Uso de la app</th>
-                                <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Estado</th>
-                                {canManage && <th className="px-4 py-2.5 text-right font-medium">Acciones</th>}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                            {residents.map((resident) => (
-                                <tr key={resident.id}>
-                                    <td className="font-display px-4 py-3 text-lg font-semibold tabular-nums">{resident.lot ?? '—'}</td>
-                                    <td className="px-4 py-3">
-                                        <div className="font-medium">{resident.name}</div>
-                                        <div className="text-muted-foreground text-sm">{resident.email}</div>
-                                    </td>
-                                    <td className="text-muted-foreground hidden px-4 py-3 md:table-cell">{resident.sector ?? '—'}</td>
-                                    <td className="text-muted-foreground hidden px-4 py-3 md:table-cell">{resident.phone ?? '—'}</td>
-                                    <td className="px-4 py-3 text-sm">
-                                        <AppUsage resident={resident} />
-                                    </td>
-                                    <td className="hidden px-4 py-3 text-sm lg:table-cell">
-                                        {resident.away_until ? (
-                                            `De vacaciones hasta el ${new Date(resident.away_until + 'T12:00').toLocaleDateString('es-AR')}`
-                                        ) : (
-                                            <span className="text-muted-foreground">En casa</span>
-                                        )}
-                                    </td>
-                                    {canManage && (
-                                        <td className="px-2 py-3">
-                                            <ItemActions className="justify-end">
-                                                <EditResident siteId={site.id} resident={resident} sectors={sectors} kind={site.kind} />
-                                                <RemoveResident siteId={site.id} resident={resident} />
-                                            </ItemActions>
-                                        </td>
-                                    )}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <ResidentsPanel
+                    siteId={site.id}
+                    kind={site.kind}
+                    perimeter={site.perimeter}
+                    center={site.center}
+                    residents={residents}
+                    sectors={sectors}
+                    messages={messages}
+                    canManage={canManage}
+                    renderUsage={(resident) => <AppUsage resident={resident as Resident} />}
+                    renderActions={(resident) =>
+                        canManage && (
+                            <>
+                                <EditResident
+                                    siteId={site.id}
+                                    resident={resident as Resident}
+                                    sectors={sectors}
+                                    kind={site.kind}
+                                    center={site.center}
+                                />
+                                <RemoveResident siteId={site.id} resident={resident as Resident} />
+                            </>
+                        )
+                    }
+                />
             )}
         </div>
     );
@@ -1244,6 +1272,9 @@ export default function SiteShow({
     patrols,
     patrolIntervals,
     mediaViews,
+    residentMessages,
+    setup,
+    testModeUntil,
 }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Propiedades', href: '/sites' },
@@ -1255,7 +1286,33 @@ export default function SiteShow({
             <Head title={site.name} />
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-6">
                 <WatchHeader site={site} />
-                <Tabs siteId={site.id} tab={tab} canManage={canManage} residentsCount={residentsCount} camerasCount={site.cameras.length} />
+                {testModeUntil && new Date(testModeUntil) > new Date() && (
+                    <Link
+                        href={`/sites/${site.id}/setup#prueba`}
+                        className="border-pending/50 bg-pending/10 rounded-lg border px-4 py-2 text-sm font-medium"
+                    >
+                        Prueba de instalación en curso: las detecciones no avisan a la guardia. Ver la prueba
+                    </Link>
+                )}
+                {setup && setup.done < setup.total && (
+                    <Link
+                        href={`/sites/${site.id}/setup`}
+                        className="bg-card hover:bg-accent flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-2.5 text-sm"
+                    >
+                        <span>
+                            <span className="font-semibold">Instalación sin terminar:</span> {setup.done} de {setup.total} pasos hechos.
+                        </span>
+                        <span className="font-medium underline underline-offset-2">Seguir con la instalación</span>
+                    </Link>
+                )}
+                <Tabs
+                    siteId={site.id}
+                    tab={tab}
+                    canManage={canManage}
+                    residentsCount={residentsCount}
+                    camerasCount={site.cameras.length}
+                    kind={site.kind}
+                />
 
                 {tab === 'resumen' && <Summary site={site} metrics={metrics} canManage={canManage} patrols={patrols} />}
                 {tab === 'cobertura' && (
@@ -1269,9 +1326,14 @@ export default function SiteShow({
                     />
                 )}
                 {tab === 'camaras' && <CamerasTab site={site} canManage={canManage} />}
-                {tab === 'vecinos' && residents && <ResidentsTab site={site} residents={residents} sectors={sectors} canManage={canManage} />}
+                {tab === 'vecinos' && residents && (
+                    <ResidentsTab site={site} residents={residents} sectors={sectors} canManage={canManage} messages={residentMessages} />
+                )}
                 {tab === 'ajustes' && canManage && (
                     <div className="flex flex-col gap-10">
+                        <ItemActionLink kind="view" href={`/sites/${site.id}/setup`} className="-ml-3 self-start">
+                            Instalación y prueba de cámaras
+                        </ItemActionLink>
                         <SiteDetailsForm site={site} clients={clients} isAdmin={isAdmin} />
                         <SettingsTab site={site} aiUsage={aiUsage} patrolIntervals={patrolIntervals} />
                         {canManageEdges && <EdgesSection site={site} newEdge={newEdge} serverUrl={edgeServerUrl} />}

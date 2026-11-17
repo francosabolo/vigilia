@@ -3,6 +3,7 @@
 namespace App\Services\Cameras;
 
 use App\Models\Camera;
+use App\Services\Privacy\PrivacyMask;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -30,7 +31,7 @@ class CameraWall
 
     public function storePreview(Camera $camera, UploadedFile $image): void
     {
-        Storage::disk(config('seguria.media_disk'))->putFileAs('previews', $image, "{$camera->id}.jpg");
+        Storage::disk(config('seguria.media_disk'))->put($this->previewPath($camera), app(PrivacyMask::class)->apply($camera, $image->get()));
         Cache::put("camera-wall:preview-at:{$camera->id}", now()->timestamp, now()->addDay());
     }
 

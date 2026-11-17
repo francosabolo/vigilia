@@ -216,6 +216,8 @@ class SiteController extends Controller
                     'at' => $view->viewed_at->toIso8601String(),
                 ])
                 : null,
+            'setup' => $canManage ? collect(SiteSetupController::steps($site))->where('optional', false)->pipe(fn ($steps) => ['done' => $steps->where('done', true)->count(), 'total' => $steps->count()]) : null,
+            'testModeUntil' => $site->inTestMode() ? $site->test_mode_until->toIso8601String() : null,
             'patrols' => $site->patrols()->with('requester:id,name')->latest('started_at')->limit(6)->get()->map(fn (Patrol $patrol): array => $patrol->toPayload()),
             'patrolIntervals' => VirtualPatrol::INTERVALS,
         ]);

@@ -173,22 +173,22 @@ function MemberRow({ member, sites, clients }: { member: Member; sites: Option[]
         member.client?.name ?? member.site?.name ?? (member.role === 'admin' || member.role === 'operator' ? 'Todos los lugares' : 'Sin asignar');
 
     return (
-        <li className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-            <div className="min-w-48 flex-1">
-                <p className="font-semibold">
+        <li className="grid items-center gap-x-6 gap-y-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_15rem_11rem_13rem]">
+            <div className="min-w-0">
+                <p className="truncate font-semibold">
                     {member.name}
                     {member.is_me && <span className="text-muted-foreground font-normal"> (vos)</span>}
                 </p>
-                <p className="text-muted-foreground text-sm">{member.email}</p>
+                <p className="text-muted-foreground truncate text-sm">{member.email}</p>
             </div>
-            <div className="min-w-44 text-sm">
+            <div className="min-w-0 text-sm">
                 <p>{ROLE_LABELS[member.role]}</p>
                 <p className="text-muted-foreground">
                     {where}
                     {member.role === 'resident' && member.lot && `, ${member.lot}`}
                 </p>
             </div>
-            <div className="min-w-40 text-sm">
+            <div className="text-sm">
                 {member.role !== 'resident' &&
                     (member.two_factor ? (
                         <span className="text-ok flex items-center gap-1.5">
@@ -201,7 +201,7 @@ function MemberRow({ member, sites, clients }: { member: Member; sites: Option[]
                     ))}
                 <p className="text-muted-foreground">{member.last_login_at ? `Entró ${timeAgo(member.last_login_at)}` : 'Nunca entró'}</p>
             </div>
-            <ItemActions>
+            <ItemActions className="md:justify-end">
                 {member.role === 'resident' ? (
                     member.site && (
                         <ItemActionLink kind="edit" href={`/sites/${member.site.id}?tab=vecinos`}>

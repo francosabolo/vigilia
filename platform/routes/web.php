@@ -16,6 +16,7 @@ use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\ShadowController;
 use App\Http\Controllers\SiteConfigurationController;
 use App\Http\Controllers\SiteController;
+use App\Http\Controllers\SiteSetupController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ZoneEditorController;
 use Illuminate\Support\Facades\Route;
@@ -86,6 +87,9 @@ Route::middleware('auth')->group(function () {
         Route::patch('sites/{site}/client', [ClientController::class, 'assignSite'])->name('sites.client');
         Route::get('sites/{site}', [SiteController::class, 'show'])->name('sites.show');
         Route::patch('sites/{site}', [SiteConfigurationController::class, 'updateSite'])->name('sites.update');
+        Route::get('sites/{site}/setup', [SiteSetupController::class, 'show'])->name('sites.setup');
+        Route::post('sites/{site}/test-mode', [SiteSetupController::class, 'startTest'])->name('sites.test-mode');
+        Route::delete('sites/{site}/test-mode', [SiteSetupController::class, 'stopTest'])->name('sites.test-mode.stop');
         Route::patch('sites/{site}/details', [SiteController::class, 'updateDetails'])->name('sites.details');
         Route::delete('sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
         Route::post('sites/{site}/residents', [ResidentAdminController::class, 'store'])->name('residents.store');

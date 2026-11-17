@@ -8,9 +8,11 @@ use App\Http\Requests\Edge\StoreDetectionEventRequest;
 use App\Models\Camera;
 use App\Models\DetectionEvent;
 use App\Models\EdgeDevice;
+use App\Services\Privacy\PrivacyMask;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class DetectionEventController extends Controller
 {
@@ -46,11 +48,11 @@ class DetectionEventController extends Controller
 
         $directory = "sites/{$device->site_id}/events/{$event->id}";
         $event->fill(array_filter([
-            'snapshot_path' => $this->storeMedia($request->file('snapshot'), $directory, 'snapshot'),
+            'snapshot_path' => $this->storeMedia($request->file('snapshot'), $directory, 'snapshot', $camera),
             'clip_path' => $this->storeMedia($request->file('clip'), $directory, 'clip'),
             'frame_paths' => collect($request->file('frames', []))
                 ->values()
-                ->map(fn (UploadedFile $file, int $index) => $this->storeMedia($file, $directory, "frame_{$index}"))
+                ->map(fn (UploadedFile $file, int $index) => $this->storeMedia($file, $directory, "frame_{$index}", $camera))
                 ->filter()
                 ->values()
                 ->all() ?: null,
@@ -63,10 +65,18 @@ class DetectionEventController extends Controller
         return response()->json(['id' => $event->id, 'created' => $isNew], $isNew ? 201 : 200);
     }
 
-    private function storeMedia(?UploadedFile $file, string $directory, string $name): ?string
+    private function storeMedia(?UploadedFile $file, string $directory, string $name, ?Camera $camera = null): ?string
     {
         if (! $file) {
             return null;
+        }
+
+        // J2 — privacy areas are blacked out before the image is stored or seen by the AI. Clips are masked on the edge.
+        if ($camera && in_array(strtolower($file->extension()), ['jpg', 'jpeg', 'png'], true)) {
+            $path = "{$directory}/{$name}.jpg";
+            Storage::disk(config('seguria.media_disk'))->put($path, app(PrivacyMask::class)->apply($camera, $file->get()));
+
+            return $path;
         }
 
         return $file->storeAs(

@@ -7,6 +7,7 @@ use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
 use App\Enums\ZoneAutonomy;
+use App\Enums\ZoneKind;
 use App\Events\DetectionActivity;
 use App\Events\IncidentChanged;
 use App\Events\IncidentOpened;
@@ -192,7 +193,7 @@ class DetectionProcessor
      */
     private function matchingZones(DetectionEvent $event): array|false|null
     {
-        $zones = $event->camera->zones;
+        $zones = $event->camera->zones->reject(fn (Zone $zone): bool => $zone->kind === ZoneKind::Privacy);
 
         if ($zones->isEmpty()) {
             return null;

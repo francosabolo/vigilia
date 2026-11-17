@@ -3,14 +3,18 @@
 namespace App\Enums;
 
 /**
- * The kinds of property Vigilia watches. The interface talks about each in its own words, and the ones made of
- * houses (country, condominio) place each home on the map.
+ * The kinds of property Vigilia watches. The interface talks about each in its own words; the ones made of houses
+ * (country, condominio) place each home on the map, and single properties have no units at all.
  */
 enum SiteKind: string
 {
     case Building = 'building';
     case Condominium = 'condominium';
     case Country = 'country';
+    case House = 'house';
+    case Apartment = 'apartment';
+    case Store = 'store';
+    case Warehouse = 'warehouse';
 
     public function noun(): string
     {
@@ -18,11 +22,15 @@ enum SiteKind: string
             self::Building => 'edificio',
             self::Condominium => 'condominio',
             self::Country => 'country',
+            self::House => 'casa',
+            self::Apartment => 'departamento',
+            self::Store => 'local',
+            self::Warehouse => 'nave',
         };
     }
 
     /**
-     * What a resident's home is called: "unidad 4B" in a building or a condominio, "lote 42" in a country.
+     * What a resident's home is called: "lote 42" in a country, "unidad 4B" everywhere else.
      */
     public function unitNoun(): string
     {
@@ -34,6 +42,14 @@ enum SiteKind: string
      */
     public function hasHousesOnMap(): bool
     {
-        return $this !== self::Building;
+        return in_array($this, [self::Condominium, self::Country], true);
+    }
+
+    /**
+     * Several homes with their own residents (consorcios, barrios). A house, a flat, a shop or a warehouse is one.
+     */
+    public function hasUnits(): bool
+    {
+        return in_array($this, [self::Building, self::Condominium, self::Country], true);
     }
 }
