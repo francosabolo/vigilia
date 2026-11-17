@@ -11,7 +11,7 @@ import { timeAgo } from '@/lib/seguria';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm, usePage, usePoll } from '@inertiajs/react';
-import { DoorOpen, KeyRound, ListChecks, QrCode, ScrollText, UserRoundSearch } from 'lucide-react';
+import { DoorOpen, KeyRound, ListChecks, QrCode, ScrollText, ShieldAlert, UserRoundSearch } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Accesos', href: '/access' }];
@@ -53,6 +53,7 @@ interface Props {
     entries?: Entry[];
     authorizations?: Authorization[];
     residents?: { id: number; name: string; lot: string | null }[];
+    watchlist?: { id: number; plate: string; reason: string | null }[];
     q?: string;
 }
 
@@ -69,7 +70,16 @@ function when(auth: Authorization): string {
     return [dates, days, hours].filter(Boolean).join(', ');
 }
 
-export default function AccessIndex({ site, sites = [], waiting = [], entries = [], authorizations = [], residents = [], q = '' }: Props) {
+export default function AccessIndex({
+    site,
+    sites = [],
+    waiting = [],
+    entries = [],
+    authorizations = [],
+    residents = [],
+    watchlist = [],
+    q = '',
+}: Props) {
     const { flash } = usePage<{ flash: { notice: string | null } }>().props;
     usePoll(waiting.length > 0 ? 3000 : 15000, { only: ['waiting', 'entries'] });
 
@@ -212,6 +222,8 @@ export default function AccessIndex({ site, sites = [], waiting = [], entries = 
                         </ul>
                     )}
                 </section>
+
+                <Watchlist siteId={site.id} plates={watchlist} />
 
                 <EntryLog entries={entries} q={q} />
             </div>
@@ -376,6 +388,64 @@ function Announce({ siteId, residents }: { siteId: number; residents: { id: numb
                     Avisar al vecino
                 </Button>
                 <p className="text-muted-foreground text-xs">Le llega al celular para que lo deje pasar o no. Su respuesta aparece acá.</p>
+            </form>
+        </section>
+    );
+}
+
+/**
+ * A7 — plates the guard is warned about when they reach the access.
+ */
+function Watchlist({ siteId, plates }: { siteId: number; plates: { id: number; plate: string; reason: string | null }[] }) {
+    const form = useForm({ plate: '', reason: '' });
+
+    return (
+        <section className="flex flex-col gap-3">
+            <SectionTitle icon={ShieldAlert}>Patentes en alerta</SectionTitle>
+            <p className="text-muted-foreground -mt-1 text-sm">
+                Si una de estas patentes llega al acceso, la IA la lee en la foto y avisa a la guardia y a la central.
+            </p>
+            {plates.length > 0 && (
+                <ul className="flex flex-wrap gap-2">
+                    {plates.map((plate) => (
+                        <li key={plate.id} className="bg-card flex items-center gap-2 rounded-full border py-1 pr-1 pl-3 text-sm">
+                            <span className="font-display font-semibold tracking-wider">{plate.plate}</span>
+                            {plate.reason && <span className="text-muted-foreground">{plate.reason}</span>}
+                            <ItemActionButton
+                                kind="delete"
+                                aria-label={`Quitar ${plate.plate} de la lista`}
+                                onClick={() => router.delete(`/access/watchlist/${plate.id}`, { preserveScroll: true })}
+                            >
+                                Quitar
+                            </ItemActionButton>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <form
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    form.post(`/access/${siteId}/watchlist`, { preserveScroll: true, onSuccess: () => form.reset() });
+                }}
+                className="flex flex-wrap gap-2"
+            >
+                <Input
+                    aria-label="Patente"
+                    placeholder="Patente"
+                    value={form.data.plate}
+                    onChange={(e) => form.setData('plate', e.target.value.toUpperCase())}
+                    className="w-36"
+                />
+                <Input
+                    aria-label="Motivo"
+                    placeholder="Motivo (opcional)"
+                    value={form.data.reason}
+                    onChange={(e) => form.setData('reason', e.target.value)}
+                    className="max-w-xs"
+                />
+                <Button type="submit" variant="outline" disabled={form.processing || !form.data.plate.trim()}>
+                    Agregar a la lista
+                </Button>
             </form>
         </section>
     );

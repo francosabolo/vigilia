@@ -6,6 +6,7 @@ use App\Models\AccessAuthorization;
 use App\Models\AccessEntry;
 use App\Models\Site;
 use App\Models\User;
+use App\Models\WatchedPlate;
 use App\Services\Access\AccessDesk;
 use App\Services\Privacy\MediaAccessLog;
 use App\Services\Sites\SiteScope;
@@ -43,6 +44,7 @@ class AccessController extends Controller
                 ->with(['resident:id,name,lot', 'guardUser:id,name'])->latest()->limit(50)->get()->map->toPayload(),
             'authorizations' => AccessAuthorization::where('site_id', $site->id)->whereNull('revoked_at')->where('valid_until', '>=', now()->toDateString())
                 ->with('resident:id,name,lot', 'site:id,timezone')->orderBy('kind')->orderBy('name')->get()->map->toPayload(),
+            'watchlist' => WatchedPlate::where('site_id', $site->id)->orderBy('plate')->get(['id', 'plate', 'reason']),
             'residents' => $site->residents()->get(['id', 'name', 'lot'])->map(fn (User $resident) => ['id' => $resident->id, 'name' => $resident->name, 'lot' => $resident->lot]),
             'q' => $q,
         ]);
@@ -101,6 +103,24 @@ class AccessController extends Controller
     {
         Gate::authorize('view', $authorization->site);
         $authorization->update(['revoked_at' => now()]);
+
+        return back();
+    }
+
+    public function watchPlate(Request $request, Site $site): RedirectResponse
+    {
+        Gate::authorize('manage', $site);
+        $data = $request->validate(['plate' => ['required', 'string', 'max:15'], 'reason' => ['nullable', 'string', 'max:200']]);
+
+        WatchedPlate::updateOrCreate(['site_id' => $site->id, 'plate' => WatchedPlate::normalize($data['plate'])], ['reason' => $data['reason'] ?? null, 'created_by' => $request->user()->id]);
+
+        return back();
+    }
+
+    public function unwatchPlate(WatchedPlate $plate): RedirectResponse
+    {
+        Gate::authorize('manage', Site::findOrFail($plate->site_id));
+        $plate->delete();
 
         return back();
     }

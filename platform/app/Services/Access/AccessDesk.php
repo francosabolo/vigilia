@@ -3,10 +3,17 @@
 namespace App\Services\Access;
 
 use Anthropic\Client;
+use App\Enums\IncidentSource;
+use App\Enums\IncidentStatus;
+use App\Enums\Severity;
+use App\Events\IncidentChanged;
+use App\Events\IncidentOpened;
 use App\Models\AccessAuthorization;
 use App\Models\AccessEntry;
+use App\Models\Incident;
 use App\Models\Site;
 use App\Models\User;
+use App\Models\WatchedPlate;
 use App\Notifications\VisitorAtGate;
 use App\Services\Cameras\CameraViewMonitor;
 use App\Services\Verification\AiBudget;
@@ -110,7 +117,38 @@ class AccessDesk
             }
         }
 
+        $this->checkWatchlist($site, $entry->fresh());
+
         return $entry->fresh();
+    }
+
+    /**
+     * A7 — a plate on the site's watchlist at the gate: the guard and the central get an alert at once.
+     */
+    private function checkWatchlist(Site $site, AccessEntry $entry): void
+    {
+        if (! $entry->plate) {
+            return;
+        }
+        $watched = WatchedPlate::where('site_id', $site->id)->where('plate', WatchedPlate::normalize($entry->plate))->first();
+        if (! $watched) {
+            return;
+        }
+
+        $incident = Incident::create([
+            'site_id' => $site->id,
+            'camera_id' => $site->cameras()->where('is_access', true)->value('id'),
+            'source' => IncidentSource::Detection,
+            'severity' => Severity::High,
+            'status' => IncidentStatus::New,
+            'title' => "Patente en alerta en el acceso: {$watched->plate}",
+            'description' => trim("{$entry->name} llegó al acceso con la patente {$watched->plate}. ".($watched->reason ? "Motivo de la alerta: {$watched->reason}." : '')),
+            'snapshot_path' => $entry->photo_path,
+            'detected_at' => now(),
+        ]);
+        $incident->actions()->create(['type' => 'detected', 'channel' => 'system', 'notes' => $incident->description]);
+        IncidentOpened::dispatch($incident);
+        IncidentChanged::dispatch($incident, 'opened');
     }
 
     /**

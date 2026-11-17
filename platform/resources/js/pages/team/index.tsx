@@ -173,7 +173,7 @@ function MemberRow({ member, sites, clients }: { member: Member; sites: Option[]
         member.client?.name ?? member.site?.name ?? (member.role === 'admin' || member.role === 'operator' ? 'Todos los lugares' : 'Sin asignar');
 
     return (
-        <li className="grid items-center gap-x-6 gap-y-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_15rem_11rem_13rem]">
+        <li className="grid items-center gap-x-6 gap-y-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_14rem_10rem_19rem]">
             <div className="min-w-0">
                 <p className="truncate font-semibold">
                     {member.name}
@@ -202,6 +202,7 @@ function MemberRow({ member, sites, clients }: { member: Member; sites: Option[]
                 <p className="text-muted-foreground">{member.last_login_at ? `Entró ${timeAgo(member.last_login_at)}` : 'Nunca entró'}</p>
             </div>
             <ItemActions className="md:justify-end">
+                <PersonalData member={member} />
                 {member.role === 'resident' ? (
                     member.site && (
                         <ItemActionLink kind="edit" href={`/sites/${member.site.id}?tab=vecinos`}>
@@ -365,6 +366,48 @@ function MemberDialog({ sites, clients, member }: { sites: Option[]; clients: Op
                         </Button>
                     </DialogFooter>
                 </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/**
+ * J5 — Ley 25.326: download everything kept about a person, or delete it.
+ */
+function PersonalData({ member }: { member: Member }) {
+    const [confirm, setConfirm] = useState('');
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <ItemActionButton kind="view" aria-label={`Datos personales de ${member.name}`}>
+                    Datos
+                </ItemActionButton>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Datos personales de {member.name}</DialogTitle>
+                    <DialogDescription>
+                        Para atender un pedido de acceso o de borrado (Ley 25.326). El borrado elimina la cuenta, sus contactos, notificaciones y
+                        autorizaciones; los incidentes que reportó quedan en el historial sin su nombre.
+                    </DialogDescription>
+                </DialogHeader>
+                <Button asChild variant="outline">
+                    <a href={`/team/${member.id}/data`}>Descargar sus datos</a>
+                </Button>
+                {!member.is_me && (
+                    <div className="border-alarm/40 flex flex-col gap-2 rounded-xl border p-3">
+                        <Label htmlFor={`erase-${member.id}`}>Para borrar todo, escribí «{member.name}»</Label>
+                        <Input id={`erase-${member.id}`} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+                        <Button
+                            variant="destructive"
+                            disabled={confirm !== member.name}
+                            onClick={() => router.delete(`/team/${member.id}/data`, { data: { confirm }, preserveScroll: true })}
+                        >
+                            Borrar sus datos
+                        </Button>
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     );
