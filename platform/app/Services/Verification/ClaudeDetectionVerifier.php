@@ -7,6 +7,7 @@ use Anthropic\Lib\Helpers\StructuredOutput;
 use Anthropic\Messages\Message;
 use App\Models\Camera;
 use App\Models\DetectionEvent;
+use App\Services\Detection\SiteSituation;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
@@ -215,9 +216,9 @@ class ClaudeDetectionVerifier implements DetectionVerifier
 
     private function eventContext(DetectionEvent $event, int $frames = 0): string
     {
-        $zones = $event->camera->zones()->whereIn('frigate_zone', $event->zones ?? [])->get()
-            ->map(fn ($zone): string => "{$zone->name} ({$zone->kind->label()})")
-            ->implode(', ');
+        $matched = $event->camera->zones()->whereIn('frigate_zone', $event->zones ?? [])->get();
+        $zones = $matched->map(fn ($zone): string => "{$zone->name} ({$zone->kind->label()})")->implode(', ');
+        $hints = $matched->map(fn ($zone) => $zone->kind->aiHint())->filter()->unique()->implode(' ');
 
         $sequence = '';
         if ($frames >= 2) {
@@ -225,12 +226,12 @@ class ClaudeDetectionVerifier implements DetectionVerifier
             $sequence = $seconds ? "Secuencia de {$frames} cuadros a lo largo de {$seconds} s. " : "Secuencia de {$frames} cuadros. ";
         }
 
-        return $sequence.sprintf(
+        return trim($sequence.sprintf(
             'Detector: %s (score %s). Zonas: %s.',
             LabelTranslator::translate($event->label),
             $event->score !== null ? number_format($event->score, 2) : 'n/d',
             $zones ?: (implode(', ', $event->zones ?? []) ?: 'cámara completa'),
-        );
+        ).' '.$hints.' '.app(SiteSituation::class)->for($event));
     }
 
     private function eventSubject(DetectionEvent $event): string

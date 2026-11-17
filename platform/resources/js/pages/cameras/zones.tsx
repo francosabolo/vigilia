@@ -20,16 +20,20 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm, usePoll } from '@inertiajs/react';
 import {
     AppWindow,
+    Armchair,
+    Car,
     CheckCircle2,
     DoorOpen,
     EyeOff,
     Fence,
+    HardHat,
     Loader2,
     RotateCcw,
     Target,
     Trash2,
     Undo2,
     VideoOff,
+    Waves,
     X,
     type LucideIcon,
 } from 'lucide-react';
@@ -121,7 +125,17 @@ function DeleteZone({ zone }: { zone: ZoneData }) {
     );
 }
 
-const KIND_ICONS: Record<ZoneKind, LucideIcon> = { perimeter: Fence, door: DoorOpen, window: AppWindow, sensitive: Target, privacy: EyeOff };
+const KIND_ICONS: Record<ZoneKind, LucideIcon> = {
+    perimeter: Fence,
+    door: DoorOpen,
+    window: AppWindow,
+    sensitive: Target,
+    garage: Car,
+    common_area: Armchair,
+    pool: Waves,
+    construction: HardHat,
+    privacy: EyeOff,
+};
 
 const COLORS = ['#7aa2ff', '#34c77b', '#c084fc', '#f472b6', '#38bdf8', '#a3e635'];
 const DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
@@ -447,7 +461,7 @@ export default function ZoneEditor({ camera, zones, synced, interval }: Props) {
                                             ventanas o patios de vecinos.
                                         </p>
                                     ) : (
-                                        form.data.kind !== 'perimeter' && (
+                                        ['door', 'window', 'sensitive'].includes(form.data.kind) && (
                                             <p className="text-muted-foreground mt-1.5 text-xs">
                                                 Una persona en esta zona genera una alerta crítica, a cualquier hora en que esté armada.
                                             </p>

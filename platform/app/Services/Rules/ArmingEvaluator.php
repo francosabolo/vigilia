@@ -2,8 +2,12 @@
 
 namespace App\Services\Rules;
 
+use App\Enums\IncidentSource;
+use App\Enums\IncidentStatus;
 use App\Enums\UserRole;
+use App\Enums\ZoneKind;
 use App\Models\ArmingSchedule;
+use App\Models\Incident;
 use App\Models\SafeArrival;
 use App\Models\User;
 use App\Models\Zone;
@@ -27,6 +31,12 @@ class ArmingEvaluator
             return true;
         }
 
+        // M17 — with an intrusion open elsewhere in the property, the rest of the perimeter is watched too: it may
+        // be a distraction.
+        if (in_array($zone->kind, [ZoneKind::Perimeter, ZoneKind::Construction], true) && $this->intrusionOpenNearby($zone, $at)) {
+            return true;
+        }
+
         $schedules = $zone->armingSchedules;
 
         if ($schedules->isEmpty()) {
@@ -36,6 +46,16 @@ class ArmingEvaluator
         $local = $at->copy()->setTimezone($timezone);
 
         return $schedules->contains(fn (ArmingSchedule $schedule): bool => $this->covers($schedule, $local));
+    }
+
+    private function intrusionOpenNearby(Zone $zone, CarbonInterface $at): bool
+    {
+        return Incident::where('site_id', $zone->camera->site_id)
+            ->where('source', IncidentSource::Detection)
+            ->where('status', '!=', IncidentStatus::Resolved)
+            ->whereBetween('detected_at', [$at->copy()->subMinutes(15), $at])
+            ->where('camera_id', '!=', $zone->camera_id)
+            ->exists();
     }
 
     private function arrivalWatches(Zone $zone, CarbonInterface $at): bool
