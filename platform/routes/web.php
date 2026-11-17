@@ -21,6 +21,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResidentAdminController;
 use App\Http\Controllers\ResidentContactController;
 use App\Http\Controllers\ResidentController;
+use App\Http\Controllers\ResidentDirectoryController;
 use App\Http\Controllers\ResidentVisitController;
 use App\Http\Controllers\SafeArrivalController;
 use App\Http\Controllers\SearchController;
@@ -109,6 +110,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('team/{member}', [TeamController::class, 'destroy'])->name('team.destroy');
         Route::get('business', [BusinessController::class, 'index'])->name('business.index');
         Route::get('search', SearchController::class)->name('search');
+        Route::get('residents', ResidentDirectoryController::class)->name('staff.residents');
         Route::post('team/{user}/impersonate', [ImpersonationController::class, 'start'])->name('impersonation.start');
         Route::get('team/{user}/data', [PersonalDataController::class, 'export'])->name('team.data.export');
         Route::delete('team/{user}/data', [PersonalDataController::class, 'erase'])->name('team.data.erase');

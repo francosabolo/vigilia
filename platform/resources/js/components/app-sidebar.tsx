@@ -15,91 +15,43 @@ import {
     Search,
     ShieldCheck,
     Siren,
+    UserRound,
     Users,
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Panel',
-        url: '/dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Cámaras',
-        url: '/cameras',
-        icon: Cctv,
-    },
-    {
-        title: 'Incidentes',
-        url: '/incidents',
-        icon: Siren,
-    },
-    {
-        title: 'Accesos',
-        url: '/access',
-        icon: DoorOpen,
-    },
-    {
-        title: 'Buscar',
-        url: '/search',
-        icon: Search,
-    },
-    {
-        title: 'Propiedades',
-        url: '/sites',
-        icon: Building2,
-    },
+type Role = 'admin' | 'operator' | 'guard' | 'site_admin' | 'client_admin';
+
+interface Entry extends NavItem {
+    roles?: Role[];
+}
+
+/** What the guard and the central use every shift. */
+const operationItems: Entry[] = [
+    { title: 'Panel', url: '/dashboard', icon: LayoutGrid },
+    { title: 'Incidentes', url: '/incidents', icon: Siren },
+    { title: 'Cámaras', url: '/cameras', icon: Cctv },
+    { title: 'Accesos', url: '/access', icon: DoorOpen },
+    { title: 'Vecinos', url: '/residents', icon: UserRound },
+    { title: 'Buscar', url: '/search', icon: Search },
 ];
 
-const supervisionNavItems: NavItem[] = [
-    {
-        title: 'Guardias',
-        url: '/guards',
-        icon: ShieldCheck,
-    },
-];
-
-const centralNavItems: NavItem[] = [
-    {
-        title: 'Calidad de la IA',
-        url: '/ai/quality',
-        icon: Gauge,
-    },
-    {
-        title: 'Pruebas de IA',
-        url: '/ai/shadow',
-        icon: FlaskConical,
-    },
-];
-
-const adminNavItems: NavItem[] = [
-    {
-        title: 'Negocio',
-        url: '/business',
-        icon: ChartNoAxesCombined,
-    },
-    {
-        title: 'Clientes',
-        url: '/clients',
-        icon: Briefcase,
-    },
-    {
-        title: 'Usuarios',
-        url: '/team',
-        icon: Users,
-    },
+/** Setting things up and following how the service goes. */
+const managementItems: Entry[] = [
+    { title: 'Propiedades', url: '/sites', icon: Building2 },
+    { title: 'Guardias', url: '/guards', icon: ShieldCheck, roles: ['admin', 'operator', 'site_admin', 'client_admin'] },
+    { title: 'Clientes', url: '/clients', icon: Briefcase, roles: ['admin'] },
+    { title: 'Usuarios', url: '/team', icon: Users, roles: ['admin'] },
+    { title: 'Negocio', url: '/business', icon: ChartNoAxesCombined, roles: ['admin'] },
+    { title: 'Calidad de la IA', url: '/ai/quality', icon: Gauge, roles: ['admin', 'operator'] },
+    { title: 'Pruebas de IA', url: '/ai/shadow', icon: FlaskConical, roles: ['admin', 'operator'] },
 ];
 
 export function AppSidebar() {
-    const { auth } = usePage<{ auth: { user: { role?: string } } }>().props;
+    const { auth } = usePage<{ auth: { user: { role?: Role } } }>().props;
     const role = auth.user.role;
-    const items = [
-        ...mainNavItems,
-        ...(role !== 'guard' ? supervisionNavItems : []),
-        ...(role === 'admin' || role === 'operator' ? centralNavItems : []),
-        ...(role === 'admin' ? adminNavItems : []),
-    ];
+    const allowed = (items: Entry[]) => items.filter((item) => !item.roles || (role && item.roles.includes(role)));
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -115,7 +67,8 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={items} />
+                <NavMain label="Operación diaria" items={allowed(operationItems)} />
+                <NavMain label="Gestión" items={allowed(managementItems)} />
             </SidebarContent>
 
             <SidebarFooter>

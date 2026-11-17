@@ -1,14 +1,17 @@
-import { SidebarGroup, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 
-export function NavMain({ items = [] }: { items: NavItem[] }) {
+export function NavMain({ items = [], label }: { items: NavItem[]; label?: string }) {
     const page = usePage<SharedData>();
     const alerts = page.props.siteContext?.alerts;
 
+    if (items.length === 0) return null;
+
     return (
         <SidebarGroup className="px-2 py-2">
+            {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
             <SidebarMenu>
                 {items.map((item) => {
                     const showBadge = item.url === '/incidents' && alerts && alerts.open > 0;

@@ -238,7 +238,7 @@ class SiteController extends Controller
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function residents(Site $site, ResidentDevices $devices): array
+    public function residents(Site $site, ResidentDevices $devices): array
     {
         $residents = $site->residents()->with('contacts', 'vehicles')->get();
         $usage = $devices->forUsers($residents->pluck('id')->all());

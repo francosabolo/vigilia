@@ -33,3 +33,10 @@ it('shows the contacts to the staff and lets the administration add them', funct
     $guard = User::factory()->create(['role' => UserRole::Guard, 'organization_id' => $this->site->organization_id, 'site_id' => $this->site->id]);
     $this->actingAs($guard)->post("/sites/{$this->site->id}/residents/{$this->resident->id}/contacts", ['name' => 'X', 'phone' => '+5491155550003'])->assertForbidden();
 });
+
+it('shows the residents of the property in view from the main menu', function () {
+    $guard = User::factory()->create(['role' => UserRole::Guard, 'organization_id' => $this->site->organization_id, 'site_id' => $this->site->id]);
+
+    $this->actingAs($guard)->get('/residents')->assertOk()
+        ->assertInertia(fn ($page) => $page->component('residents/directory')->where('site.id', $this->site->id)->has('residents', 1));
+});
