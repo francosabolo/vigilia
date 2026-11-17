@@ -10,8 +10,9 @@ import { SafeArrivalCard, type Arrival } from '@/components/safe-arrival';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDuration, theSite, timeAgo, unitNoun, type IncidentStatus, type Metrics, type SiteKind } from '@/lib/seguria';
+import { cn } from '@/lib/utils';
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
-import { Bell, Car, CheckCircle2, Eye, LogOut, Phone, Plane, ShieldCheck, Siren } from 'lucide-react';
+import { Bell, Car, CheckCircle2, DoorOpen, Eye, Home, LogOut, Phone, Plane, ShieldCheck, Siren } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 
 interface Notice {
@@ -189,8 +190,28 @@ function AwayMode({ awayUntil, hasLot }: { awayUntil: string | null; hasLot: boo
     );
 }
 
+type Section = 'inicio' | 'visitas' | 'llegada' | 'casa';
+
+/** The app's sections, in a bottom bar like any phone app: no long scroll to find things. */
+const SECTIONS: { id: Section; label: string; icon: typeof Bell }[] = [
+    { id: 'inicio', label: 'Inicio', icon: ShieldCheck },
+    { id: 'visitas', label: 'Visitas', icon: DoorOpen },
+    { id: 'llegada', label: 'Llegada', icon: Car },
+    { id: 'casa', label: 'Mi casa', icon: Home },
+];
+
 export default function ResidentHome({ resident, sectors, notices, metrics, vapidPublicKey, visits, atGate, contacts, arrival, vehicles }: Props) {
     usePoll(atGate.some((entry) => entry.status === 'waiting') ? 4000 : 30000, { only: ['visits', 'atGate', 'arrival'] });
+    const [tab, setTab] = useState<Section>(() => {
+        const hash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
+        return (SECTIONS.some((section) => section.id === hash) ? hash : 'inicio') as Section;
+    });
+    const go = (section: Section) => {
+        setTab(section);
+        window.history.replaceState(null, '', `#${section}`);
+        window.scrollTo({ top: 0 });
+    };
+    const waitingAtGate = atGate.filter((entry) => entry.status === 'waiting').length;
     usePoll(15000, { only: ['notices'] });
 
     return (
@@ -212,126 +233,171 @@ export default function ResidentHome({ resident, sectors, notices, metrics, vapi
                 </Link>
             </header>
 
-            <main className="mx-auto flex max-w-xl flex-col gap-4 p-4">
-                <PanicButton />
+            <main className="mx-auto flex max-w-xl flex-col gap-4 p-4 pb-28">
+                {waitingAtGate > 0 && tab !== 'visitas' && (
+                    <button
+                        type="button"
+                        onClick={() => go('visitas')}
+                        className="border-alarm bg-alarm/10 text-alarm rounded-xl border-2 px-4 py-3 text-left font-semibold"
+                    >
+                        Hay alguien en la guardia preguntando por vos. Tocá para responder.
+                    </button>
+                )}
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-lg">
-                            <IconCircle icon={Eye} /> Vi algo raro
-                        </CardTitle>
-                        <CardDescription>Avisás a la guardia y la IA revisa al instante las cámaras de ese sector.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {sectors.length ? (
-                            <ReportForm sectors={sectors} defaultSector={resident.sector} />
-                        ) : (
-                            <p className="text-muted-foreground text-sm">Todavía no hay sectores configurados.</p>
-                        )}
-                    </CardContent>
-                </Card>
+                {tab === 'inicio' && (
+                    <>
+                        <PanicButton />
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-lg">
-                            <IconCircle icon={Plane} /> Modo vacaciones
-                        </CardTitle>
-                        <CardDescription>Mientras no estás, tu casa queda vigilada las 24 h.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <AwayMode awayUntil={resident.away_until} hasLot={!!resident.lot} />
-                    </CardContent>
-                </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-3 text-lg">
+                                    <IconCircle icon={Eye} /> Vi algo raro
+                                </CardTitle>
+                                <CardDescription>Avisás a la guardia y la IA revisa al instante las cámaras de ese sector.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {sectors.length ? (
+                                    <ReportForm sectors={sectors} defaultSector={resident.sector} />
+                                ) : (
+                                    <p className="text-muted-foreground text-sm">Todavía no hay sectores configurados.</p>
+                                )}
+                            </CardContent>
+                        </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-lg">
-                            <IconCircle icon={Bell} /> Avisos de tu sector
-                        </CardTitle>
-                        <CardDescription>Últimos 7 días</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-3">
-                        <PushToggle vapidPublicKey={vapidPublicKey} />
-                        {notices.length === 0 && <p className="text-muted-foreground text-sm">Sin novedades en tu sector esta semana.</p>}
-                        {notices.map((notice) => (
-                            <div key={notice.id} className="flex items-start gap-3 border-t pt-3 text-sm first:border-t-0">
-                                <span className={`mt-1.5 size-2.5 shrink-0 rounded-full ${notice.status === 'resolved' ? 'bg-ok' : 'bg-pending'}`} />
-                                <div className="flex-1">
-                                    <div className="font-medium">{noticeText(notice)}</div>
-                                    <div className="text-muted-foreground">
-                                        {noticeStatus(notice)}, {timeAgo(notice.detected_at)}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-3 text-lg">
+                                    <IconCircle icon={Bell} /> Avisos de tu sector
+                                </CardTitle>
+                                <CardDescription>Últimos 7 días</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex flex-col gap-3">
+                                <PushToggle vapidPublicKey={vapidPublicKey} />
+                                {notices.length === 0 && <p className="text-muted-foreground text-sm">Sin novedades en tu sector esta semana.</p>}
+                                {notices.map((notice) => (
+                                    <div key={notice.id} className="flex items-start gap-3 border-t pt-3 text-sm first:border-t-0">
+                                        <span
+                                            className={`mt-1.5 size-2.5 shrink-0 rounded-full ${notice.status === 'resolved' ? 'bg-ok' : 'bg-pending'}`}
+                                        />
+                                        <div className="flex-1">
+                                            <div className="font-medium">{noticeText(notice)}</div>
+                                            <div className="text-muted-foreground">
+                                                {noticeStatus(notice)}, {timeAgo(notice.detected_at)}
+                                            </div>
+                                        </div>
                                     </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
+
+                {tab === 'visitas' && <ResidentVisits visits={visits} atGate={atGate} siteName={resident.site} />}
+
+                {tab === 'llegada' && <SafeArrivalCard arrival={arrival} />}
+
+                {tab === 'casa' && (
+                    <>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-3 text-lg">
+                                    <IconCircle icon={Plane} /> Modo vacaciones
+                                </CardTitle>
+                                <CardDescription>Mientras no estás, tu casa queda vigilada las 24 h.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <AwayMode awayUntil={resident.away_until} hasLot={!!resident.lot} />
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-3 text-lg">
+                                    <IconCircle icon={Phone} /> Contactos de emergencia
+                                </CardTitle>
+                                <CardDescription>
+                                    A quién llama la guardia si pasa algo y no te encuentra. Hasta 5 personas, en orden.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <EmergencyContacts
+                                    contacts={contacts}
+                                    addAction="/vecinos/contactos"
+                                    removeAction={(contact) => `/vecinos/contactos/${contact.id}`}
+                                />
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-3 text-lg">
+                                    <IconCircle icon={Car} /> Tus vehículos
+                                </CardTitle>
+                                <CardDescription>La guardia reconoce tu auto por la patente cuando llegás.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ResidentVehicles
+                                    vehicles={vehicles}
+                                    addAction="/vecinos/vehiculos"
+                                    removeAction={(vehicle) => `/vecinos/vehiculos/${vehicle.id}`}
+                                />
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-3 text-lg">
+                                    <IconCircle icon={ShieldCheck} /> Así cuidamos {theSite(resident.site_kind)}
+                                </CardTitle>
+                                <CardDescription>Últimos 30 días</CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <div className="font-display text-4xl font-semibold tabular-nums">{metrics.detections}</div>movimientos analizados
+                                    por la IA
                                 </div>
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
+                                <div>
+                                    <div className="font-display text-4xl font-semibold tabular-nums">{metrics.incidents}</div>alertas a la guardia
+                                </div>
+                                <div>
+                                    <div className="font-display text-4xl font-semibold tabular-nums">{metrics.confirmed}</div>intrusiones frenadas
+                                </div>
+                                <div>
+                                    <div className="font-display text-4xl font-semibold tabular-nums">{formatDuration(metrics.avg_ack_seconds)}</div>
+                                    respuesta promedio
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                <SafeArrivalCard arrival={arrival} />
-
-                <ResidentVisits visits={visits} atGate={atGate} siteName={resident.site} />
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-lg">
-                            <IconCircle icon={Phone} /> Contactos de emergencia
-                        </CardTitle>
-                        <CardDescription>A quién llama la guardia si pasa algo y no te encuentra. Hasta 5 personas, en orden.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <EmergencyContacts
-                            contacts={contacts}
-                            addAction="/vecinos/contactos"
-                            removeAction={(contact) => `/vecinos/contactos/${contact.id}`}
-                        />
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-lg">
-                            <IconCircle icon={Car} /> Tus vehículos
-                        </CardTitle>
-                        <CardDescription>La guardia reconoce tu auto por la patente cuando llegás.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ResidentVehicles
-                            vehicles={vehicles}
-                            addAction="/vecinos/vehiculos"
-                            removeAction={(vehicle) => `/vecinos/vehiculos/${vehicle.id}`}
-                        />
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-lg">
-                            <IconCircle icon={ShieldCheck} /> Así cuidamos {theSite(resident.site_kind)}
-                        </CardTitle>
-                        <CardDescription>Últimos 30 días</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <div className="font-display text-4xl font-semibold tabular-nums">{metrics.detections}</div>movimientos analizados por la
-                            IA
-                        </div>
-                        <div>
-                            <div className="font-display text-4xl font-semibold tabular-nums">{metrics.incidents}</div>alertas a la guardia
-                        </div>
-                        <div>
-                            <div className="font-display text-4xl font-semibold tabular-nums">{metrics.confirmed}</div>intrusiones frenadas
-                        </div>
-                        <div>
-                            <div className="font-display text-4xl font-semibold tabular-nums">{formatDuration(metrics.avg_ack_seconds)}</div>respuesta
-                            promedio
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <p className="text-muted-foreground px-2 text-center text-xs">
-                    Por privacidad, en esta app no se ven cámaras ni imágenes de personas. Las imágenes solo las ve el personal de seguridad.
-                </p>
+                        <p className="text-muted-foreground px-2 text-center text-xs">
+                            Por privacidad, en esta app no se ven cámaras ni imágenes de personas. Las imágenes solo las ve el personal de seguridad.
+                        </p>
+                    </>
+                )}
             </main>
+
+            <nav aria-label="Secciones" className="bg-card fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)]">
+                <div className="mx-auto grid max-w-xl grid-cols-4">
+                    {SECTIONS.map((section) => (
+                        <button
+                            key={section.id}
+                            type="button"
+                            onClick={() => go(section.id)}
+                            aria-current={tab === section.id ? 'page' : undefined}
+                            className={cn(
+                                'relative flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium',
+                                tab === section.id ? 'text-brand' : 'text-muted-foreground',
+                            )}
+                        >
+                            <section.icon className="size-5" />
+                            {section.label}
+                            {section.id === 'visitas' && waitingAtGate > 0 && (
+                                <span className="bg-alarm absolute top-1.5 right-[30%] size-2.5 rounded-full" />
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </nav>
         </div>
     );
 }
