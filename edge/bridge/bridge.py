@@ -25,7 +25,7 @@ import paho.mqtt.client as mqtt
 import requests
 from ruamel.yaml import YAML
 
-VERSION = "0.7.0"
+VERSION = "0.7.1"
 API_URL = os.environ["SEGURIA_API_URL"].rstrip("/")
 TOKEN = os.environ["SEGURIA_TOKEN"]
 MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
@@ -353,13 +353,39 @@ def update_self() -> None:
         log.error("update failed: %s", exc)
 
 
+def sound_siren(siren: dict) -> tuple[bool, str]:
+    """K11 — the camera's own siren or alarm output through its brand's HTTP API, set up from the console."""
+    host, user, password = siren["host"], siren["user"], siren.get("password", "")
+    auth = requests.auth.HTTPDigestAuth(user, password)
+    try:
+        if siren["brand"] == "hikvision":
+            r = requests.put(f"http://{host}/ISAPI/System/IO/outputs/1/trigger", auth=auth, timeout=10,
+                             data="<IOPortData><outputState>high</outputState></IOPortData>")
+        elif siren["brand"] == "dahua":
+            r = requests.get(f"http://{host}/cgi-bin/coaxialControlIO.cgi?action=control&channel=1&info[0].Type=2&info[0].IO=1",
+                             auth=auth, timeout=10)
+        elif siren["brand"] == "reolink":
+            r = requests.post(f"http://{host}/api.cgi?cmd=AudioAlarmPlay&user={requests.utils.quote(user)}&password={requests.utils.quote(password)}",
+                              json=[{"cmd": "AudioAlarmPlay", "param": {"alarm_mode": "times", "manual_switch": 0, "times": 2, "channel": 0}}],
+                              timeout=10)
+        else:
+            return False, f"Marca de sirena desconocida: {siren['brand']}"
+    except requests.RequestException as exc:
+        return False, f"La cámara no respondió: {exc}"[:255]
+    if r.ok:
+        return True, "Sirena activada."
+    return False, f"La cámara rechazó el pedido ({r.status_code}). Revisá usuario y contraseña."
+
+
 def deter(command: dict) -> None:
     """Plays the deterrence on the site's speaker / siren through a site-specific hook, and reports the result.
 
     SEGURIA_DETER_COMMAND is a shell command run with SEGURIA_CAMERA and SEGURIA_MESSAGE in its environment,
     e.g. a curl to the camera's two-way audio or alarm-output API (Hikvision ISAPI, Reolink siren) or a TTS script.
     """
-    if not DETER_COMMAND:
+    if command.get("siren"):
+        ok, result = sound_siren(command["siren"])
+    elif not DETER_COMMAND:
         ok, result = False, "El equipo no tiene altavoz ni sirena configurados (SEGURIA_DETER_COMMAND)."
     else:
         try:

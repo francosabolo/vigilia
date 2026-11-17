@@ -77,6 +77,7 @@ interface Camera {
     is_ptz: boolean;
     watch_motion: boolean;
     fire_watch: boolean;
+    siren: { brand: string; host: string; user: string } | null;
     ai_notes: string | null;
     speaker_test: { status: string; result: string | null; at: string } | null;
     view_status: 'ok' | 'moved' | 'covered';
@@ -664,6 +665,95 @@ function CameraNotes({ camera }: { camera: Camera }) {
     );
 }
 
+const SIREN_BRANDS = [
+    ['none', 'Sin sirena'],
+    ['hikvision', 'Hikvision (salida de alarma)'],
+    ['dahua', 'Dahua (sirena)'],
+    ['reolink', 'Reolink (sirena)'],
+] as const;
+
+/**
+ * K11 — the camera's own siren, set up from the console. The password is never shown back.
+ */
+function SirenSetup({ camera }: { camera: Camera }) {
+    const [open, setOpen] = useState(false);
+    const form = useForm({ brand: camera.siren?.brand ?? 'none', host: camera.siren?.host ?? '', user: camera.siren?.user ?? 'admin', password: '' });
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <button type="button" className="text-muted-foreground hover:text-foreground text-left text-sm underline underline-offset-2">
+                    {camera.siren ? `Sirena: ${camera.siren.brand}` : 'Configurar sirena'}
+                </button>
+            </DialogTrigger>
+            <DialogContent>
+                <form
+                    className="flex flex-col gap-4"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        form.put(`/cameras/${camera.id}/siren`, { preserveScroll: true, onSuccess: () => setOpen(false) });
+                    }}
+                >
+                    <DialogHeader>
+                        <DialogTitle>Sirena de {camera.name}</DialogTitle>
+                        <DialogDescription>
+                            La disuasión y «Probar altavoz» la hacen sonar a través del equipo del lugar. Para un mensaje hablado hace falta
+                            configurar el altavoz en el equipo.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <select
+                        aria-label="Marca"
+                        value={form.data.brand}
+                        onChange={(e) => form.setData('brand', e.target.value)}
+                        className="border-input bg-background h-9 rounded-md border px-2"
+                    >
+                        {SIREN_BRANDS.map(([value, label]) => (
+                            <option key={value} value={value}>
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                    {form.data.brand !== 'none' && (
+                        <div className="grid gap-2 sm:grid-cols-3">
+                            <Input
+                                aria-label="IP de la cámara"
+                                placeholder="192.168.1.64"
+                                value={form.data.host}
+                                onChange={(e) => form.setData('host', e.target.value)}
+                            />
+                            <Input
+                                aria-label="Usuario"
+                                placeholder="Usuario"
+                                value={form.data.user}
+                                onChange={(e) => form.setData('user', e.target.value)}
+                            />
+                            <Input
+                                aria-label="Contraseña"
+                                type="password"
+                                autoComplete="off"
+                                placeholder={camera.siren ? 'Sin cambios' : 'Contraseña'}
+                                value={form.data.password}
+                                onChange={(e) => form.setData('password', e.target.value)}
+                            />
+                        </div>
+                    )}
+                    <InputError message={form.errors.host ?? form.errors.user} />
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="ghost">
+                                Cancelar
+                            </Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={form.processing}>
+                            Guardar sirena
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function CameraRoles({ camera }: { camera: Camera }) {
     const toggle = (role: 'is_guard_post' | 'is_checkpoint' | 'is_access' | 'is_ptz' | 'watch_motion' | 'fire_watch') =>
         router.patch(
@@ -698,6 +788,7 @@ function CameraRoles({ camera }: { camera: Camera }) {
                 </label>
             ))}
             <CameraNotes camera={camera} />
+            <SirenSetup camera={camera} />
             <button
                 type="button"
                 className="text-muted-foreground hover:text-foreground text-left text-sm underline underline-offset-2"

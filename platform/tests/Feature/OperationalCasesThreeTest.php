@@ -93,3 +93,21 @@ it('knows what to watch for in a warehouse loading bay and around forklifts', fu
         ->and(ZoneKind::Loading->aiHint())->toContain('fuera del horario de carga')
         ->and(ZoneKind::Hazard->aiHint())->toContain('montacargas');
 });
+
+it('sets up the camera siren from the console and sends it with the speaker test only', function () {
+    $camera = Camera::factory()->create(['site_id' => $this->site->id, 'edge_device_id' => $this->edge->id, 'frigate_name' => 'porton']);
+    $admin = App\Models\User::factory()->create(['role' => App\Enums\UserRole::Admin, 'organization_id' => $this->site->organization_id]);
+
+    $this->actingAs($admin)->put("/cameras/{$camera->id}/siren", ['brand' => 'hikvision', 'host' => '192.168.1.64', 'user' => 'admin', 'password' => 's3creta'])->assertRedirect();
+    expect($camera->fresh()->getRawOriginal('siren'))->not->toContain('s3creta');
+
+    // Saving again without a password keeps the saved one.
+    $this->actingAs($admin)->put("/cameras/{$camera->id}/siren", ['brand' => 'hikvision', 'host' => '192.168.1.65', 'user' => 'admin'])->assertRedirect();
+    expect($camera->fresh()->siren)->toMatchArray(['host' => '192.168.1.65', 'password' => 's3creta']);
+
+    $this->actingAs($admin)->post("/cameras/{$camera->id}/speaker-test")->assertRedirect();
+    $this->withToken($this->token)->getJson('/api/edge/commands')
+        ->assertJsonPath('deterrence.0.siren.brand', 'hikvision')
+        ->assertJsonPath('deterrence.0.siren.password', 's3creta');
+    $this->actingAs($admin)->get("/sites/{$this->site->id}?tab=camaras")->assertDontSee('s3creta');
+});

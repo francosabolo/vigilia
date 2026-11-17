@@ -41,7 +41,7 @@ class CommandController extends Controller
 
         // A deterrence that waited more than a minute is useless: the moment passed.
         $deterrence = DeterrenceCommand::query()
-            ->with('camera:id,frigate_name')
+            ->with('camera:id,frigate_name,siren')
             ->where('edge_device_id', $device->id)
             ->where('status', 'pending')
             ->where('created_at', '>', now()->subMinute())
@@ -66,6 +66,7 @@ class CommandController extends Controller
                 'id' => $command->id,
                 'camera' => $command->camera->frigate_name,
                 'message' => $command->message,
+                'siren' => $command->camera->siren,
             ]),
             'preview' => $wall->isWatched($device->site_id)
                 ? ['cameras' => $device->cameras()->pluck('frigate_name'), 'interval' => CameraWall::PREVIEW_INTERVAL]

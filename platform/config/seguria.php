@@ -35,7 +35,7 @@ return [
 
     // E6 — the bridge version edge boxes should run; older ones show "Actualizar" in Equipos.
     'edge' => [
-        'latest_version' => env('SEGURIA_EDGE_LATEST', '0.7.0'),
+        'latest_version' => env('SEGURIA_EDGE_LATEST', '0.7.1'),
     ],
 
     'tracking' => [

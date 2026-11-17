@@ -95,6 +95,7 @@ Route::middleware('auth')->group(function () {
         Route::get('sites/{site}/report', [ReportController::class, 'site'])->name('reports.site');
         Route::post('incidents/{incident}/speaker', [SpeakerController::class, 'speak'])->middleware('throttle:20,1')->name('incidents.speaker');
         Route::post('cameras/{camera}/speaker-test', [SpeakerController::class, 'test'])->middleware('throttle:10,1')->name('cameras.speaker-test');
+        Route::put('cameras/{camera}/siren', [SpeakerController::class, 'configure'])->name('cameras.siren');
         Route::post('incidents/{incident}/notes', [IncidentController::class, 'note'])->name('incidents.notes');
         Route::post('incidents/{incident}/camera-view', [IncidentController::class, 'fixCameraView'])->name('incidents.camera-view');
 

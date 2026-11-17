@@ -42,6 +42,29 @@ class SpeakerController extends Controller
         return back()->with('notice', 'Mensaje enviado al altavoz. El resultado aparece en la bitácora.');
     }
 
+    /**
+     * K11 — the camera's siren set up from the console: no file to edit on site for the common brands.
+     */
+    public function configure(Request $request, Camera $camera): RedirectResponse
+    {
+        Gate::authorize('manage', $camera->site);
+        $data = $request->validate([
+            'brand' => ['required', 'in:none,hikvision,dahua,reolink'],
+            'host' => ['required_unless:brand,none', 'nullable', 'string', 'max:100'],
+            'user' => ['required_unless:brand,none', 'nullable', 'string', 'max:60'],
+            'password' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $previous = $camera->siren ?? [];
+        $camera->update(['siren' => $data['brand'] === 'none' ? null : [
+            'brand' => $data['brand'], 'host' => $data['host'], 'user' => $data['user'],
+            // Left empty keeps the saved one: the password is never shown back.
+            'password' => ($data['password'] ?? null) ?: ($previous['password'] ?? ''),
+        ]]);
+
+        return back()->with('notice', $data['brand'] === 'none' ? "Sirena de {$camera->name} desactivada." : "Sirena de {$camera->name} configurada. Probala con «Probar altavoz».");
+    }
+
     public function test(Request $request, Camera $camera): RedirectResponse
     {
         Gate::authorize('manage', $camera->site);

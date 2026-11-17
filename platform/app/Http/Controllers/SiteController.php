@@ -187,6 +187,7 @@ class SiteController extends Controller
                         'is_ptz' => $camera->is_ptz,
                         'watch_motion' => $camera->watch_motion,
                         'fire_watch' => $camera->fire_watch,
+                        'siren' => $camera->siren ? ['brand' => $camera->siren['brand'], 'host' => $camera->siren['host'], 'user' => $camera->siren['user']] : null,
                         'ai_notes' => $canManage ? $camera->ai_notes : null,
                         'speaker_test' => ($test = DeterrenceCommand::where('camera_id', $camera->id)->whereNull('incident_id')->latest('id')->first())
                             ? ['status' => $test->status, 'result' => $test->result, 'at' => $test->created_at->toIso8601String()]
